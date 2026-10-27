@@ -379,7 +379,7 @@ function counselList(){
   if(idle.length>workers+1)out.push([2,'Idle wardens, empty stations. Even a poor fighter gathers more than a bored one.']);
   var ar=S.heroes.filter(function(h){return h.lvl>=10;})[0];
   if(ar&&S.gold>=300*(ar.r+1))out.push([2,'<b>'+esc(ar.name)+'</b> is ascension-ready and the gold is available. Rebirth favors the decisive.']);
-  if(S.inv.length>=storageCap())out.push([3,'The Vault overflows — loot is being salvaged unread. Upgrade it or equip it.');
+  if(S.inv.length>=storageCap())out.push([3,'The Vault overflows — loot is being salvaged unread. Upgrade it or equip it.']);
   if(S.inv.some(function(x){return x.upg<S.bld.vault;})&&S.gold>200)out.push([1,'Unupgraded gear gathers dust while you carry coin.']);
   var lw=S.heroes.filter(function(h){return h.morale<30;});
   if(lw.length)out.push([2,'<b>'+esc(lw[0].name)+'</b> is one bad day from refusing orders. Rest is cheaper than mutiny.']);
