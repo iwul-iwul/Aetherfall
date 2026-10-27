@@ -1,274 +1,4 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>AETHERFALL — Wardens of the Starforge</title>
-<style>
-:root{
-  --bg:#0b0e1a; --panel:#141a2e; --panel2:#1b2340; --line:#2a3560;
-  --text:#e8ecf8; --dim:#8b94b8; --gold:#fbbf24; --gem:#67e8f9;
-}
-*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
-body{margin:0;background:radial-gradient(1200px 800px at 50% -10%,#1a2450 0%,var(--bg) 60%);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;}
-#err{position:fixed;left:8px;right:8px;bottom:8px;background:#5b1220;color:#ffd7dd;padding:10px 12px;border:1px solid #ff5b73;border-radius:10px;font-size:13px;display:none;z-index:999;}
-.screen{display:none;max-width:720px;margin:0 auto;padding:14px;padding-bottom:90px;}
-.screen.active{display:block;}
-h1{font-size:26px;margin:6px 0 2px;letter-spacing:1px;}
-h2{font-size:17px;margin:16px 0 8px;color:var(--gold);}
-.sub{color:var(--dim);font-size:13px;margin-bottom:10px;}
-.topbar{display:flex;gap:10px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px 14px;position:sticky;top:8px;z-index:5;flex-wrap:wrap;}
-.topbar .res{font-weight:700;font-size:15px;}
-.btn{background:linear-gradient(180deg,#3b4a86,#2a3560);border:1px solid #46579c;color:#fff;padding:10px 18px;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;}
-.btn:active{transform:scale(.97);}
-.btn.gold{background:linear-gradient(180deg,#b8860b,#8a6508);border-color:#fbbf24;}
-.btn.danger{background:linear-gradient(180deg,#7a2233,#551622);border-color:#c2455c;}
-.btn:disabled{opacity:.45;cursor:not-allowed;}
-.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:10px;}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;}
-.heroCard{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:10px;cursor:pointer;position:relative;transition:transform .1s;}
-.heroCard:active{transform:scale(.97);}
-.heroCard.selected{outline:2px solid var(--gem);}
-.heroCard.busy{opacity:.55;}
-.heroName{font-weight:700;font-size:14px;}
-.heroMeta{font-size:12px;color:var(--dim);margin-top:2px;}
-.stars{color:var(--gold);font-size:12px;letter-spacing:1px;}
-.bar{height:7px;background:#0a0d18;border-radius:5px;overflow:hidden;margin-top:6px;}
-.bar>div{height:100%;border-radius:5px;}
-.moraleF{background:linear-gradient(90deg,#f472b6,#fb923c);}
-.xpF{background:linear-gradient(90deg,#4ade80,#22d3ee);}
-.progF{background:linear-gradient(90deg,#8b5cf6,#67e8f9);}
-.tabs{position:fixed;bottom:0;left:0;right:0;background:rgba(11,14,26,.96);border-top:1px solid var(--line);display:flex;z-index:10;backdrop-filter:blur(8px);}
-.tabs button{flex:1;background:none;border:none;color:var(--dim);padding:12px 4px 14px;font-size:11px;font-weight:700;cursor:pointer;}
-.tabs button.on{color:var(--gold);}
-.tabs .ic{display:block;font-size:20px;margin-bottom:2px;}
-.logline{font-size:13px;padding:6px 2px;border-bottom:1px solid #1c2440;color:#c6cde8;}
-.logline b{color:var(--gold);}
-.modal{position:fixed;inset:0;background:rgba(4,6,14,.8);display:none;align-items:center;justify-content:center;z-index:50;padding:16px;}
-.modal.open{display:flex;}
-.modalBox{background:var(--panel2);border:1px solid var(--line);border-radius:16px;padding:18px;max-width:420px;width:100%;max-height:80vh;overflow-y:auto;}
-.center{text-align:center;}
-.small{font-size:12px;color:var(--dim);}
-.reveal{font-size:60px;text-align:center;padding:20px;animation:pop .5s ease;}
-@keyframes pop{0%{transform:scale(.3);opacity:0}70%{transform:scale(1.15)}100%{transform:scale(1)}}
-.tag{display:inline-block;background:#232c52;border-radius:6px;padding:2px 8px;font-size:11px;margin:2px 2px 0 0;color:#aeb8dd;}
-@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
-.shake{animation:shake .3s;}
-#cv{width:100%;border-radius:12px;background:linear-gradient(#0a0d1f,#141a35);display:block;border:1px solid var(--line);}
-
-/* ===== LIVING WORLD UI ===== */
-#lobbyWrap{position:fixed;left:0;top:0;right:48px;bottom:0;z-index:0;display:none;}
-#lobbyCv{width:100%;height:100%;display:block;border:none;border-radius:0;background:linear-gradient(#0a0d1f,#141a35);}
-.panel{position:fixed;z-index:10;background:rgba(11,14,26,.94);border:1px solid var(--line);border-radius:16px;backdrop-filter:blur(12px);display:none;overflow-y:auto;}
-.panel.open{display:block;}
-.panel-left{left:8px;top:70px;bottom:68px;width:340px;max-width:calc(100vw - 80px);padding:14px;}
-.panel-right{right:56px;top:70px;bottom:68px;width:340px;max-width:calc(100vw - 80px);padding:14px;}
-.panel-bottom{left:8px;right:8px;bottom:60px;height:220px;max-height:35vh;padding:14px;}
-.panel-center{left:50%;top:50%;transform:translate(-50%,-50%);width:420px;max-width:90vw;max-height:80vh;padding:14px;}
-#rosterStrip{position:fixed;right:0;top:64px;bottom:60px;width:48px;z-index:5;display:none;background:rgba(11,14,26,.88);border-left:1px solid var(--line);overflow-y:auto;padding:4px 2px;}
-.rosterFace{width:40px;height:40px;border-radius:8px;background:var(--panel2);border:1px solid var(--line);margin:4px auto;display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;position:relative;}
-.rosterFace:active{transform:scale(.95);}
-.rosterDot{position:absolute;bottom:2px;right:2px;width:8px;height:8px;border-radius:50%;}
-#missionMarkers{position:fixed;inset:0;z-index:2;pointer-events:none;display:none;}
-.mMark{position:absolute;pointer-events:auto;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer;animation:pulse 2.4s infinite;}
-.mMark.boss{border-color:#fbbf24;background:#3a2a0a;color:#fbbf24;}
-.mMark.raid{border-color:#ff5b73;background:#4a1626;color:#ff8fa8;}
-@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(251,191,36,.3)}50%{box-shadow:0 0 0 10px rgba(251,191,36,0)}}
-#ticker{position:fixed;bottom:56px;left:0;right:0;height:26px;z-index:5;display:none;background:rgba(11,14,26,.92);border-top:1px solid var(--line);overflow:hidden;}
-#tickerText{white-space:nowrap;font-size:12px;color:var(--dim);padding:5px 10px;animation:tickScroll 24s linear infinite;}
-@keyframes tickScroll{0%{transform:translateX(100vw)}100%{transform:translateX(-100%)}}
-.topbar{position:fixed;top:8px;left:8px;right:8px;z-index:5;}
-#scr-game{background:none;max-width:none;padding:0;padding-bottom:0;}
-#gateFab{position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:4;display:none;background:rgba(11,14,26,.9);border:1px solid #4a1f6d;border-radius:50%;width:56px;height:56px;align-items:center;justify-content:center;font-size:28px;cursor:pointer;animation:glow 2s ease-in-out infinite;}
-#gateFab:active{transform:translateX(-50%) scale(.95);}
-@keyframes glow{0%,100%{box-shadow:0 0 8px #67e8f955}50%{box-shadow:0 0 20px #67e8f9aa}}
-.panel h2{margin-top:0;}
-.panel .sub{margin-top:4px;margin-bottom:8px;}
-</style>
-</head>
-<body>
-
-<div id="err"></div>
-
-<!-- TITLE -->
-<div id="scr-title" class="screen active center" style="padding-top:60px;">
-  <div style="font-size:64px;">🌌</div>
-  <h1>AETHERFALL</h1>
-  <div class="sub">Wardens of the Starforge</div>
-  <p class="small" style="max-width:340px;margin:14px auto;">The sky-citadel of Veyra is falling. You are its last Warden. Summon heroes from across the shattered realms through the Starforge — but remember: every hero you call has a will of their own. They train, rest, argue, bond, and sometimes refuse your orders.</p>
-  <button class="btn gold" id="btnStart" style="font-size:18px;padding:14px 34px;">⚔️ Begin</button>
-  <div class="small" id="saveNote" style="margin-top:12px;"></div>
-  <div style="margin-top:12px;display:flex;gap:10px;justify-content:center;">
-    <button class="btn" id="btnExp" style="padding:8px 16px;font-size:13px;">📤 Export</button>
-    <button class="btn" id="btnImp" style="padding:8px 16px;font-size:13px;">📥 Import</button>
-  </div>
-</div>
-
-<!-- LOBBY BACKGROUND -->
-<div id="lobbyWrap">
-  <canvas id="lobbyCv" width="640" height="300"></canvas>
-</div>
-
-<!-- GAME OVERLAYS -->
-<div id="scr-game" class="screen" style="background:none;max-width:none;padding:0;padding-bottom:0;">
-<div class="topbar">
-    <span class="res">💎 <span id="rGems">0</span></span>
-    <span class="res">🪙 <span id="rGold">0</span></span>
-    <span class="res">🌾 <span id="rFood">0</span></span>
-    <span class="res">🪵 <span id="rWood">0</span></span>
-    <span class="res">🪨 <span id="rStone">0</span></span>
-    <span class="res">🛡️ <span id="rPow">0</span></span>
-    <span style="flex:1"></span>
-    <button class="btn" id="btnHow" style="padding:6px 12px;font-size:12px;">?</button>
-  </div>
-
-  <div id="rosterStrip"></div>
-  <div id="missionMarkers"></div>
-  <div id="gateFab" title="Starforge Gate">🔮</div>
-
-  <div id="panel-citadel" class="panel panel-center">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-      <h2 style="margin:0;">🏰 Citadel</h2>
-      <button class="btn" onclick="closePanel('panel-citadel')" style="padding:4px 10px;font-size:12px;">✕</button>
-    </div>
-<h2>🏰 Citadel Lobby</h2>
-    <div class="sub" id="citFlavor">Wardens keep the light burning.</div>
-    
-
-    <div class="grid" id="citStats"></div>
-    <h2>👑 Captain & Standing Orders</h2>
-    <div class="card" id="captainCard"><span class="small">No captain appointed.</span></div>
-    <div class="center" style="margin:10px 0;"><button class="btn" id="btnCounsel">🧠 Ask the Strategist</button></div>
-    <h2>⚔️ Active Operations</h2>
-    <div id="activeList"></div>
-  </div>
-
-  <div id="panel-work" class="panel panel-left">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-      <h2 style="margin:0;">⛏️ Assignments</h2>
-      <button class="btn" onclick="closePanel('panel-work')" style="padding:4px 10px;font-size:12px;">✕</button>
-    </div>
-<h2>⛏️ Assignments</h2>
-    <div class="sub">Wardens who aren't cut out for combat still earn their keep. Workers gather every 8s. Low-morale workers may walk off the job.</div>
-    <div id="workList"></div>
-  </div>
-
-  <div id="panel-heroes" class="panel panel-right">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-      <h2 style="margin:0;">🛡️ Wardens Roster</h2>
-      <button class="btn" onclick="closePanel('panel-heroes')" style="padding:4px 10px;font-size:12px;">✕</button>
-    </div>
-<h2>🛡️ Wardens Roster</h2>
-    <div class="sub">Tap a hero for details. Heroes act on their own — watch their morale.</div>
-    <div style="display:flex;gap:8px;margin-bottom:10px;">
-      <select id="sortSel" style="flex:1;background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:8px;">
-        <option value="pow">Sort: Power</option><option value="r">Sort: Rarity</option><option value="lvl">Sort: Level</option><option value="name">Sort: Name</option>
-      </select>
-      <select id="filterSel" style="flex:1;background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:8px;">
-        <option value="all">All classes</option><option value="Blade">⚔️ Blade</option><option value="Arcanist">🔮 Arcanist</option><option value="Bulwark">🛡️ Bulwark</option><option value="Ranger">🏹 Ranger</option><option value="Oracle">✨ Oracle</option>
-      </select>
-    </div>
-    <div class="grid" id="heroGrid"></div>
-  </div>
-
-  <div id="panel-missions" class="panel panel-left">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-      <h2 style="margin:0;">🗺️ Operations Board</h2>
-      <button class="btn" onclick="closePanel('panel-missions')" style="padding:4px 10px;font-size:12px;">✕</button>
-    </div>
-<h2>🗺️ Operations Board</h2>
-    <div class="sub">Deploy up to 3 heroes. Success odds scale with team power vs. threat level. Low-morale heroes may refuse.</div>
-    <button class="btn" id="btnRefresh" style="width:100%;margin-bottom:10px;">🔄 Refresh board — 💎 10</button>
-    <div id="missionList"></div>
-  </div>
-
-  <div id="panel-log" class="panel panel-bottom">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-      <h2 style="margin:0;">📜 Chronicle</h2>
-      <button class="btn" onclick="closePanel('panel-log')" style="padding:4px 10px;font-size:12px;">✕</button>
-    </div>
-<h2>📜 Chronicle</h2>
-    <div id="logList" style="max-height:60vh;overflow-y:auto;"></div>
-  </div>
-
-  <div id="ticker"><div id="tickerText"></div></div>
-
-  <div class="tabs" id="navBar" style="display:none;background:rgba(11,14,26,.85);">
-    <button data-panel="citadel"><span class="ic">🏰</span>Citadel</button>
-    <button data-panel="work"><span class="ic">⛏️</span>Work</button>
-    <button data-panel="heroes"><span class="ic">🛡️</span>Roster</button>
-    <button data-panel="missions"><span class="ic">🗺️</span>Ops</button>
-    <button data-panel="log"><span class="ic">📜</span>Log</button>
-  </div>
-</div>
-
-<!-- HERO MODAL -->
-<div class="modal" id="mHero"><div class="modalBox" id="heroBox"></div></div>
-<!-- MISSION MODAL -->
-<div class="modal" id="mMission"><div class="modalBox" id="missionBox"></div></div>
-<!-- BATTLE MODAL -->
-<div class="modal" id="mBattle"><div class="modalBox" style="max-width:560px;">
-  <div id="bTitle" style="font-weight:800;margin-bottom:8px;">Battle</div>
-  <canvas id="cv" width="520" height="300"></canvas>
-  <div id="bStatus" class="center" style="margin-top:8px;min-height:26px;"></div>
-  <div class="center"><button class="btn" id="bSpeed">⏩ 1×</button> <button class="btn" onclick="closeBattle()">Close</button></div>
-</div></div>
-<!-- EVENT MODAL -->
-<div class="modal" id="mEvent"><div class="modalBox" id="eventBox"></div></div>
-<!-- HOW MODAL -->
-<div class="modal" id="mHow"><div class="modalBox">
-  <h2 style="margin-top:0;">How to Play</h2>
-  <div class="small" style="line-height:1.7;color:#c6cde8;">
-  • <b>Summon</b> heroes at the Gate with gems (earned from missions).<br>
-  • <b>Deploy</b> up to 3 wardens on operations. They fight on their own — power, morale, and bonds decide the outcome.<br>
-  • <b>Free will:</b> heroes train, nap, argue, and bond by themselves. Morale below 30 and they may refuse deployment. Greedy ones demand bonuses.<br>
-  • <b>Rest</b> a hero to restore morale (30s, unavailable for ops).<br>
-  • <b>Bonds:</b> heroes who get along grant +8% power when deployed together.<br>
-  • <b>Duplicates</b> from the gate feed XP into the existing hero.<br>
-  • <b>Loot:</b> missions drop equipment (⚔️ weapon, 💠 charm) — tap a hero to equip. Bosses always drop high-rarity loot.<br>
-  • <b>Skills:</b> in battle, heroes use class skills — Oracle heals, Arcanist blasts all foes, Bulwark shields the team, Ranger snipes, Blade combos.<br>
-  • <b>Bosses</b> appear from Threat T4+ (👹 tag): ~30% tougher, double-plus rewards.<br>
-  • <b>Lobby:</b> idle wardens wander the courtyard. Tap buildings to build/upgrade — Training (idle XP), Tavern (morale + bonds), Moon Garden (morale), Forge (loot chance). Costs gold from missions.<br>
-  • <b>Vault & Workshop:</b> all loot is stored here (cap grows per level; overflow is auto-salvaged for gold). Upgrade items up to the vault's level — each upgrade adds permanent PWR.<br>
-  • <b>Work:</b> assign non-combat wardens to the Farmstead 🌾, Lumber Camp 🪵, or Quarry ⛏️ — they gather every 8s (Calm workers gather double, Lazy ones nap). Rations scale with threat tier; building requires 🪵 wood and 🪨 stone.<br>
-  • <b>Raids:</b> from Threat T5+, the Hollow periodically attacks the citadel (🚨). Answer within 90s or a building is damaged — or pay 200 gold tribute to skip.<br>
-  • <b>Ascension:</b> wardens at Lv10+ can ascend for gold — reset to Lv1 with +15% permanent power per ✦. Dismiss unwanted wardens for salvage gold.<br>
-  • <b>Captain:</b> appoint a Lv10+ <b>Loyal, Calm, or Strategist</b> warden (👑 from their page — eligible traits show a 👑 on their card). They rest low-morale heroes, staff work stations, and auto-deploy ops and raids by your standing orders — their trait bends the rules.<br>
-  • <b>Strategist:</b> a rare mind. Offers counsel (🧠 button in the Lobby, or speaks up on their own), talks the Captain out of reckless fights and bad raid odds, and gives unbiased odds-perfect Suggest advice.<br>
-  • <b>Telegraphs:</b> red zones in battle show incoming strikes — high-morale wardens dodge out, low morale may freeze or panic.<br>
-  • <b>Suggest:</b> in any deploy screen, 💡 Suggest asks a leader (your first pick, else the Captain, else the strongest) to propose a party with reasons — personality-biased advice, never a command.<br>
-  • Progress saves automatically, even offline. Refresh anytime.</div>
-  <div class="center" style="margin-top:14px;"><button class="btn" onclick="closeModal('mHow')">Close</button>
-  <button class="btn danger" onclick="if(confirm('Wipe all progress?')){localStorage.removeItem(KEY);location.reload();}">Reset Save</button></div>
-</div></div>
-
-
-
-<!-- GATE MODAL -->
-<div class="modal" id="mGate"><div class="modalBox" style="max-width:460px;">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-    <h2 style="margin:0;">🌀 The Starforge Gate</h2>
-    <button class="btn" onclick="closeModal('mGate')" style="padding:4px 10px;font-size:12px;">✕</button>
-  </div>
-<h2>🌀 The Starforge Gate</h2>
-    <div class="sub">Summon heroes from across the shattered realms. Duplicates empower the existing hero.</div>
-    <div class="card center">
-      <div style="font-size:56px;" id="gateOrb">🔮</div>
-      <div class="small" id="gateHint">The gate hums, waiting.</div>
-      <div style="margin-top:12px;display:flex;gap:10px;justify-content:center;">
-        <button class="btn" id="btnPull1">Summon ×1<br><span class="small" style="color:#cfe3ff;">💎 50</span></button>
-        <button class="btn gold" id="btnPull10">Summon ×10<br><span class="small" style="color:#ffe9b0;">💎 450</span></button>
-      </div>
-      <div class="small" style="margin-top:10px;">Mythic ★5: 2% · Epic ★4: 8% · Rare ★3: 20% · Guaranteed ★4+ within 30 pulls.</div>
-    </div>
-    <div id="summonResults"></div>
-</div></div>
-
-<!-- SAVE EXPORT/IMPORT MODAL -->
-<div class="modal" id="mSaveIO"><div class="modalBox" id="sioBox"></div></div>
-
-<script>
-
 window.addEventListener('error',function(e){var d=document.getElementById('err');d.style.display='block';d.textContent='⚠ '+e.message;});
 var KEY='aetherfall_save_v1';
 var RARITY=[
@@ -291,6 +21,109 @@ var TRAITS={
  'Hot-headed':{d:'Fury: +18% PWR at 70+ morale, −8% below 40',mod:1.0},
  'Calm':{d:'+1 party morale, gathers double at work',mod:1.0},
  'Strategist':{d:'+3% PWR — counsel, vetoes, cold plans',mod:1.03}};
+var TALENTS={
+  Blade:{
+    assault:[
+      {n:'Keen Edge',d:'+5% ATK dmg',fx:function(h){return{atk:1.05};}},
+      {n:'Bloodletter',d:'+10% ATK dmg',fx:function(h){return{atk:1.10};}},
+      {n:'Whirlwind',d:'Flurry strikes 2 targets',fx:function(h){return{flurry:true};}},
+      {n:'Crimson Dance',d:'Flurry ×2 damage',fx:function(h){return{flurryDmg:2};}}
+    ],
+    survival:[
+      {n:'Tough Hide',d:'+5% HP',fx:function(h){return{hp:1.05};}},
+      {n:'Iron Will',d:'+10% HP, resist stun',fx:function(h){return{hp:1.10};}},
+      {n:'Vampiric Blade',d:'Heal 15% of dmg dealt',fx:function(h){return{lifesteal:0.15};}},
+      {n:'Undying Rage',d:'Survive fatal blow once',fx:function(h){return{revive:true};}}
+    ],
+    fury:[
+      {n:'Battle Fury',d:'+3% crit chance',fx:function(h){return{crit:0.03};}},
+      {n:'Deep Wounds',d:'Bleed on crit',fx:function(h){return{bleed:1};}},
+      {n:'Berserker',d:'+8% crit, -5% HP',fx:function(h){return{crit:0.08,hp:0.95};}},
+      {n:'Bladestorm',d:'Crits splash 30% dmg',fx:function(h){return{critSplash:0.3};}}
+    ]
+  },
+  Arcanist:{
+    destruction:[
+      {n:'Spark',d:'+5% spell dmg',fx:function(h){return{spell:1.05};}},
+      {n:'Arcane Power',d:'+10% spell dmg',fx:function(h){return{spell:1.10};}},
+      {n:'Chain Bolt',d:'Nova chains to 2nd target',fx:function(h){return{chain:1};}},
+      {n:'Cataclysm',d:'Nova burns ground 3s',fx:function(h){return{burn:3};}}
+    ],
+    control:[
+      {n:'Still Mind',d:'-10% skill CD',fx:function(h){return{cd:0.90};}},
+      {n:'Time Warp',d:'-20% skill CD',fx:function(h){return{cd:0.80};}},
+      {n:'Mana Shield',d:'Shield on skill use',fx:function(h){return{shieldSkill:1};}},
+      {n:'Stasis',d:'Freeze one foe on skill',fx:function(h){return{freeze:1};}}
+    ],
+    wisdom:[
+      {n:'Scholar',d:'+5% XP gain',fx:function(h){return{xp:1.05};}},
+      {n:'Ancient Lore',d:'+10% XP gain',fx:function(h){return{xp:1.10};}},
+      {n:'Arcane Mastery',d:'Skills cost no morale',fx:function(h){return{freeSkill:1};}},
+      {n:'Archmage',d:'Double loot chance +20%',fx:function(h){return{loot:0.20};}}
+    ]
+  },
+  Bulwark:{
+    fortress:[
+      {n:'Sturdy',d:'+5% HP',fx:function(h){return{hp:1.05};}},
+      {n:'Towering',d:'+10% HP',fx:function(h){return{hp:1.10};}},
+      {n:'Taunt',d:'Draw enemy attacks',fx:function(h){return{taunt:1};}},
+      {n:'Living Wall',d:'Party +5% HP',fx:function(h){return{partyHp:0.05};}}
+    ],
+    aegis:[
+      {n:'Shield Bash',d:'+5% shield power',fx:function(h){return{shield:1.05};}},
+      {n:'Aegis Mastery',d:'+10% shield power',fx:function(h){return{shield:1.10};}},
+      {n:'Shield Share',d:'Shield affects 2 allies',fx:function(h){return{shieldShare:1};}},
+      {n:'Invincible',d:'Shield blocks debuffs',fx:function(h){return{shieldCleanse:1};}}
+    ],
+    endurance:[
+      {n:'Resilient',d:'Heal +5% faster',fx:function(h){return{regen:1.05};}},
+      {n:'Unbreakable',d:'Heal +10% faster',fx:function(h){return{regen:1.10};}},
+      {n:'Second Wind',d:'Heal to 30% once',fx:function(h){return{secondWind:1};}},
+      {n:'Immortal',d:'Survive death, +50% HP',fx:function(h){return{revive:1,reviveHp:0.5};}}
+    ]
+  },
+  Ranger:{
+    marksman:[
+      {n:'Steady Aim',d:'+5% shot dmg',fx:function(h){return{shot:1.05};}},
+      {n:'Hawk Eye',d:'+10% shot dmg',fx:function(h){return{shot:1.10};}},
+      {n:'Headshot',d:'15% chance to instakill',fx:function(h){return{headshot:0.15};}},
+      {n:'Sniper',d:'Double range, +20% dmg',fx:function(h){return{range:2,dmg:1.2};}}
+    ],
+    skirmisher:[
+      {n:'Quick Shot',d:'-5% attack CD',fx:function(h){return{atkCd:0.95};}},
+      {n:'Rapid Fire',d:'-10% attack CD',fx:function(h){return{atkCd:0.90};}},
+      {n:'Multi-Shot',d:'Hit 2 targets',fx:function(h){return{multishot:1};}},
+      {n:'Volley',d:'Piercing hits all in line',fx:function(h){return{pierce:1};}}
+    ],
+    tracker:[
+      {n:'Scout',d:'+5% dodge chance',fx:function(h){return{dodge:0.05};}},
+      {n:'Pathfinder',d:'+10% dodge, +5% speed',fx:function(h){return{dodge:0.10,speed:1.05};}},
+      {n:'Poison Tip',d:'Attacks poison 3s',fx:function(h){return{poison:3};}},
+      {n:'Eagle Eye',d:'"I saw it coming" — perfect dodge',fx:function(h){return{perfectDodge:1};}}
+    ]
+  },
+  Oracle:{
+    light:[
+      {n:'Gentle Touch',d:'+5% heal power',fx:function(h){return{heal:1.05};}},
+      {n:'Blessed Hands',d:'+10% heal power',fx:function(h){return{heal:1.10};}},
+      {n:'Group Heal',d:'Renewal heals all',fx:function(h){return{groupHeal:1};}},
+      {n:'Resurrection',d:'Revive fallen ally once',fx:function(h){return{res:1};}}
+    ],
+    fate:[
+      {n:'ForeSight',d:'+5% dodge party',fx:function(h){return{partyDodge:0.05};}},
+      {n:'Prophecy',d:'+10% dodge party',fx:function(h){return{partyDodge:0.10};}},
+      {n:'I Saw It Coming',d:'Perfect dodge first hit',fx:function(h){return{sawIt:1};}},
+      {n:'Destiny',d:'Party ignores 1st fatal blow',fx:function(h){return{destiny:1};}}
+    ],
+    void:[
+      {n:'Dim Light',d:'+5% spell dmg',fx:function(h){return{spell:1.05};}},
+      {n:'Shadow Word',d:'+10% spell dmg',fx:function(h){return{spell:1.10};}},
+      {n:'Silence',d:'Silence foe on skill',fx:function(h){return{silence:1};}},
+      {n:'Annihilation',d:'Seal enemy skills 5s',fx:function(h){return{seal:5};}}
+    ]
+  }
+};
+
 var QUAL=['Loyal','Calm','Strategist'];
 var N1=['Vey','Kor','Ael','Nyx','Tal','Zor','Mir','Syl','Dax','Ryn','Oda','Bel','Cas','Jun','Fen','Ily','Rau','Thea','Var','Osi','Hal','Ner','Quin','Wren','Ash','Lum','Ser','Oro','Ely'];
 var N2=['a','o','is','en','ara','eth','ion','ys','or','in','une','el','ith','a','o'];
@@ -303,8 +136,9 @@ var IWPN=['Edge','Fang','Pike','Brand','Saber','Maul'];
 var ICN=['Sigil','Charm','Idol','Talisman','Band'];
 
 var S=null, uid=1, sortMode='pow', filterCls='all';
-var AC=null;
+var AC=null;var MUTE=false;
 function beep(f,d,type,vol){
+  if(MUTE)return;
   try{
     if(!AC)AC=new (window.AudioContext||window.webkitAudioContext)();
     var o=AC.createOscillator(),g=AC.createGain();
@@ -339,7 +173,7 @@ function newGame(){
 function mkHero(forceR){
   var r=(forceR!==undefined)?forceR:rollRarityIdx();
   var cls=rnd(Object.keys(CLASSES));
-  var h={id:uid++,name:heroName(),cls:cls,r:r,lvl:1,xp:0,trait:rnd(Object.keys(TRAITS)),morale:rint(55,85),bonds:{},busy:null,restUntil:0,eq:{wpn:null,chn:null}};
+  var h={id:uid++,name:heroName(),cls:cls,r:r,lvl:1,xp:0,trait:rnd(Object.keys(TRAITS)),morale:rint(55,85),bonds:{},busy:null,restUntil:0,eq:{wpn:null,chn:null},talents:{}};
   return h;
 }
 function rollRarityIdx(){
@@ -387,7 +221,9 @@ function partyPower(m){
   if(bondBonus)p*=1.08;
   return Math.round(p);
 }
-function successChance(m){var c=0.35+((partyPower(m)/m.req)-1)*0.5;return Math.max(0.15,Math.min(0.97,c));}
+function successChance(m){var c=0.35+((partyPower(m)/m.req)-1)*0.5;
+  m.party.forEach(function(id){var h=byId(id);if(!h)return;var tfx=collectTalentFx(h);if(tfx.assault)c+=0.02;if(tfx.headshot)c+=0.03;if(tfx.poison)c+=0.02;if(tfx.destiny)c+=0.02;});
+  return Math.max(0.15,Math.min(0.97,c));}
 function deploy(mid,hids,quiet){
   var m=null;for(var i=0;i<S.missions.length;i++)if(S.missions[i].id===mid)m=S.missions[i];
   if(!m)return;
@@ -396,7 +232,14 @@ function deploy(mid,hids,quiet){
   for(var k=0;k<hids.length;k++){var h=byId(hids[k]);h.busy=mid;if(h.trait==='Hot-headed')h._spark=true;}
   log('Deployed on <b>'+esc(m.name)+'</b>: '+hids.map(function(x){return esc(byId(x).name);}).join(', ')+'.');
   closeModal('mMission');
-  if(!quiet)setTimeout(function(){openBattle(m.id);},250);
+  if(!quiet){
+    (function(mission){
+      setTimeout(function(){
+        if(mission.boss||mission.raid)startExpedition(mission.id);
+        else openBattle(mission.id);
+      },250);
+    })(m);
+  }
 }
 function resolveMission(m,silent){
   var ok=Math.random()<successChance(m);
@@ -440,9 +283,110 @@ function checkLevel(h){
   while(h.xp>=xpNeed(h)){h.xp-=xpNeed(h);h.lvl++;beep(760,0.1,'sine');log('<b>'+esc(h.name)+'</b> reached <b>level '+h.lvl+'</b>! Power is now '+heroPower(h)+'.');}
 }
 function byId(id){for(var i=0;i<S.heroes.length;i++)if(S.heroes[i].id===id)return S.heroes[i];return null;}
+function toggleMute(){MUTE=!MUTE;var btn=$('muteBtn');if(btn)btn.textContent=MUTE?'🔇':'🔊';}
 function log(t){S.log.unshift('<div class="logline">'+t+'</div>');if(S.log.length>60)S.log.pop();}
 function save(){S.last=Date.now();try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
 function load(){try{var d=localStorage.getItem(KEY);return d?JSON.parse(d):null;}catch(e){return null;}}
+
+// ---------- talents ----------
+function talentPoints(h){
+  var pts=Math.floor(h.lvl/5)+h.r*2+(h._survivedAsc?1:0);
+  var spent=0;
+  if(h.talents){
+    var tree=TALENTS[h.cls];
+    if(tree)for(var b in h.talents){var br=h.talents[b];for(var n in br)spent+=br[n];}
+  }
+  return {total:pts,spent:spent,avail:pts-spent};
+}
+function hasTalent(h,branch,node){
+  return h.talents&&h.talents[branch]&&h.talents[branch][node]>0;
+}
+function talentRank(h,branch,node){
+  return(h.talents&&h.talents[branch]&&h.talents[branch][node])||0;
+}
+function buyTalent(hid,branch,node){
+  var h=byId(hid);if(!h)return;
+  var tp=talentPoints(h);
+  if(tp.avail<=0)return;
+  var tree=TALENTS[h.cls];if(!tree||!tree[branch])return;
+  var nodes=tree[branch];if(node<0||node>=nodes.length)return;
+  h.talents=h.talents||{};
+  h.talents[branch]=h.talents[branch]||{};
+  var cur=h.talents[branch][node]||0;
+  if(cur>=1)return;
+  if(node>0){
+    var prev=h.talents[branch][node-1]||0;
+    if(prev<1){flashMsg('Unlock previous node first.');return;}
+  }
+  h.talents[branch][node]=1;
+  log('✨ <b>'+esc(h.name)+'</b> unlocked <b>'+nodes[node].n+'</b>.');
+  save();render();
+}
+function respecTalents(hid){
+  var h=byId(hid);if(!h)return;
+  var spent=talentPoints(h).spent;
+  if(!spent)return;
+  var cost=spent*50;
+  if(S.gold<cost){flashMsg('Need '+cost+' gold to respec.');return;}
+  if(!confirm('Respec '+esc(h.name)+' for '+cost+' gold?'))return;
+  S.gold-=cost;
+  h.talents={};
+  log('🔄 <b>'+esc(h.name)+'</b> talents reset.');
+  save();render();
+}
+function collectTalentFx(h){
+  var fx={};
+  var tree=TALENTS[h.cls];
+  if(!tree||!h.talents)return fx;
+  for(var b in h.talents){
+    var br=h.talents[b];
+    for(var n in br){
+      if(br[n]>0&&tree[b]&&tree[b][n]&&tree[b][n].fx){
+        var tfx=tree[b][n].fx(h);
+        for(var k in tfx)fx[k]=tfx[k];
+      }
+    }
+  }
+  return fx;
+}
+function openTalentTree(hid){
+  var h=byId(hid);if(!h)return;
+  var tp=talentPoints(h);
+  var tree=TALENTS[h.cls];
+  var fx=collectTalentFx(h);
+  var html='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">'+
+    '<h2 style="margin:0;">🌿 '+esc(h.name)+' — '+CLASSES[h.cls].ic+' Talents</h2>'+
+    '<button class="btn" onclick="closeModal(\'mTalent\')" style="padding:4px 10px;font-size:12px;">✕</button></div>'+
+    '<div class="small" style="margin-bottom:10px;">Points: <b>'+tp.avail+'</b> / '+tp.total+' available · Spent: '+tp.spent+
+    ' · <button class="btn" style="padding:3px 8px;font-size:11px;" onclick="respecTalents('+hid+')">🔄 Respec ('+(tp.spent*50)+'g)</button></div>';
+  for(var b in tree){
+    var branch=tree[b];
+    var bname=b.charAt(0).toUpperCase()+b.slice(1);
+    html+='<div style="margin-bottom:14px;border:1px solid var(--line);border-radius:12px;padding:10px;background:rgba(255,255,255,0.03);">';
+    html+='<div style="font-weight:700;font-size:13px;margin-bottom:8px;color:#a5b4fc;">'+bname+'</div>';
+    html+='<div style="display:flex;gap:8px;flex-wrap:wrap;">';
+    for(var i=0;i<branch.length;i++){
+      var node=branch[i];
+      var unlocked=hasTalent(h,b,i);
+      var canBuy=tp.avail>0&&i===0||hasTalent(h,b,i-1);
+      var locked=!unlocked&&!canBuy;
+      var bg=unlocked?'rgba(74,222,128,0.15)':(locked?'rgba(100,100,100,0.1)':'rgba(251,191,36,0.1)');
+      var border=unlocked?'#4ade80':(locked?'#555':'#fbbf24');
+      html+='<div style="flex:1;min-width:70px;padding:8px;border-radius:10px;border:1px solid '+border+';background:'+bg+';text-align:center;cursor:'+(unlocked?'default':(canBuy?'pointer':'not-allowed'))+';"'+
+        (canBuy&&!unlocked?' onclick="buyTalent('+hid+',\''+b+'\','+i+')"':'')+'>';
+      html+='<div style="font-size:11px;font-weight:700;">'+node.n+'</div>';
+      html+='<div style="font-size:9px;color:var(--dim);margin-top:2px;">'+node.d+'</div>';
+      if(unlocked)html+='<div style="font-size:9px;color:#4ade80;margin-top:2px;">✓</div>';
+      html+='</div>';
+    }
+    html+='</div></div>';
+  }
+  if(Object.keys(fx).length){
+    html+='<div class="small" style="margin-top:8px;color:var(--dim);">Active: '+Object.keys(fx).map(function(k){return k+'='+fx[k];}).join(', ')+'</div>';
+  }
+  document.getElementById('talentBox').innerHTML=html;
+  document.getElementById('mTalent').classList.add('open');
+}
 // END OF PART 1
 // ---------- counsel (Strategist) ----------
 function counselList(){
@@ -830,7 +774,7 @@ function openBattle(mid){
   BT.heroes=m.party.map(function(id,i){
     var h=byId(id);if(!h)return null;
     var pal=heroPal(h);
-    return {h:h,x:148+i*62,hx:148+i*62,ty:240,y:400,hp:1,flash:0,cd:40+i*24,skill:220+i*70,wt:0,dir:1,moveA:null,dodge:null,atk:null,face:HMAP,pal:pal};
+    var tfx=collectTalentFx(h);var dodgeBonus=tfx.dodge||0;var spdBonus=tfx.speed||1;var atkBonus=tfx.atk||tfx.shot||1;return {h:h,x:148+i*62,hx:148+i*62,ty:240,y:400,hp:1,flash:0,cd:(40+i*24)/spdBonus,skill:(220+i*70)/spdBonus,wt:0,dir:1,moveA:null,dodge:dodgeBonus,atk:null,face:HMAP,pal:pal,tfx:tfx,atkMul:atkBonus};
   }).filter(Boolean);
   BT.foes=[];
   var n=2+Math.floor(tier/2);
@@ -901,7 +845,7 @@ function useSkill(a){
     BT.fxs.push({type:'ring',x:260,y:246,r:80,life:1,c:'#4ade80'});
     BT.fxs.push({type:'txt',txt:'Renewal!',life:42,y:60});
   }else if(a.h.cls==='Arcanist'){
-    foes.forEach(function(f){f.hp-=0.18;f.flash=6;});
+    var spellMul=(a.tfx&&a.tfx.spell)?a.tfx.spell:1;foes.forEach(function(f){f.hp-=0.18*spellMul;f.flash=6;if(a.tfx&&a.tfx.burn)f._burn=(a.tfx.burn*60);});
     if(foes.length){var g=foes[(Math.random()*foes.length)|0];
       BT.fxs.push({type:'bolt',x:g.x,y:g.y,life:1});}
     BT.fxs.push({type:'ring',x:400,y:110,r:70,life:1,c:'#c084fc'});
@@ -910,7 +854,7 @@ function useSkill(a){
   }else if(a.h.cls==='Blade'){
     if(foes.length){var t=foes[0],bd=1e9;
       foes.forEach(function(f){var d=Math.hypot(f.x-a.x,f.y-a.y);if(d<bd){bd=d;t=f;}});
-      t.hp-=0.5;t.flash=8;t.kx=(t.x-a.x)>0?10:-10;
+      var dmg=0.5*(a.atkMul||1);if(a.tfx&&a.tfx.crit&&Math.random()<a.tfx.crit){dmg*=2;if(a.tfx.critSplash){foes.forEach(function(nf){if(nf!==t&&Math.hypot(nf.x-t.x,nf.y-t.y)<40)nf.hp-=dmg*a.tfx.critSplash;nf.flash=4;});}}t.hp-=dmg;t.flash=8;t.kx=(t.x-a.x)>0?10:-10;if(a.tfx&&a.tfx.lifesteal){a.h.hp=Math.min(1,a.h.hp+dmg*a.tfx.lifesteal);}
       BT.floats.push({x:t.x,y:t.y-26,v:'-'+(50+((Math.random()*30)|0)),c:'#ffd75e',life:1});
       BT.fxs.push({type:'ring',x:t.x,y:t.y-10,r:26,life:1,c:'#fbbf24'});
       BT.stop=4;BT.shake=8;
@@ -1012,10 +956,13 @@ function loopBattle(){
         BT.scorch.push({x:T.x,y:T.y,r:T.r*0.8,life:1});
         BT.heroes.forEach(function(h){
           if(Math.hypot(h.x-T.x,h.y-T.y)<T.r+8&&!h.dodge){
-            h.hp=Math.max(0.15,h.hp-0.13);h.flash=6;
+            var dodgeChance=h.dodge||0;if(h.tfx&&h.tfx.perfectDodge){dodgeChance=1;h.tfx.perfectDodge=0;}if(Math.random()<dodgeChance){BT.floats.push({x:h.x,y:h.y-20,v:'Dodge!',c:'#4ade80',life:1});}else{var dmg=0.13;h.hp=Math.max(0.15,h.hp-dmg);h.flash=6;if(h.tfx&&h.tfx.hp)h.hp=Math.min(1,h.hp+dmg*0.1);}
             BT.floats.push({x:h.x,y:h.y-28,v:'-'+(18+((Math.random()*22)|0)),c:'#ff5b73',life:1});
           }});
         BT.shake=Math.max(BT.shake,4);
+        // boss enrage
+        if(f.ty==='boss'&&f.hp/f.maxHp<0.3&&!f.enraged){f.enraged=true;f.flash=20;log('👹 <b>'+f.n+'</b> enrages!');}
+        if(f.enraged&&Math.random()<0.015){var sx=f.x+(Math.random()-0.5)*80;var sy=160+Math.random()*60;var add=mkFoe('crawl',sx,sy,BT.mission.tier);add.sc=2.5;add.hp=0.6;add.maxHp=0.6;BT.foes.push(add);}
         f.tele=null;f.cd=150+rint(0,120);
       }
     }else{
@@ -1055,13 +1002,21 @@ function loopBattle(){
   ctx.fillStyle=g;ctx.fillRect(-8,-8,536,316);
   if(bio.night>0){for(var s=0;s<36;s++){ctx.fillStyle='rgba(255,255,255,'+(0.1+0.1*Math.sin(t*2+s))+')';ctx.fillRect((s*97)%520,(s*53)%120,2,2);}}
   ground2(t,bio);
-  // telegraphs under units
+  // telegraphs under units + enemy scatter
   BT.foes.forEach(function(f){
     if(f.tele&&f.dead===0){
       var a=0.15+0.12*Math.sin(t*14);
       ctx.fillStyle='rgba(255,40,60,'+a+')';
       ctx.strokeStyle='rgba(255,60,80,0.9)';ctx.lineWidth=2;
-      ctx.beginPath();ctx.arc(f.tele.x,f.tele.y,f.tele.r,0,6.283);ctx.fill();ctx.stroke();
+      if(f.ty==='witch'){
+        ctx.beginPath();ctx.moveTo(f.tele.x,f.tele.y);ctx.lineTo(f.tele.x+f.tele.r,f.tele.y-f.tele.r);ctx.lineTo(f.tele.x-f.tele.r,f.tele.y-f.tele.r);ctx.closePath();ctx.fill();ctx.stroke();
+      }else if(f.ty==='brute'){
+        ctx.fillRect(f.tele.x-f.tele.r,f.tele.y-f.tele.r*0.6,f.tele.r*2,f.tele.r*1.2);ctx.strokeRect(f.tele.x-f.tele.r,f.tele.y-f.tele.r*0.6,f.tele.r*2,f.tele.r*1.2);
+      }else{
+        ctx.beginPath();ctx.arc(f.tele.x,f.tele.y,f.tele.r,0,6.283);ctx.fill();ctx.stroke();
+      }
+      // enemies scatter from telegraphs
+      BT.foes.forEach(function(e){if(e!==f&&e.dead===0){var dx=e.x-f.tele.x,dy=e.y-f.tele.y,d=Math.sqrt(dx*dx+dy*dy)||1;if(d<f.tele.r+20){e.x+=dx/d*2;e.y+=dy/d*2;}}});
     }});
   fire2(260,92,t);
   torch2(150,84,t);torch2(370,84,t);torch2(196,196,t);torch2(326,196,t);
@@ -1080,6 +1035,7 @@ function loopBattle(){
     var flip=u.fr?(e.dir<0):(e.dir>0);
     drawPix(map,pal,e.x-w/2,e.y-hh+2+bob,sc,flip);
     if(e.flash>0){ctx.fillStyle='rgba(255,255,255,'+(e.flash/9)+')';ctx.fillRect(e.x-w/2,e.y-hh+2,w,hh);}
+    if(e.enraged){ctx.strokeStyle='rgba(255,30,30,'+(0.5+0.3*Math.sin(t*10))+')';ctx.lineWidth=3;ctx.beginPath();ctx.arc(e.x,e.y-hh/2,w*0.9,0,6.283);ctx.stroke();}
     if(u.fr&&BT.shield>0){ctx.strokeStyle='rgba(96,165,250,0.8)';ctx.lineWidth=2;
       ctx.beginPath();ctx.arc(e.x,e.y-hh/2,w*0.75,0,6.283);ctx.stroke();}
     nameTag(e.x,e.y-hh-2,(u.fr?e.h.name+' · '+e.h.cls+' Lv'+e.h.lvl:e.n),u.fr?'#e8ecf8':'#ff8fa8');
@@ -1450,7 +1406,7 @@ function renderRosterStrip(){
   var html='';
   S.heroes.forEach(function(h){
     var col=h.morale>=70?'#4ade80':(h.morale>=40?'#fbbf24':'#f87171');
-    html+='<div class="rosterFace" onclick="openHero('+h.id+')" title="'+esc(h.name)+'">'+CLASSES[h.cls].ic+'<div class="rosterDot" style="background:'+col+'"></div></div>';
+    var tpts=talentPoints(h).avail;html+='<div class="rosterFace" onclick="openHero('+h.id+')" title="'+esc(h.name)+(tpts?' ['+tpts+'pts]':'')+'">'+CLASSES[h.cls].ic+(tpts?'<div style="position:absolute;top:-2px;right:-2px;background:#fbbf24;color:#000;font-size:8px;border-radius:4px;padding:0 2px;font-weight:700;">'+tpts+'</div>':'')+'<div class="rosterDot" style="background:'+col+'"></div></div>';
   });
   el.innerHTML=html;
 }
@@ -1474,7 +1430,7 @@ function renderTicker(){
     var t=document.createElement('div');t.innerHTML=S.log[i];var txt=t.textContent.trim();
     if(txt)texts.push(txt);
   }
-  texts=texts.concat(FLAVOR.slice(0,2));
+  if(FLAVOR&&FLAVOR.length)texts=texts.concat(FLAVOR.slice(0,2));
   if(!texts.length)texts=['The spires of Veyra drift ever lower.'];
   el.textContent=texts.join('   ·   ');
 }
@@ -1552,7 +1508,7 @@ function openHero(id){
     '<button class="btn" id="hRest" '+(h.busy!==null||resting?'disabled':'')+' onclick="restHero('+h.id+')">'+(resting?'Resting… '+Math.ceil((h.restUntil-Date.now())/1000)+'s':'Rest 30s (+morale)')+'</button>'+
     (h.lvl>=10?'<button class="btn gold" onclick="ascendHero('+h.id+')">🌟 Ascend — 🪙'+(300*(h.r+1)*((h.asc||0)+1))+'</button>':'')+
     ((QUAL.indexOf(h.trait)>=0&&h.lvl>=10)||S.captain===h.id?'<button class="btn" onclick="appointCaptain('+h.id+')">'+(S.captain===h.id?'👑 Remove Captain':'👑 Appoint Captain')+'</button>':'')+
-    (h.busy===null&&S.heroes.length>1?'<button class="btn danger" onclick="dismissHero('+h.id+')">Dismiss</button>':'')+
+    '<button class="btn" onclick="openTalentTree('+h.id+')">🌿 Talents ('+talentPoints(h).avail+' pts)</button>'+(h.busy===null&&S.heroes.length>1?'<button class="btn danger" onclick="dismissHero('+h.id+')">Dismiss</button>':'')+
     '<button class="btn" onclick="closeModal(&#39;mHero&#39;)">Close</button></div>';
   document.getElementById('mHero').classList.add('open');
 }
@@ -1760,6 +1716,379 @@ function doPull(n){
   document.getElementById('gateHint').textContent='The gate answered, '+n+' time'+(n>1?'s':'')+'.';
 }
 
+
+// ---------- expedition ----------
+var EXP={active:false,map:[],w:0,h:0,ts:24,party:[],camera:{x:0,y:0},fog:[],objective:{type:'hunt',x:0,y:0,reached:false},enemies:[],dayNight:0,seed:0,raf:0,mission:null,state:'travel',skMsg:'',cmd:'advance',shouts:[],trail:[],tCamp:0};
+
+function expRNG(s){var x=s;return function(){x=(x*9301+49297)%233280;return x/233280;};}
+function generateExpMap(tier){
+  var seed=Date.now()+Math.random()*100000|0;
+  var rng=expRNG(seed);
+  var w=50+tier*15;var h=35+tier*10;
+  var tiles=[];
+  for(var y=0;y<h;y++){tiles[y]=[];for(var x=0;x<w;x++)tiles[y][x]={biome:'grass',x:x,y:y,loot:false};}
+  var biomes=['forest','mountain','swamp','desert'];
+  for(var i=0;i<6+tier*2;i++){
+    var bx=rng()*w|0,by=rng()*h|0,br=4+rng()*8|0,bt=biomes[rng()*biomes.length|0];
+    for(var y=Math.max(0,by-br);y<Math.min(h,by+br);y++){
+      for(var x=Math.max(0,bx-br);x<Math.min(w,bx+br);x++){
+        if((x-bx)*(x-bx)+(y-by)*(y-by)<br*br&&rng()>0.25)tiles[y][x].biome=bt;
+      }
+    }
+  }
+  var sx=3+rng()*3|0;var sy=(h/2+(rng()-0.5)*8)|0;
+  var ox=w-4-rng()*3|0;var oy=(h/2+(rng()-0.5)*8)|0;
+  for(var i=0;i<3+tier;i++){
+    var rx=(rng()*w)|0,ry=(rng()*h)|0;
+    for(var j=0;j<20;j++){if(rx>=0&&rx<w&&ry>=0&&ry<h)tiles[ry][rx].biome='water';rx+=(rng()*3-1)|0;ry+=(rng()*3-1)|0;}
+  }
+  for(var i=0;i<3+tier;i++){var lx=(rng()*(w-4))|0+2;var ly=(rng()*(h-4))|0+2;if(tiles[ly][lx].biome!=='water')tiles[ly][lx].loot=true;}
+  var enemies=[];
+  var count=2+tier*2;
+  for(var i=0;i<count;i++){
+    var ex=sx+8+(rng()*(ox-sx-16))|0;
+    var ey=(rng()*h)|0;
+    enemies.push({x:ex,y:ey,hp:1+tier*0.5,power:10+tier*8,type:'skirmish',alive:true,seen:false});
+  }
+  var types=['hunt','escort','relic','purge'];
+  var objType=types[(rng()*types.length)|0];
+  return {tiles:tiles,w:w,h:h,seed:seed,sx:sx,sy:sy,ox:ox,oy:oy,enemies:enemies,objType:objType};
+}
+
+var BIOCOL={
+  grass:['#2a4a2a','#2d5a2d'],
+  forest:['#1a3a1a','#1e4a1e'],
+  mountain:['#5a5a5a','#6a6a6a'],
+  swamp:['#3a4a2a','#4a5a3a'],
+  desert:['#8a7a4a','#9a8a5a'],
+  water:['#1a3a5a','#2a4a6a']
+};
+
+function startExpedition(mid){
+  var m=null;for(var i=0;i<S.missions.length;i++)if(S.missions[i].id===mid)m=S.missions[i];
+  if(!m||!m.party.length)return;
+  var tier=m.tier;
+  var mapData=generateExpMap(tier);
+  EXP.mission=m;
+  EXP.map=mapData.tiles;
+  EXP.w=mapData.w;EXP.h=mapData.h;
+  EXP.seed=mapData.seed;
+  EXP.enemies=mapData.enemies;
+  EXP.objective={type:mapData.objType,x:mapData.ox,y:mapData.oy,reached:false};
+  EXP.dayNight=0;
+  EXP.state='travel';
+  EXP.skMsg='';
+  EXP.cmd='advance';
+  EXP.shouts=[];
+  EXP.trail=[];
+  EXP.tCamp=0;
+  EXP.party=m.party.map(function(id,i){
+    var h=byId(id);
+    return {id:id,h:h,x:mapData.sx+(i%2)*0.6,y:mapData.sy+Math.floor(i/2)*0.6,hp:1,maxHp:1,dir:1,wt:0,alive:true,intent:'idle',tx:mapData.ox,ty:mapData.oy,rest:0,shoutCD:0};
+  });
+  EXP.fog=[];
+  for(var y=0;y<EXP.h;y++){EXP.fog[y]=[];for(var x=0;x<EXP.w;x++)EXP.fog[y][x]=false;}
+  EXP.party.forEach(function(p){revealFog(Math.round(p.x),Math.round(p.y),4);});
+  document.getElementById('mExpedition').classList.add('open');
+  document.getElementById('expTitle').textContent=m.ic+' '+esc(m.name)+' — T'+tier;
+  EXP.active=true;
+  renderExpedition();
+  expTick();
+}
+
+function revealFog(cx,cy,r){
+  for(var y=Math.max(0,cy-r);y<Math.min(EXP.h,cy+r);y++){
+    for(var x=Math.max(0,cx-r);x<Math.min(EXP.w,cx+r);x++){
+      if((x-cx)*(x-cx)+(y-cy)*(y-cy)<=r*r)EXP.fog[y][x]=true;
+    }
+  }
+}
+
+function expShout(p,msg){
+  if(p.shoutCD>0)return;
+  p.shoutCD=200+Math.random()*150;
+  var name=esc(p.h.name);
+  EXP.shouts.unshift('<span style="color:#8b94b8;">'+name+'</span> <span style="color:#a5b4fc;">'+msg+'</span>');
+  if(EXP.shouts.length>6)EXP.shouts.pop();
+}
+
+function decideIntent(p){
+  var h=p.h;var rng=expRNG(EXP.seed+h.id*997);
+  var allies=EXP.party.filter(function(a){return a.alive&&a.id!==p.id;});
+  var nearestAlly=null,allyDist=1e9;
+  allies.forEach(function(a){var d=(a.x-p.x)*(a.x-p.x)+(a.y-p.y)*(a.y-p.y);if(d<allyDist){allyDist=d;nearestAlly=a;}});
+  var nearEnemies=EXP.enemies.filter(function(e){return e.alive&&e.seen&&((e.x-p.x)*(e.x-p.x)+(e.y-p.y)*(e.y-p.y))<30;});
+  var nearLoot=false;
+  for(var dy=-2;dy<=2;dy++)for(var dx=-2;dx<=2;dx++){var tx=Math.round(p.x)+dx,ty=Math.round(p.y)+dy;if(tx>=0&&tx<EXP.w&&ty>=0&&ty<EXP.h&&EXP.map[ty][tx].loot)nearLoot=true;}
+  var cmd=EXP.cmd;
+  p.intent='idle';p.tx=EXP.objective.x;p.ty=EXP.objective.y;
+  if(p.rest>0){p.intent='rest';p.rest--;expShout(p,'catching my breath...');return;}
+  if(h.morale<25&&Math.random()<0.4){p.intent='retreat';p.tx=3;p.ty=EXP.h/2;expShout(p,'I need to fall back!');return;}
+  if(h.trait==='Hot-headed'&&nearEnemies.length){p.intent='attack';var t=nearEnemies[rng()*nearEnemies.length|0];p.tx=t.x;p.ty=t.y;expShout(p,'charge!');return;}
+  if(h.trait==='Greedy'&&nearLoot&&rng()<0.6){p.intent='explore';p.tx=Math.round(p.x)+(rng()*6-3)|0;p.ty=Math.round(p.y)+(rng()*6-3)|0;expShout(p,'something glimmers over there...');return;}
+  if(h.trait==='Bold'&&nearEnemies.length&&cmd!=='hold'){p.intent='attack';var t=nearEnemies[rng()*nearEnemies.length|0];p.tx=t.x;p.ty=t.y;expShout(p,'I will not yield!');return;}
+  if(h.trait==='Cautious'&&nearEnemies.length&&cmd!=='advance'){p.intent='avoid';p.tx=p.x+(p.x-EXP.objective.x)*0.3;p.ty=p.y+(p.y-EXP.objective.y)*0.3;expShout(p,'best to go around.');return;}
+  if(nearestAlly&&h.bondWith&&h.bondWith===nearestAlly.h.id&&allyDist>4){p.intent='support';p.tx=nearestAlly.x+0.5;p.ty=nearestAlly.y+0.5;expShout(p,'I will watch your back!');return;}
+  if(h.morale<40&&rng()<0.3&&cmd==='rest'){p.intent='rest';p.rest=40+rng()*40|0;expShout(p,'I must rest a moment.');return;}
+  if(cmd==='scout'){p.intent='explore';p.tx=Math.max(0,Math.min(EXP.w-1,p.x+(rng()*8-4)));p.ty=Math.max(0,Math.min(EXP.h-1,p.y+(rng()*8-4)));return;}
+  if(cmd==='hold'){p.intent='guard';p.tx=p.x;p.ty=p.y;if(nearEnemies.length)expShout(p,'hold the line!');return;}
+  p.intent='advance';
+  if(rng()<0.15){p.tx=EXP.objective.x+(rng()*4-2);p.ty=EXP.objective.y+(rng()*4-2);}
+  if(h.morale>80&&rng()<0.2)expShout(p,'onward!');
+}
+
+function moveHero(p){
+  var dx=p.tx-p.x,dy=p.ty-p.y,d=Math.sqrt(dx*dx+dy*dy)||1;
+  var speed=0.035;
+  if(p.h.trait==='Hot-headed')speed+=0.015;
+  if(p.h.morale<35)speed*=0.6;
+  if(p.intent==='rest')speed=0;
+  if(p.intent==='guard')speed=0.01;
+  if(p.intent==='avoid')speed=0.04;
+  p.x+=dx/d*speed+(Math.random()-0.5)*0.012;
+  p.y+=dy/d*speed+(Math.random()-0.5)*0.012;
+  p.x=Math.max(0,Math.min(EXP.w-1,p.x));
+  p.y=Math.max(0,Math.min(EXP.h-1,p.y));
+  p.wt+=0.5;
+  p.shoutCD=Math.max(0,p.shoutCD-1);
+}
+
+function closeExpedition(){
+  EXP.active=false;cancelAnimationFrame(EXP.raf);
+  document.getElementById('mExpedition').classList.remove('open');
+}
+
+function retreatExpedition(){
+  if(!EXP.active)return;
+  log('🏃 <b>Retreat</b> from '+esc(EXP.mission.name)+'. The wardens returned empty-handed.');
+  var m=EXP.mission;
+  var names=S.heroes.filter(function(h){return h.busy===m.id;});
+  names.forEach(function(h){h.busy=null;h.morale=Math.max(0,h.morale-8);});
+  var idx=S.missions.indexOf(m);if(idx>=0)S.missions.splice(idx,1);
+  S.missions.push(mkMission());
+  closeExpedition();save();render();
+}
+
+function renderExpedition(){
+  if(!EXP.active)return;
+  var cv=document.getElementById('expCv');
+  var ctx=cv.getContext('2d');
+  if(cv.width!==cv.clientWidth||cv.height!==cv.clientHeight){cv.width=cv.clientWidth;cv.height=cv.clientHeight;}
+  var ts=EXP.ts;
+  var px=0,py=0,n=0;
+  EXP.party.forEach(function(p){if(p.alive){px+=p.x;py+=p.y;n++;}});
+  if(n){px/=n;py/=n;}
+  EXP.camera.x=px*ts-cv.width/2;
+  EXP.camera.y=py*ts-cv.height/2;
+  EXP.camera.x=Math.max(0,Math.min(EXP.camera.x,EXP.w*ts-cv.width));
+  EXP.camera.y=Math.max(0,Math.min(EXP.camera.y,EXP.h*ts-cv.height));
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.fillStyle='#0a0d1a';ctx.fillRect(0,0,cv.width,cv.height);
+  ctx.save();
+  ctx.translate(-EXP.camera.x,-EXP.camera.y);
+  var sx=Math.floor(EXP.camera.x/ts),sy=Math.floor(EXP.camera.y/ts);
+  var ex=Math.ceil((EXP.camera.x+cv.width)/ts),ey=Math.ceil((EXP.camera.y+cv.height)/ts);
+  for(var y=Math.max(0,sy);y<Math.min(EXP.h,ey);y++){
+    for(var x=Math.max(0,sx);x<Math.min(EXP.w,ex);x++){
+      var t=EXP.map[y][x];
+      var col=BIOCOL[t.biome];
+      ctx.fillStyle=col?col[0]:'#2a4a2a';
+      ctx.fillRect(x*ts,y*ts,ts,ts);
+      ctx.fillStyle=col?col[1]:'#2d5a2d';
+      var hx=((x*7+y*13)%4);var hy=((x*3+y*11)%4);
+      ctx.fillRect(x*ts+hx,y*ts+hy,2,2);
+      if(t.loot&&EXP.fog[y][x]){
+        ctx.fillStyle='#fbbf24';ctx.beginPath();ctx.arc(x*ts+ts/2,y*ts+ts/2,3,0,6.283);ctx.fill();
+      }
+    }
+  }
+  EXP.enemies.forEach(function(e){
+    if(!e.alive||!e.seen)return;
+    ctx.fillStyle='rgba(255,50,50,0.8)';
+    ctx.beginPath();ctx.arc(e.x*ts+ts/2,e.y*ts+ts/2,ts*0.35,0,6.283);ctx.fill();
+    ctx.strokeStyle='#ff8fa8';ctx.lineWidth=2;
+    ctx.beginPath();ctx.moveTo(e.x*ts+4,e.y*ts+4);ctx.lineTo(e.x*ts+ts-4,e.y*ts+ts-4);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(e.x*ts+ts-4,e.y*ts+4);ctx.lineTo(e.x*ts+4,e.y*ts+ts-4);ctx.stroke();
+  });
+  if(!EXP.objective.reached){
+    ctx.fillStyle='#fbbf24';
+    ctx.beginPath();ctx.arc(EXP.objective.x*ts+ts/2,EXP.objective.y*ts+ts/2,ts*0.5,0,6.283);ctx.fill();
+    ctx.strokeStyle='#ffd75e';ctx.lineWidth=2;
+    ctx.beginPath();ctx.arc(EXP.objective.x*ts+ts/2,EXP.objective.y*ts+ts/2,ts*0.5+4+Math.sin(Date.now()/200)*2,0,6.283);ctx.stroke();
+  }
+  EXP.party.forEach(function(p,i){
+    if(!p.alive)return;
+    var pc=['#4ade80','#67e8f9','#fbbf24','#f472b6','#a78bfa'][i%5];
+    ctx.fillStyle=pc;
+    ctx.beginPath();ctx.arc(p.x*ts+ts/2,p.y*ts+ts/2,ts*0.3,0,6.283);ctx.fill();
+    ctx.strokeStyle='#fff';ctx.lineWidth=2;
+    ctx.stroke();
+    if(p.intent==='rest'){ctx.fillStyle='rgba(200,220,255,0.4)';ctx.beginPath();ctx.arc(p.x*ts+ts/2,p.y*ts+ts/2,ts*0.6,0,6.283);ctx.fill();}
+    if(p.intent==='attack'){ctx.strokeStyle='rgba(255,80,80,0.6)';ctx.lineWidth=2;ctx.beginPath();ctx.arc(p.x*ts+ts/2,p.y*ts+ts/2,ts*0.5,0,6.283);ctx.stroke();}
+    if(p.intent==='guard'){ctx.strokeStyle='rgba(80,150,255,0.5)';ctx.lineWidth=2;ctx.beginPath();ctx.arc(p.x*ts+ts/2,p.y*ts+ts/2,ts*0.5,0,6.283);ctx.stroke();}
+    ctx.fillStyle='#fff';ctx.font='9px sans-serif';ctx.textAlign='center';
+    ctx.fillText(p.h.name.split(' ')[0],p.x*ts+ts/2,p.y*ts-4);
+  });
+  ctx.restore();
+  for(var y=Math.max(0,sy);y<Math.min(EXP.h,ey);y++){
+    for(var x=Math.max(0,sx);x<Math.min(EXP.w,ex);x++){
+      if(!EXP.fog[y][x]){
+        ctx.fillStyle='rgba(0,0,0,0.92)';
+        ctx.fillRect(x*ts-EXP.camera.x,y*ts-EXP.camera.y,ts,ts);
+      }
+    }
+  }
+  var dn=EXP.dayNight;
+  var darkness=0.1+Math.sin(dn*Math.PI)*0.35;
+  ctx.fillStyle='rgba(8,10,30,'+darkness+')';
+  ctx.fillRect(0,0,cv.width,cv.height);
+  var dayLabel=dn<0.2?'Dawn':(dn<0.8?'Day':(dn<1.2?'Dusk':'Night'));
+  document.getElementById('expDay').textContent=dayLabel;
+  var status=EXP.skMsg||'';
+  if(!status&&EXP.shouts.length)status=EXP.shouts[0];
+  document.getElementById('expStatus').innerHTML=status||'Traveling...';
+  var hud='';
+  EXP.party.forEach(function(p,i){
+    if(!p.alive)return;
+    var col=['#4ade80','#67e8f9','#fbbf24','#f472b6','#a78bfa'][i%5];
+    var ic=CLASSES[p.h.cls].ic;
+    var stateDot=p.intent==='rest'?'⚪':(p.intent==='attack'?'🔴':(p.intent==='guard'?'🔵':'🟢'));
+    hud+='<div style="display:inline-block;margin:0 4px;text-align:center;cursor:pointer;" onclick="expShout(EXP.party['+i+'],\'here!\')">'+
+      '<div style="width:28px;height:28px;border-radius:50%;background:'+col+';border:2px solid #fff;display:flex;align-items:center;justify-content:center;font-size:14px;">'+ic+'</div>'+
+      '<div style="font-size:9px;color:#8b94b8;margin-top:2px;">'+stateDot+' '+Math.round(p.hp*100)+'%</div></div>';
+  });
+  document.getElementById('expParty').innerHTML=hud||'<span class="small">No survivors</span>';
+}
+
+function expTick(){
+  if(!EXP.active)return;
+  if(EXP.state==='travel'){
+    EXP.party.forEach(function(p){
+      if(!p.alive)return;
+      decideIntent(p);
+      moveHero(p);
+      revealFog(Math.round(p.x),Math.round(p.y),3);
+    });
+    var allDead=true;
+    EXP.party.forEach(function(p){if(p.alive)allDead=false;});
+    if(allDead){
+      EXP.state='defeat';
+      setTimeout(function(){endExpedition(false);},1500);
+      return;
+    }
+    EXP.enemies.forEach(function(e){
+      if(!e.alive)return;
+      if(EXP.fog[Math.round(e.y)]&&EXP.fog[Math.round(e.y)][Math.round(e.x)])e.seen=true;
+    });
+    EXP.party.forEach(function(p){
+      if(!p.alive)return;
+      EXP.enemies.forEach(function(e){
+        if(!e.alive)return;
+        var dx=e.x-p.x,dy=e.y-p.y;
+        if(dx*dx+dy*dy<3){
+          e.alive=false;
+          runSkirmish(e);
+        }
+      });
+      var tx=Math.round(p.x),ty=Math.round(p.y);
+      if(tx>=0&&tx<EXP.w&&ty>=0&&ty<EXP.h&&EXP.map[ty][tx].loot){
+        EXP.map[ty][tx].loot=false;
+        var loot=mkItem(EXP.mission.tier,false);
+        addLoot(loot,EXP.mission.tier);
+        log('✨ <b>'+esc(p.h.name)+'</b> found '+esc(loot.name)+' in the wild!');
+        expShout(p,'I found something!');
+      }
+    });
+    var pcx=0,pcy=0,pcn=0;
+    EXP.party.forEach(function(p){if(p.alive){pcx+=p.x;pcy+=p.y;pcn++;}});
+    if(pcn){pcx/=pcn;pcy/=pcn;}
+    var odx=EXP.objective.x-pcx,ody=EXP.objective.y-pcy;
+    if(odx*odx+ody*ody<6){
+      EXP.objective.reached=true;
+      EXP.state='boss';
+      setTimeout(function(){startBossFromExpedition();},800);
+      return;
+    }
+  }
+  EXP.dayNight+=0.0003;
+  if(EXP.dayNight>2)EXP.dayNight=0;
+  renderExpedition();
+  EXP.raf=requestAnimationFrame(expTick);
+}
+
+function runSkirmish(enemy){
+  EXP.state='skirmish';
+  EXP.skMsg='Skirmish! Fighting...';
+  renderExpedition();
+  var partyPower=0;
+  EXP.party.forEach(function(p){if(p.alive){var pwr=p.h.lvl*12+p.h.morale*0.5;var tfx=collectTalentFx(p.h);if(tfx.atk)pwr*=tfx.atk;if(tfx.shot)pwr*=tfx.shot;if(tfx.spell)pwr*=tfx.spell;if(tfx.assault)pwr*=1.1;partyPower+=pwr;}});
+  var odds=partyPower/(partyPower+enemy.power);
+  var won=Math.random()<odds;
+  setTimeout(function(){
+    if(won){
+      EXP.skMsg='Skirmish won!';
+      EXP.party.forEach(function(p){if(p.alive){var tfx=collectTalentFx(p.h);var dmg=0.08;if(tfx.dodge&&Math.random()<tfx.dodge)return;if(tfx.hp)dmg/=tfx.hp;if(tfx.regen)p.hp=Math.min(p.maxHp,p.hp+0.01);if(tfx.lifesteal)p.hp=Math.min(p.maxHp,p.hp+0.02);if(Math.random()<0.3)p.hp=Math.max(0,p.hp-dmg);}});
+    }else{
+      EXP.skMsg='Skirmish lost — injuries taken.';
+      EXP.party.forEach(function(p){if(p.alive)p.hp=Math.max(0,p.hp-0.25);});
+    }
+    EXP.party.forEach(function(p){if(p.alive&&p.hp<=0.05){p.alive=false;log('💀 <b>'+esc(p.h.name)+'</b> fell in the expedition.');}});
+    var survivors=EXP.party.filter(function(p){return p.alive;});
+    if(!survivors.length){
+      setTimeout(function(){endExpedition(false);},1500);
+      return;
+    }
+    EXP.state='travel';
+    setTimeout(function(){EXP.skMsg='';},2000);
+  },1200);
+}
+
+function startBossFromExpedition(){
+  EXP.active=false;cancelAnimationFrame(EXP.raf);
+  document.getElementById('mExpedition').classList.remove('open');
+  var survivors=EXP.party.filter(function(p){return p.alive;}).map(function(p){return p.id;});
+  EXP.mission.party=survivors;
+  setTimeout(function(){
+    openBattle(EXP.mission.id);
+    watchBossBattle();
+  },300);
+}
+
+function watchBossBattle(){
+  var check=setInterval(function(){
+    if(!document.getElementById('mBattle').classList.contains('open')){
+      clearInterval(check);
+      setTimeout(function(){resolveExpeditionMission(BT.result);},200);
+    }
+  },300);
+}
+
+function resolveExpeditionMission(victory){
+  var m=EXP.mission;
+  if(victory){
+    var ok=Math.random()<successChance(m);
+    BT.result=ok;
+    resolveMission(m);
+  }else{
+    BT.result=false;
+    resolveMission(m);
+  }
+  save();render();
+}
+
+function endExpedition(victory){
+  EXP.active=false;cancelAnimationFrame(EXP.raf);
+  document.getElementById('mExpedition').classList.remove('open');
+  if(!victory){
+    var m=EXP.mission;
+    log('💀 <b>Expedition failed.</b> The wardens could not reach '+esc(m.name)+'.');
+    var names=S.heroes.filter(function(h){return h.busy===m.id;});
+    names.forEach(function(h){h.busy=null;h.morale=Math.max(0,h.morale-18);});
+    var idx=S.missions.indexOf(m);if(idx>=0)S.missions.splice(idx,1);
+    S.missions.push(mkMission());
+    save();render();
+  }
+}
 // ---------- wiring ----------
 function closePanel(id){document.getElementById(id).classList.remove('open');}
 document.querySelectorAll('#navBar button').forEach(function(b){
@@ -1888,8 +2217,6 @@ function importSave(){
     showReport();
   }else{newGame();}
   document.getElementById('saveNote').textContent=d?'A saved citadel awaits — tap Begin to continue.':'A new citadel awaits.';
-})();
-
-</script>
+})();</script>
 </body>
 </html>
