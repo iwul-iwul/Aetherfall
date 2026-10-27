@@ -55,9 +55,39 @@ h2{font-size:17px;margin:16px 0 8px;color:var(--gold);}
 @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
 .shake{animation:shake .3s;}
 #cv{width:100%;border-radius:12px;background:linear-gradient(#0a0d1f,#141a35);display:block;border:1px solid var(--line);}
+
+/* ===== LIVING WORLD UI ===== */
+#lobbyWrap{position:fixed;inset:0;z-index:0;width:100vw;height:100vh;display:none;}
+#lobbyCv{width:100%;height:100%;display:block;border:none;border-radius:0;background:linear-gradient(#0a0d1f,#141a35);}
+.panel{position:fixed;z-index:10;background:rgba(11,14,26,.94);border:1px solid var(--line);border-radius:16px;backdrop-filter:blur(12px);display:none;overflow-y:auto;}
+.panel.open{display:block;}
+.panel-left{left:8px;top:70px;bottom:68px;width:340px;max-width:calc(100vw - 80px);padding:14px;}
+.panel-right{right:64px;top:70px;bottom:68px;width:340px;max-width:calc(100vw - 80px);padding:14px;}
+.panel-bottom{left:8px;right:8px;bottom:60px;height:220px;max-height:35vh;padding:14px;}
+.panel-center{left:50%;top:50%;transform:translate(-50%,-50%);width:420px;max-width:90vw;max-height:80vh;padding:14px;}
+#rosterStrip{position:fixed;right:0;top:64px;bottom:60px;width:52px;z-index:5;display:none;background:rgba(11,14,26,.85);border-left:1px solid var(--line);overflow-y:auto;padding:4px 2px;}
+.rosterFace{width:40px;height:40px;border-radius:8px;background:var(--panel2);border:1px solid var(--line);margin:4px auto;display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;position:relative;}
+.rosterFace:active{transform:scale(.95);}
+.rosterDot{position:absolute;bottom:2px;right:2px;width:8px;height:8px;border-radius:50%;}
+#missionMarkers{position:fixed;inset:0;z-index:2;pointer-events:none;display:none;}
+.mMark{position:absolute;pointer-events:auto;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer;animation:pulse 2.4s infinite;}
+.mMark.boss{border-color:#fbbf24;background:#3a2a0a;color:#fbbf24;}
+.mMark.raid{border-color:#ff5b73;background:#4a1626;color:#ff8fa8;}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(251,191,36,.3)}50%{box-shadow:0 0 0 10px rgba(251,191,36,0)}}
+#ticker{position:fixed;bottom:56px;left:0;right:0;height:26px;z-index:5;display:none;background:rgba(11,14,26,.92);border-top:1px solid var(--line);overflow:hidden;}
+#tickerText{white-space:nowrap;font-size:12px;color:var(--dim);padding:5px 10px;animation:tickScroll 24s linear infinite;}
+@keyframes tickScroll{0%{transform:translateX(100vw)}100%{transform:translateX(-100%)}}
+.topbar{position:fixed;top:8px;left:8px;right:8px;z-index:5;}
+#scr-game{background:none;max-width:none;padding:0;padding-bottom:0;}
+#gateFab{position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:4;display:none;background:rgba(11,14,26,.9);border:1px solid #4a1f6d;border-radius:50%;width:56px;height:56px;align-items:center;justify-content:center;font-size:28px;cursor:pointer;animation:glow 2s ease-in-out infinite;}
+#gateFab:active{transform:translateX(-50%) scale(.95);}
+@keyframes glow{0%,100%{box-shadow:0 0 8px #67e8f955}50%{box-shadow:0 0 20px #67e8f9aa}}
+.panel h2{margin-top:0;}
+.panel .sub{margin-top:4px;margin-bottom:8px;}
 </style>
 </head>
 <body>
+
 <div id="err"></div>
 
 <!-- TITLE -->
@@ -68,11 +98,20 @@ h2{font-size:17px;margin:16px 0 8px;color:var(--gold);}
   <p class="small" style="max-width:340px;margin:14px auto;">The sky-citadel of Veyra is falling. You are its last Warden. Summon heroes from across the shattered realms through the Starforge — but remember: every hero you call has a will of their own. They train, rest, argue, bond, and sometimes refuse your orders.</p>
   <button class="btn gold" id="btnStart" style="font-size:18px;padding:14px 34px;">⚔️ Begin</button>
   <div class="small" id="saveNote" style="margin-top:12px;"></div>
+  <div style="margin-top:12px;display:flex;gap:10px;justify-content:center;">
+    <button class="btn" id="btnExp" style="padding:8px 16px;font-size:13px;">📤 Export</button>
+    <button class="btn" id="btnImp" style="padding:8px 16px;font-size:13px;">📥 Import</button>
+  </div>
 </div>
 
-<!-- GAME -->
-<div id="scr-game" class="screen">
-  <div class="topbar">
+<!-- LOBBY BACKGROUND -->
+<div id="lobbyWrap">
+  <canvas id="lobbyCv" width="640" height="300"></canvas>
+</div>
+
+<!-- GAME OVERLAYS -->
+<div id="scr-game" class="screen" style="background:none;max-width:none;padding:0;padding-bottom:0;">
+<div class="topbar">
     <span class="res">💎 <span id="rGems">0</span></span>
     <span class="res">🪙 <span id="rGold">0</span></span>
     <span class="res">🌾 <span id="rFood">0</span></span>
@@ -83,11 +122,19 @@ h2{font-size:17px;margin:16px 0 8px;color:var(--gold);}
     <button class="btn" id="btnHow" style="padding:6px 12px;font-size:12px;">?</button>
   </div>
 
-  <div id="tab-citadel" class="tabpane">
-    <h2>🏰 Citadel Lobby</h2>
+  <div id="rosterStrip"></div>
+  <div id="missionMarkers"></div>
+  <div id="gateFab" title="Starforge Gate">🔮</div>
+
+  <div id="panel-citadel" class="panel panel-center">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+      <h2 style="margin:0;">🏰 Citadel</h2>
+      <button class="btn" onclick="closePanel('panel-citadel')" style="padding:4px 10px;font-size:12px;">✕</button>
+    </div>
+<h2>🏰 Citadel Lobby</h2>
     <div class="sub" id="citFlavor">Wardens keep the light burning.</div>
-    <canvas id="lobbyCv" width="640" height="300" style="width:100%;border-radius:12px;border:1px solid var(--line);display:block;background:linear-gradient(#0a0d1f,#141a35);"></canvas>
-    <div class="small" style="margin:4px 0 12px;">Tap a building to view or upgrade it. Idle wardens wander the courtyard and visit their favorite spots.</div>
+    
+
     <div class="grid" id="citStats"></div>
     <h2>👑 Captain & Standing Orders</h2>
     <div class="card" id="captainCard"><span class="small">No captain appointed.</span></div>
@@ -96,29 +143,22 @@ h2{font-size:17px;margin:16px 0 8px;color:var(--gold);}
     <div id="activeList"></div>
   </div>
 
-  <div id="tab-work" class="tabpane" style="display:none;">
-    <h2>⛏️ Assignments</h2>
+  <div id="panel-work" class="panel panel-left">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+      <h2 style="margin:0;">⛏️ Assignments</h2>
+      <button class="btn" onclick="closePanel('panel-work')" style="padding:4px 10px;font-size:12px;">✕</button>
+    </div>
+<h2>⛏️ Assignments</h2>
     <div class="sub">Wardens who aren't cut out for combat still earn their keep. Workers gather every 8s. Low-morale workers may walk off the job.</div>
     <div id="workList"></div>
   </div>
 
-  <div id="tab-gate" class="tabpane" style="display:none;">
-    <h2>🌀 The Starforge Gate</h2>
-    <div class="sub">Summon heroes from across the shattered realms. Duplicates empower the existing hero.</div>
-    <div class="card center">
-      <div style="font-size:56px;" id="gateOrb">🔮</div>
-      <div class="small" id="gateHint">The gate hums, waiting.</div>
-      <div style="margin-top:12px;display:flex;gap:10px;justify-content:center;">
-        <button class="btn" id="btnPull1">Summon ×1<br><span class="small" style="color:#cfe3ff;">💎 50</span></button>
-        <button class="btn gold" id="btnPull10">Summon ×10<br><span class="small" style="color:#ffe9b0;">💎 450</span></button>
-      </div>
-      <div class="small" style="margin-top:10px;">Mythic ★5: 2% · Epic ★4: 8% · Rare ★3: 20% · Guaranteed ★4+ within 30 pulls.</div>
+  <div id="panel-heroes" class="panel panel-right">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+      <h2 style="margin:0;">🛡️ Wardens Roster</h2>
+      <button class="btn" onclick="closePanel('panel-heroes')" style="padding:4px 10px;font-size:12px;">✕</button>
     </div>
-    <div id="summonResults"></div>
-  </div>
-
-  <div id="tab-heroes" class="tabpane" style="display:none;">
-    <h2>🛡️ Wardens Roster</h2>
+<h2>🛡️ Wardens Roster</h2>
     <div class="sub">Tap a hero for details. Heroes act on their own — watch their morale.</div>
     <div style="display:flex;gap:8px;margin-bottom:10px;">
       <select id="sortSel" style="flex:1;background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:8px;">
@@ -131,27 +171,35 @@ h2{font-size:17px;margin:16px 0 8px;color:var(--gold);}
     <div class="grid" id="heroGrid"></div>
   </div>
 
-  <div id="tab-missions" class="tabpane" style="display:none;">
-    <h2>🗺️ Operations Board</h2>
+  <div id="panel-missions" class="panel panel-left">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+      <h2 style="margin:0;">🗺️ Operations Board</h2>
+      <button class="btn" onclick="closePanel('panel-missions')" style="padding:4px 10px;font-size:12px;">✕</button>
+    </div>
+<h2>🗺️ Operations Board</h2>
     <div class="sub">Deploy up to 3 heroes. Success odds scale with team power vs. threat level. Low-morale heroes may refuse.</div>
     <button class="btn" id="btnRefresh" style="width:100%;margin-bottom:10px;">🔄 Refresh board — 💎 10</button>
     <div id="missionList"></div>
   </div>
 
-  <div id="tab-log" class="tabpane" style="display:none;">
-    <h2>📜 Chronicle</h2>
+  <div id="panel-log" class="panel panel-bottom">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+      <h2 style="margin:0;">📜 Chronicle</h2>
+      <button class="btn" onclick="closePanel('panel-log')" style="padding:4px 10px;font-size:12px;">✕</button>
+    </div>
+<h2>📜 Chronicle</h2>
     <div id="logList" style="max-height:60vh;overflow-y:auto;"></div>
   </div>
-</div>
 
-<!-- NAV -->
-<div class="tabs" id="navBar" style="display:none;">
-  <button data-tab="citadel" class="on"><span class="ic">🏰</span>Lobby</button>
-  <button data-tab="work"><span class="ic">⛏️</span>Work</button>
-  <button data-tab="gate"><span class="ic">🌀</span>Gate</button>
-  <button data-tab="heroes"><span class="ic">🛡️</span>Wardens</button>
-  <button data-tab="missions"><span class="ic">🗺️</span>Ops</button>
-  <button data-tab="log"><span class="ic">📜</span>Log</button>
+  <div id="ticker"><div id="tickerText"></div></div>
+
+  <div class="tabs" id="navBar" style="display:none;background:rgba(11,14,26,.85);">
+    <button data-panel="citadel"><span class="ic">🏰</span>Citadel</button>
+    <button data-panel="work"><span class="ic">⛏️</span>Work</button>
+    <button data-panel="heroes"><span class="ic">🛡️</span>Roster</button>
+    <button data-panel="missions"><span class="ic">🗺️</span>Ops</button>
+    <button data-panel="log"><span class="ic">📜</span>Log</button>
+  </div>
 </div>
 
 <!-- HERO MODAL -->
@@ -194,7 +242,33 @@ h2{font-size:17px;margin:16px 0 8px;color:var(--gold);}
   <button class="btn danger" onclick="if(confirm('Wipe all progress?')){localStorage.removeItem(KEY);location.reload();}">Reset Save</button></div>
 </div></div>
 
+
+
+<!-- GATE MODAL -->
+<div class="modal" id="mGate"><div class="modalBox" style="max-width:460px;">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+    <h2 style="margin:0;">🌀 The Starforge Gate</h2>
+    <button class="btn" onclick="closeModal('mGate')" style="padding:4px 10px;font-size:12px;">✕</button>
+  </div>
+<h2>🌀 The Starforge Gate</h2>
+    <div class="sub">Summon heroes from across the shattered realms. Duplicates empower the existing hero.</div>
+    <div class="card center">
+      <div style="font-size:56px;" id="gateOrb">🔮</div>
+      <div class="small" id="gateHint">The gate hums, waiting.</div>
+      <div style="margin-top:12px;display:flex;gap:10px;justify-content:center;">
+        <button class="btn" id="btnPull1">Summon ×1<br><span class="small" style="color:#cfe3ff;">💎 50</span></button>
+        <button class="btn gold" id="btnPull10">Summon ×10<br><span class="small" style="color:#ffe9b0;">💎 450</span></button>
+      </div>
+      <div class="small" style="margin-top:10px;">Mythic ★5: 2% · Epic ★4: 8% · Rare ★3: 20% · Guaranteed ★4+ within 30 pulls.</div>
+    </div>
+    <div id="summonResults"></div>
+</div></div>
+
+<!-- SAVE EXPORT/IMPORT MODAL -->
+<div class="modal" id="mSaveIO"><div class="modalBox" id="sioBox"></div></div>
+
 <script>
+
 window.addEventListener('error',function(e){var d=document.getElementById('err');d.style.display='block';d.textContent='⚠ '+e.message;});
 var KEY='aetherfall_save_v1';
 var RARITY=[
@@ -1363,6 +1437,41 @@ function unassignWork(hid,job){
 }
 // END OF PART 4B
 // ---------- rendering ----------
+
+// ---------- living world renders ----------
+function renderRosterStrip(){
+  var el=document.getElementById('rosterStrip');if(!el||!S)return;
+  var html='';
+  S.heroes.forEach(function(h){
+    var col=h.morale>=70?'#4ade80':(h.morale>=40?'#fbbf24':'#f87171');
+    html+='<div class="rosterFace" onclick="openHero('+h.id+')" title="'+esc(h.name)+'">'+CLASSES[h.cls].ic+'<div class="rosterDot" style="background:'+col+'"></div></div>';
+  });
+  el.innerHTML=html;
+}
+function renderMissionMarkers(){
+  var el=document.getElementById('missionMarkers');if(!el||!S)return;
+  var html='',side=0;
+  S.missions.forEach(function(m){
+    if(m.party.length>0)return;
+    var pos=(side%2===0)?'left:8px;':'right:8px;';
+    var top=80+(side*0.5|0)*58;
+    var cls=m.boss?'mMark boss':(m.raid?'mMark raid':'mMark');
+    html+='<div class="'+cls+'" style="'+pos+'top:'+top+'px;" onclick="openMission('+m.id+')">'+m.ic+' T'+m.tier+(m.boss?' 👹':'')+'</div>';
+    side++;
+  });
+  el.innerHTML=html;
+}
+function renderTicker(){
+  var el=document.getElementById('tickerText');if(!el||!S)return;
+  var texts=[];
+  for(var i=0;i<Math.min(5,S.log.length);i++){
+    var t=document.createElement('div');t.innerHTML=S.log[i];var txt=t.textContent.trim();
+    if(txt)texts.push(txt);
+  }
+  texts=texts.concat(FLAVOR.slice(0,2));
+  if(!texts.length)texts=['The spires of Veyra drift ever lower.'];
+  el.textContent=texts.join('   ·   ');
+}
 function render(){
   if(!S)return;
   document.getElementById('rGems').textContent=S.gems;
@@ -1410,6 +1519,9 @@ function render(){
   document.getElementById('logList').innerHTML=S.log.join('')||'<div class="small">Nothing yet.</div>';
   renderWork();
   renderCaptain();
+  renderRosterStrip();
+  renderMissionMarkers();
+  renderTicker();
 }
 
 function openHero(id){
@@ -1643,14 +1755,18 @@ function doPull(n){
 }
 
 // ---------- wiring ----------
-document.querySelectorAll('.tabs button').forEach(function(b){
+function closePanel(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('#navBar button').forEach(function(b){
   b.onclick=function(){
-    document.querySelectorAll('.tabs button').forEach(function(x){x.classList.remove('on');});
-    b.classList.add('on');
-    document.querySelectorAll('.tabpane').forEach(function(p){p.style.display='none';});
-    document.getElementById('tab-'+b.dataset.tab).style.display='block';
-    if(b.dataset.tab==='citadel')startLobby();else stopLobby();
+    var pid='panel-'+b.dataset.panel;
+    var wasOpen=document.getElementById(pid).classList.contains('open');
+    document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('open');});
+    document.querySelectorAll('#navBar button').forEach(function(x){x.classList.remove('on');});
+    if(!wasOpen){document.getElementById(pid).classList.add('open');b.classList.add('on');}
     render();};});
+document.getElementById('gateFab').onclick=function(){document.getElementById('mGate').classList.add('open');document.getElementById('gateHint').textContent='The gate hums, waiting.';document.getElementById('summonResults').innerHTML='';};
+document.getElementById('btnExp').onclick=exportSave;
+document.getElementById('btnImp').onclick=importSave;
 document.getElementById('btnHow').onclick=function(){document.getElementById('mHow').classList.add('open');};
 document.getElementById('btnPull1').onclick=function(){doPull(1);};
 document.getElementById('btnPull10').onclick=function(){doPull(10);};
@@ -1658,6 +1774,11 @@ document.getElementById('btnStart').onclick=function(){
   document.getElementById('scr-title').classList.remove('active');
   document.getElementById('scr-game').classList.add('active');
   document.getElementById('navBar').style.display='flex';
+  document.getElementById('lobbyWrap').style.display='block';
+  document.getElementById('rosterStrip').style.display='block';
+  document.getElementById('missionMarkers').style.display='block';
+  document.getElementById('gateFab').style.display='flex';
+  document.getElementById('ticker').style.display='block';
   startLobby();
   render();};
 document.getElementById('lobbyCv').addEventListener('click',function(e){
@@ -1688,6 +1809,56 @@ document.getElementById('btnCounsel').onclick=function(){
   beep(600,0.08,'sine',0.03);
 };
 
+
+// ---------- save export/import ----------
+function exportSave(){
+  var raw=null;
+  try{raw=localStorage.getItem(KEY);}catch(e){}
+  if(!raw){alert('No save found — tap ⚔️ Begin first.');return;}
+  var code='AF1:'+btoa(unescape(encodeURIComponent(raw)));
+  document.getElementById('sioBox').innerHTML='<h2 style="margin-top:0;">📤 Backup Save</h2>'+
+    '<div class="small" style="margin-bottom:8px;">Copy this code somewhere safe. It is your entire citadel.</div>'+
+    '<textarea id="sioOut" readonly style="width:100%;height:120px;background:#0a0d18;color:#67e8f9;border:1px solid var(--line);border-radius:10px;padding:8px;font-size:11px;resize:vertical;" onclick="this.select()">'+code+'</textarea>'+
+    '<div class="small" style="margin-top:6px;">'+code.length+' chars · tap to select all.</div>'+
+    '<div class="center" style="margin-top:10px;display:flex;gap:10px;justify-content:center;">'+
+    '<button class="btn gold" id="sioCopy">📋 Copy</button>'+
+    '<button class="btn" onclick="closeModal(\'mSaveIO\')">Done</button></div>'+
+    '<div id="sioMsg" class="center small" style="margin-top:8px;"></div>';
+  document.getElementById('mSaveIO').classList.add('open');
+  setTimeout(function(){var t=document.getElementById('sioOut');if(t)t.select();},50);
+  document.getElementById('sioCopy').onclick=function(){
+    var t=document.getElementById('sioOut');t.select();
+    function ok(){document.getElementById('sioMsg').innerHTML='<span style="color:#4ade80;">Copied. Guard it well.</span>';}
+    if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t.value).then(ok,function(){document.execCommand('copy');ok();});}
+    else{document.execCommand('copy');ok();}
+  };
+}
+function importSave(){
+  document.getElementById('sioBox').innerHTML='<h2 style="margin-top:0;">📥 Restore Save</h2>'+
+    '<div class="small" style="margin-bottom:8px;">Paste a backup code below. Restoring <b>replaces</b> the save on this device.</div>'+
+    '<textarea id="sioIn" style="width:100%;height:120px;background:#0a0d18;color:#e8ecf8;border:1px solid var(--line);border-radius:10px;padding:8px;font-size:11px;resize:vertical;" placeholder="AF1:..."></textarea>'+
+    '<div id="sioMsg" class="center small" style="min-height:18px;margin-top:6px;"></div>'+
+    '<div class="center" style="margin-top:10px;display:flex;gap:10px;justify-content:center;">'+
+    '<button class="btn gold" id="sioGo">🔍 Validate & Restore</button>'+
+    '<button class="btn" onclick="closeModal(\'mSaveIO\')">Cancel</button></div>';
+  document.getElementById('mSaveIO').classList.add('open');
+  document.getElementById('sioGo').onclick=function(){
+    var v=(document.getElementById('sioIn').value||'').trim();
+    var msg=document.getElementById('sioMsg');
+    if(!v){msg.innerHTML='<span style="color:#f87171;">⚠ Paste a code first.</span>';return;}
+    if(v.indexOf('AF1:')!==0){msg.innerHTML='<span style="color:#f87171;">⚠ Not an Aetherfall backup — codes start with AF1:</span>';return;}
+    var json;try{json=decodeURIComponent(escape(atob(v.slice(4))));}catch(e){msg.innerHTML='<span style="color:#f87171;">⚠ Corrupted code. Re-copy the whole thing.</span>';return;}
+    var d;try{d=JSON.parse(json);}catch(e){msg.innerHTML='<span style="color:#f87171;">⚠ Decoded but not valid JSON.</span>';return;}
+    if(!d||typeof d!=='object'){msg.innerHTML='<span style="color:#f87171;">⚠ Empty save.</span>';return;}
+    if(!Array.isArray(d.heroes)||!d.heroes.length){msg.innerHTML='<span style="color:#f87171;">⚠ No wardens found — refusing empty citadel.</span>';return;}
+    if(d.heroes.some(function(h){return !h||typeof h.name!=='string'||typeof h.cls!=='string'||typeof h.lvl!=='number';})){msg.innerHTML='<span style="color:#f87171;">⚠ Warden records look wrong — foreign save.</span>';return;}
+    if(typeof d.gems!=='number'||typeof d.gold!=='number'){msg.innerHTML='<span style="color:#f87171;">⚠ Resource data missing.</span>';return;}
+    if(json.length>3000000){msg.innerHTML='<span style="color:#f87171;">⚠ Save too large — refusing.</span>';return;}
+    if(localStorage.getItem(KEY)&&!confirm('A save already exists. Replace it with this backup?'))return;
+    try{localStorage.setItem(KEY,JSON.stringify(d));}catch(e){msg.innerHTML='<span style="color:#f87171;">⚠ Storage blocked — could not write.</span>';return;}
+    location.reload();
+  };
+}
 (function init(){
   var d=load();
   if(d&&d.heroes&&d.heroes.length){S=d;
@@ -1712,7 +1883,7 @@ document.getElementById('btnCounsel').onclick=function(){
   }else{newGame();}
   document.getElementById('saveNote').textContent=d?'A saved citadel awaits — tap Begin to continue.':'A new citadel awaits.';
 })();
+
 </script>
 </body>
 </html>
-
