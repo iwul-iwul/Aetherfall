@@ -246,8 +246,130 @@ function rnd(a){return a[Math.floor(Math.random()*a.length)];}
 function rint(a,b){return a+Math.floor(Math.random()*(b-a+1));}
 function heroName(){return rnd(N1)+rnd(N2)+rnd(N3);}
 function stars(n){return '★'.repeat(n)+'☆'.repeat(5-n);}
-function itemBonus(h){var b=0;if(h.eq){if(h.eq.wpn)b+=h.eq.wpn.bonus;if(h.eq.chn)b+=h.eq.chn.bonus;}
+function itemBonus(h){var b=0;if(h.eq){if(h.eq.wpn)b+=h.eq.wpn.bonus;if(h.eq.chn)b+=h.eq.chn.bonus;}return b;}
+function heroPower(h){
+  var mod=TRAITS[h.trait].mod;
+  if(h.trait==='Hot-headed')mod=h.morale>=70?1.18:(h.morale<40?0.92:1.0);
+  if(h.trait==='Lazy'&&h.morale>=70)mod=1.10;
+  return Math.round(RARITY[h.r].base*(1+(h.lvl-1)*0.18)*(1+0.15*(h.asc||0))*mod)+itemBonus(h);}
+function xpNeed(h){return 40*h.lvl;}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+
+function newGame(){
+  S={gems:320,gold:0,pity:0,heroes:[],missions:[],log:[],inv:[],bld:{train:1,tavern:1,garden:0,forge:0,vault:0},res:{food:50,wood:60,stone:60},work:{farm:[],wood:[],stone:[]},last:Date.now(),mtier:1,nextIdle:Date.now()+12000,nextWork:Date.now()+8000,nextRaid:0,pendingReport:[],captain:null,orders:{minOdds:0.5,restBelow:35,staffJobs:true,autoDeploy:true,raidPolicy:'defend'},nextCaptain:Date.now()+45000,nextCounsel:Date.now()+90000,winsTier:0,party:[]};
+  for(var i=0;i<3;i++)S.heroes.push(mkHero(rint(0,1)));
+  genMissions();
+  log('You lit the Starforge for the first time. Three wardens answered the call.');
+  save();
+}
+function mkHero(forceR){
+  var r=(forceR!==undefined)?forceR:rollRarityIdx();
+  var cls=rnd(Object.keys(CLASSES));
+  var h={id:uid++,name:heroName(),cls:cls,r:r,lvl:1,xp:0,trait:rnd(Object.keys(TRAITS)),morale:rint(55,85),bonds:{},busy:null,restUntil:0,eq:{wpn:null,chn:null}};
+  return h;
+}
+function rollRarityIdx(){
+  var pool=[];
+  for(var i=0;i<RARITY.length;i++){var w=RARITY[i].rate;if(S.pity>=29&&i<3)w=0;for(var j=0;j<w;j++)pool.push(i);}
+  var r=pool[Math.floor(Math.random()*pool.length)];
+  S.pity=(r>=3)?0:S.pity+1;
+  return r;
+}
+function summon(n){
+  var res=[],bonusGiven=false;
+  for(var i=0;i<n;i++){
+    var h=mkHero();
+    if(n===10&&i===n-1&&!bonusGiven&&h.r<2){h=mkHero(rint(2,4));bonusGiven=true;}
+    var dup=null;
+    for(var j=0;j<S.heroes.length;j++){if(S.heroes[j].name===h.name&&S.heroes[j].cls===h.cls){dup=S.heroes[j];break;}}
+    if(dup){var g=Math.ceil(xpNeed(dup)*0.4);dup.xp+=g;log('Duplicate <b>'+esc(h.name)+'</b> dissolved into starlight — '+esc(h.name)+' gained '+g+' XP.');checkLevel(dup);res.push({h:h,dupe:true});}
+    else{S.heroes.push(h);res.push({h:h,dupe:false});log('<b>'+esc(h.name)+'</b> ('+CLASSES[h.cls].ic+' '+esc(h.cls)+', '+RARITY[h.r].n+' '+stars(h.r).trim()+') answered the Gate.');}
+  }
+  return res;
+}
+function genMissions(){
+  S.missions=[];
+  for(var i=0;i<5;i++)S.missions.push(mkMission());
+}
+function mkMission(){
+  var tier=S.mtier;
+  var boss=tier>=4&&Math.random()<0.3;
+  var t=boss?{n:rnd(BOSSES),i:'👹'}:{n:rnd(MT)[0],i:rnd(MT)[1]};
+  var m={id:uid++,name:t.n,ic:t.i,tier:tier,boss:boss,req:Math.round(26*tier*1.35),dur:Math.min(150,30+tier*12),prog:0,party:[],done:false,gems:14+tier*9,gold:20+tier*14};
+  if(boss){m.req=Math.round(m.req*1.3);m.dur=Math.min(200,Math.round(m.dur*1.4));m.gems=Math.round(m.gems*2.2);m.gold=Math.round(m.gold*2);}
+  return m;
+}
+function mkItem(tier,forceHigh){
+  var w=forceHigh?[5,15,35,30,15]:(tier>=5?[10,25,30,22,13]:[30,30,22,12,6]);
+  var pool=[];for(var i=0;i<5;i++)for(var j=0;j<w[i];j++)pool.push(i);
+  var r=rnd(pool);
+  var slot=Math.random()<0.5?'wpn':'chn';
+  return {name:rnd(IPRE)+' '+(slot==='wpn'?rnd(IWPN):rnd(ICN)),slot:slot,r:r,bonus:3+tier*2+r*3+rint(0,4),upg:0};
+}
+function partyPower(m){
+  var p=0,bondBonus=false;
+  for(var i=0;i<m.party.length;i++){var h=byId(m.party[i]);if(!h)continue;p+=heroPower(h)*(0.8+h.morale/250);
+    for(var j=i+1;j<m.party.length;j++){var o=byId(m.party[j]);if(o&&h.bonds[o.id]>=20)bondBonus=true;}}
+  if(bondBonus)p*=1.08;
+  return Math.round(p);
+}
+function successChance(m){var c=0.35+((partyPower(m)/m.req)-1)*0.5;return Math.max(0.15,Math.min(0.97,c));}
+function deploy(mid,hids,quiet){
+  var m=null;for(var i=0;i<S.missions.length;i++)if(S.missions[i].id===mid)m=S.missions[i];
+  if(!m)return;
+  S.heroes.forEach(function(h){if(h.busy===m.id)h.busy=null;});
+  m.party=hids;
+  for(var k=0;k<hids.length;k++){var h=byId(hids[k]);h.busy=mid;if(h.trait==='Hot-headed')h._spark=true;}
+  log('Deployed on <b>'+esc(m.name)+'</b>: '+hids.map(function(x){return esc(byId(x).name);}).join(', ')+'.');
+  closeModal('mMission');
+  if(!quiet)setTimeout(function(){openBattle(m.id);},250);
+}
+function resolveMission(m,silent){
+  var ok=Math.random()<successChance(m);
+  BT.result=ok;
+  if(m.raid){
+    var rn=S.heroes.filter(function(h){return h.busy===m.id;});
+    if(ok){
+      S.gems+=m.gems;S.gold+=m.gold;
+      rn.forEach(function(h){h.xp+=40*m.tier;h.busy=null;h.morale=Math.min(100,h.morale+8);checkLevel(h);});
+      log('🛡️ <b>The citadel holds!</b> The raid was repelled. 💎+'+m.gems+' 🪙+'+m.gold+'.');
+    }else{
+      rn.forEach(function(h){h.busy=null;h.morale=Math.max(0,h.morale-14);});
+      S.gold=Math.max(0,S.gold-80);
+      damageBld();
+      log('💀 <b>The raid succeeded.</b> The Hollow broke through. (-80 🪙, building damaged)');
+    }
+    var ri=S.missions.indexOf(m);if(ri>=0)S.missions.splice(ri,1);
+    return;
+  }
+  var names=S.heroes.filter(function(h){return h.busy===m.id;});
+  if(ok){
+    var extra=0;
+    for(var i=0;i<names.length;i++){var h=names[i];
+      h.xp+=30*m.tier;h.busy=null;h.morale=Math.min(100,h.morale+6);
+      if(h.trait==='Greedy'){extra+=Math.round(m.gems*0.15);}
+      checkLevel(h);}
+    if(extra)m.gems+=extra;
+    S.gems+=m.gems;S.gold+=m.gold;S.winsTier=(S.winsTier||0)+1;
+      if(S.winsTier>=3&&S.mtier<10){S.mtier++;S.winsTier=0;log('⚠️ The Hollow grows bolder — threat level rises to T'+S.mtier+'.');}
+    if(Math.random()<Math.min(1,(m.boss?1:0.45)+S.bld.forge*0.05)){addLoot(mkItem(m.tier,m.boss),m.tier);}
+    log('<b>'+esc(m.name)+'</b> — <b style="color:#4ade80;">SUCCESS</b> 💎+'+m.gems+(extra?' (+'+extra+' greedy cut)':"")+' 🪙+'+m.gold+'.');
+  }else{
+    for(var j=0;j<names.length;j++){names[j].busy=null;names[j].morale=Math.max(0,names[j].morale-12);}
+    S.gold+=Math.round(m.gold*0.3);
+    log('<b>'+esc(m.name)+'</b> — <b style="color:#f87171;">FAILED</b>. The wardens limped home. Morale suffered.');
+  }
+  var idx=S.missions.indexOf(m);if(idx>=0)S.missions.splice(idx,1);
+  S.missions.push(mkMission());
+}
+function checkLevel(h){
+  while(h.xp>=xpNeed(h)){h.xp-=xpNeed(h);h.lvl++;beep(760,0.1,'sine');log('<b>'+esc(h.name)+'</b> reached <b>level '+h.lvl+'</b>! Power is now '+heroPower(h)+'.');}
+}
+function byId(id){for(var i=0;i<S.heroes.length;i++)if(S.heroes[i].id===id)return S.heroes[i];return null;}
+function log(t){S.log.unshift('<div class="logline">'+t+'</div>');if(S.log.length>60)S.log.pop();}
+function save(){S.last=Date.now();try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
 function load(){try{var d=localStorage.getItem(KEY);return d?JSON.parse(d):null;}catch(e){return null;}}
+// END OF PART 1
 // ---------- counsel (Strategist) ----------
 function counselList(){
   var out=[];
@@ -257,7 +379,7 @@ function counselList(){
   if(idle.length>workers+1)out.push([2,'Idle wardens, empty stations. Even a poor fighter gathers more than a bored one.']);
   var ar=S.heroes.filter(function(h){return h.lvl>=10;})[0];
   if(ar&&S.gold>=300*(ar.r+1))out.push([2,'<b>'+esc(ar.name)+'</b> is ascension-ready and the gold is available. Rebirth favors the decisive.']);
-  if(S.inv.length>=storageCap())out.push([3,'The Vault overflows — loot is being salvaged unread. Upgrade it or equip it.']);
+  if(S.inv.length>=storageCap())out.push([3,'The Vault overflows — loot is being salvaged unread. Upgrade it or equip it.');
   if(S.inv.some(function(x){return x.upg<S.bld.vault;})&&S.gold>200)out.push([1,'Unupgraded gear gathers dust while you carry coin.']);
   var lw=S.heroes.filter(function(h){return h.morale<30;});
   if(lw.length)out.push([2,'<b>'+esc(lw[0].name)+'</b> is one bad day from refusing orders. Rest is cheaper than mutiny.']);
@@ -552,9 +674,9 @@ function askEvent(ic,text,choices){
     var b=document.createElement('button');b.className='btn';b.textContent=c[0];
     b.onclick=function(){if(c[1]()!==false){closeModal('mEvent');save();render();}};
     btns.appendChild(b);});
-
   document.getElementById('mEvent').classList.add('open');
 }
+// END OF PART 2
 // ---------- top-down pixel battle arena ----------
 var BT={mid:null,raf:0,heroes:[],foes:[],parts:[],fxs:[],floats:[],scorch:[],done:false,result:false,boss:false,speed:1,stop:0,shake:0,shield:0,t0:0};
 var ctx=null;
@@ -1593,3 +1715,4 @@ document.getElementById('btnCounsel').onclick=function(){
 </script>
 </body>
 </html>
+
