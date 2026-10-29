@@ -1,4 +1,269 @@
 <!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>AETHERFALL — Wardens of the Starforge</title>
+<style>
+:root{
+  --bg:#0b0e1a; --panel:#141a2e; --panel2:#1b2340; --line:#2a3560;
+  --text:#e8ecf8; --dim:#8b94b8; --gold:#fbbf24; --gem:#67e8f9;
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+body{margin:0;background:radial-gradient(1200px 800px at 50% -10%,#1a2450 0%,var(--bg) 60%);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;}
+#err{position:fixed;left:8px;right:8px;bottom:8px;background:#5b1220;color:#ffd7dd;padding:10px 12px;border:1px solid #ff5b73;border-radius:10px;font-size:13px;display:none;z-index:999;}
+.screen{display:none;max-width:720px;margin:0 auto;padding:14px;padding-bottom:90px;}
+.screen.active{display:block;}
+h1{font-size:26px;margin:6px 0 2px;letter-spacing:1px;}
+h2{font-size:17px;margin:16px 0 8px;color:var(--gold);}
+.sub{color:var(--dim);font-size:13px;margin-bottom:10px;}
+.topbar{display:flex;gap:10px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px 14px;position:sticky;top:8px;z-index:5;flex-wrap:wrap;}
+.topbar .res{font-weight:700;font-size:15px;}
+.btn{background:linear-gradient(180deg,#3b4a86,#2a3560);border:1px solid #46579c;color:#fff;padding:10px 18px;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;}
+.btn:active{transform:scale(.97);}
+.btn.gold{background:linear-gradient(180deg,#b8860b,#8a6508);border-color:#fbbf24;}
+.btn.danger{background:linear-gradient(180deg,#7a2233,#551622);border-color:#c2455c;}
+.btn:disabled{opacity:.45;cursor:not-allowed;}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:10px;}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;}
+.heroCard{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:10px;cursor:pointer;position:relative;transition:transform .1s;}
+.heroCard:active{transform:scale(.97);}
+.heroCard.selected{outline:2px solid var(--gem);}
+.heroCard.busy{opacity:.55;}
+.heroName{font-weight:700;font-size:14px;}
+.heroMeta{font-size:12px;color:var(--dim);margin-top:2px;}
+.stars{color:var(--gold);font-size:12px;letter-spacing:1px;}
+.bar{height:7px;background:#0a0d18;border-radius:5px;overflow:hidden;margin-top:6px;}
+.bar>div{height:100%;border-radius:5px;}
+.moraleF{background:linear-gradient(90deg,#f472b6,#fb923c);}
+.xpF{background:linear-gradient(90deg,#4ade80,#22d3ee);}
+.progF{background:linear-gradient(90deg,#8b5cf6,#67e8f9);}
+.tabs{position:fixed;bottom:0;left:0;right:0;background:rgba(11,14,26,.96);border-top:1px solid var(--line);display:flex;z-index:10;backdrop-filter:blur(8px);}
+.tabs button{flex:1;background:none;border:none;color:var(--dim);padding:12px 4px 14px;font-size:11px;font-weight:700;cursor:pointer;}
+.tabs button.on{color:var(--gold);}
+.tabs .ic{display:block;font-size:20px;margin-bottom:2px;}
+.logline{font-size:13px;padding:6px 2px;border-bottom:1px solid #1c2440;color:#c6cde8;}
+.logline b{color:var(--gold);}
+.modal{position:fixed;inset:0;background:rgba(4,6,14,.8);display:none;align-items:center;justify-content:center;z-index:50;padding:16px;}
+.modal.open{display:flex;}
+.modalBox{background:var(--panel2);border:1px solid var(--line);border-radius:16px;padding:18px;max-width:420px;width:100%;max-height:80vh;overflow-y:auto;}
+.center{text-align:center;}
+.small{font-size:12px;color:var(--dim);}
+.reveal{font-size:60px;text-align:center;padding:20px;animation:pop .5s ease;}
+@keyframes pop{0%{transform:scale(.3);opacity:0}70%{transform:scale(1.15)}100%{transform:scale(1)}}
+.tag{display:inline-block;background:#232c52;border-radius:6px;padding:2px 8px;font-size:11px;margin:2px 2px 0 0;color:#aeb8dd;}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+.shake{animation:shake .3s;}
+#cv{width:100%;border-radius:12px;background:linear-gradient(#0a0d1f,#141a35);display:block;border:1px solid var(--line);}
+
+#scr-game{padding-bottom:150px;}
+#lobbyWrap{position:relative;margin-bottom:6px;}
+#missionMarkers{position:absolute;inset:0;pointer-events:none;}
+.mMark{position:absolute;pointer-events:auto;background:rgba(27,35,64,.95);border:1px solid var(--line);border-radius:10px;padding:5px 9px;font-size:12px;font-weight:700;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.5);}
+.mMark:active{transform:scale(.96);}
+.mMark.boss{border-color:#ff5b73;color:#ff8fa8;}
+.mMark.raid{border-color:#4a7dff;color:#8fc3ff;}
+#rosterStrip{position:fixed;right:4px;top:64px;bottom:200px;display:none;flex-direction:column;gap:6px;z-index:20;overflow-y:auto;}
+.rosterFace{position:relative;min-width:36px;height:36px;background:rgba(27,35,64,.95);border:1px solid var(--line);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;cursor:pointer;flex-shrink:0;}
+.rosterDot{position:absolute;bottom:2px;right:2px;width:8px;height:8px;border-radius:50%;border:1px solid #0a0d18;}
+#gateFab{position:fixed;left:12px;bottom:66px;width:52px;height:52px;border-radius:50%;background:linear-gradient(180deg,#3b4a86,#2a3560);border:1px solid #46579c;color:#fff;font-size:24px;cursor:pointer;z-index:20;box-shadow:0 4px 14px rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;}
+#gateFab:active{transform:scale(.94);}
+#ticker{position:fixed;left:0;right:0;bottom:54px;height:26px;background:rgba(11,14,26,.94);border-top:1px solid var(--line);overflow:hidden;display:none;z-index:9;}
+#tickerText{display:block;white-space:nowrap;font-size:12px;color:#8b94b8;line-height:26px;padding:0 10px;}
+.panel{display:none;position:fixed;left:8px;right:8px;bottom:118px;max-height:50vh;overflow-y:auto;background:rgba(20,26,46,.97);border:1px solid var(--line);border-radius:16px;padding:12px;z-index:30;box-shadow:0 10px 34px rgba(0,0,0,.65);}
+.panel.open{display:block;}
+.panel h2{margin-top:0;}
+#expCv{width:100%;height:300px;border-radius:12px;border:1px solid var(--line);display:block;background:#0a0d1a;}
+</style>
+</head>
+<body>
+<div id="err"></div>
+
+<!-- TITLE -->
+<div id="scr-title" class="screen active center" style="padding-top:60px;">
+  <div style="font-size:64px;">🌌</div>
+  <h1>AETHERFALL</h1>
+  <div class="sub">Wardens of the Starforge</div>
+  <p class="small" style="max-width:340px;margin:14px auto;">The sky-citadel of Veyra is falling. You are its last Warden. Summon heroes from across the shattered realms through the Starforge — but remember: every hero you call has a will of their own. They train, rest, argue, bond, and sometimes refuse your orders.</p>
+  <button class="btn gold" id="btnStart" style="font-size:18px;padding:14px 34px;">⚔️ Begin</button>
+  <div class="small" id="saveNote" style="margin-top:12px;"></div>
+</div>
+
+<!-- GAME -->
+<div id="scr-game" class="screen">
+  <div class="topbar">
+    <span class="res">💎 <span id="rGems">0</span></span>
+    <span class="res">🪙 <span id="rGold">0</span></span>
+    <span class="res">🌾 <span id="rFood">0</span></span>
+    <span class="res">🪵 <span id="rWood">0</span></span>
+    <span class="res">🪨 <span id="rStone">0</span></span>
+    <span class="res">🛡️ <span id="rPow">0</span></span>
+    <span style="flex:1"></span>
+    <button class="btn" id="btnExp" style="padding:6px 10px;font-size:12px;" title="Backup save">💾</button>
+    <button class="btn" id="btnImp" style="padding:6px 10px;font-size:12px;" title="Restore save">📥</button>
+    <button class="btn" id="btnHow" style="padding:6px 12px;font-size:12px;">?</button>
+  </div>
+
+  <h2 style="margin-bottom:4px;">🏰 Citadel of Veyra</h2>
+  <div class="sub" id="citFlavor">Wardens keep the light burning.</div>
+  <div id="lobbyWrap" style="display:none;">
+    <canvas id="lobbyCv" width="640" height="320" style="width:100%;border-radius:12px;border:1px solid var(--line);display:block;background:linear-gradient(#0a0d1f,#141a35);"></canvas>
+    <div id="missionMarkers" style="display:none;"></div>
+  </div>
+  <div class="small" style="margin:6px 2px 10px;">Tap a building to build or upgrade it. Idle wardens wander the courtyard. Markers on the courtyard edge open operations.</div>
+</div>
+
+<!-- FLOATING UI -->
+<div id="rosterStrip" style="display:none;"></div>
+<button id="gateFab" title="Starforge Gate" style="display:none;">🌀</button>
+<div id="ticker" style="display:none;"><span id="tickerText"></span></div>
+
+<!-- NAV -->
+<div class="tabs" id="navBar" style="display:none;">
+  <button data-panel="roster" class="on"><span class="ic">🛡️</span>Roster</button>
+  <button data-panel="work"><span class="ic">⛏️</span>Work</button>
+  <button data-panel="missions"><span class="ic">🗺️</span>Ops</button>
+  <button data-panel="chronicle"><span class="ic">📜</span>Log</button>
+  <button data-panel="orders"><span class="ic">👑</span>Orders</button>
+  <button data-panel="counsel"><span class="ic">🧠</span>Counsel</button>
+</div>
+
+<!-- PANELS -->
+<div class="panel" id="panel-roster">
+  <h2>🛡️ Wardens Roster</h2>
+  <div class="sub">Tap a hero for details. Heroes act on their own — watch their morale.</div>
+  <div style="display:flex;gap:8px;margin-bottom:10px;">
+    <select id="sortSel" style="flex:1;background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:8px;">
+      <option value="pow">Sort: Power</option><option value="r">Sort: Rarity</option><option value="lvl">Sort: Level</option><option value="name">Sort: Name</option>
+    </select>
+    <select id="filterSel" style="flex:1;background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:8px;">
+      <option value="all">All classes</option><option value="Blade">⚔️ Blade</option><option value="Arcanist">🔮 Arcanist</option><option value="Bulwark">🛡️ Bulwark</option><option value="Ranger">🏹 Ranger</option><option value="Oracle">✨ Oracle</option>
+    </select>
+  </div>
+  <div class="grid" id="heroGrid"></div>
+</div>
+
+<div class="panel" id="panel-work">
+  <h2>⛏️ Assignments</h2>
+  <div class="sub">Wardens who aren't cut out for combat still earn their keep. Workers gather every 8s. Low-morale workers may walk off the job.</div>
+  <div id="workList"></div>
+</div>
+
+<div class="panel" id="panel-missions">
+  <h2>🗺️ Operations Board</h2>
+  <div class="sub">Deploy up to 3 wardens. Success odds scale with team power vs. threat level. Low-morale heroes may refuse.</div>
+  <button class="btn" id="btnRefresh" style="width:100%;margin-bottom:10px;">🔄 Refresh board — 💎 10</button>
+  <div id="missionList"></div>
+</div>
+
+<div class="panel" id="panel-chronicle">
+  <h2>📜 Chronicle</h2>
+  <div id="logList" style="max-height:44vh;overflow-y:auto;"></div>
+</div>
+
+<div class="panel" id="panel-orders">
+  <h2>👑 Captain & Standing Orders</h2>
+  <div class="grid" id="citStats"></div>
+  <div class="card" id="captainCard" style="margin-top:10px;"><span class="small">No captain appointed.</span></div>
+  <h2>⚔️ Active Operations</h2>
+  <div id="activeList"></div>
+</div>
+
+<div class="panel" id="panel-counsel">
+  <h2>🧠 The Strategist</h2>
+  <div class="sub">A rare mind speaks plainly — counsel on the state of the citadel, odds-perfect suggestions, and veto power over reckless captains.</div>
+  <div class="center" style="margin:12px 0;"><button class="btn" id="btnCounsel">🧠 Ask the Strategist</button></div>
+  <div class="small">Requires a warden with the <b>Strategist</b> trait. They also speak up on their own from time to time.</div>
+</div>
+
+<!-- GATE MODAL -->
+<div class="modal" id="mGate"><div class="modalBox">
+  <div style="display:flex;justify-content:space-between;align-items:center;">
+    <h2 style="margin:0;">🌀 The Starforge Gate</h2>
+    <button class="btn" onclick="closeModal('mGate')" style="padding:4px 10px;font-size:12px;">✕</button>
+  </div>
+  <div class="sub">Summon heroes from across the shattered realms. Duplicates empower the existing hero.</div>
+  <div class="center" style="margin-top:8px;">
+    <div style="font-size:56px;" id="gateOrb">🔮</div>
+    <div class="small" id="gateHint">The gate hums, waiting.</div>
+    <div style="margin-top:12px;display:flex;gap:10px;justify-content:center;">
+      <button class="btn" id="btnPull1">Summon ×1<br><span class="small" style="color:#cfe3ff;">💎 50</span></button>
+      <button class="btn gold" id="btnPull10">Summon ×10<br><span class="small" style="color:#ffe9b0;">💎 450</span></button>
+    </div>
+    <div class="small" style="margin-top:10px;">Mythic ★5: 2% · Epic ★4: 8% · Rare ★3: 20% · Guaranteed ★4+ within 30 pulls.</div>
+  </div>
+  <div id="summonResults" style="margin-top:10px;"></div>
+</div></div>
+
+<!-- SAVE IO MODAL -->
+<div class="modal" id="mSaveIO"><div class="modalBox" id="sioBox"></div></div>
+
+<!-- EXPEDITION MODAL -->
+<div class="modal" id="mExpedition"><div class="modalBox" style="max-width:560px;">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+    <div id="expTitle" style="font-weight:800;font-size:15px;">Expedition</div>
+    <div><span id="expDay" class="tag">Day</span> <button class="btn" onclick="closeExpedition()" style="padding:4px 10px;font-size:12px;">✕</button></div>
+  </div>
+  <div id="expStatus" class="small" style="min-height:18px;margin-bottom:6px;">Traveling...</div>
+  <canvas id="expCv" width="520" height="300"></canvas>
+  <div id="expParty" style="margin-top:8px;text-align:center;"></div>
+  <div class="center" style="margin-top:10px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
+    <button class="btn" style="padding:8px 12px;font-size:13px;" onclick="EXP.cmd='advance';renderExpedition();">⚔️ Advance</button>
+    <button class="btn" style="padding:8px 12px;font-size:13px;" onclick="EXP.cmd='hold';renderExpedition();">🛡️ Hold</button>
+    <button class="btn" style="padding:8px 12px;font-size:13px;" onclick="EXP.cmd='rest';renderExpedition();">🔥 Camp</button>
+    <button class="btn" style="padding:8px 12px;font-size:13px;" onclick="EXP.cmd='scout';renderExpedition();">🧭 Scout</button>
+    <button class="btn danger" style="padding:8px 12px;font-size:13px;" onclick="retreatExpedition();">🏃 Retreat</button>
+  </div>
+</div></div>
+
+<!-- TALENT MODAL -->
+<div class="modal" id="mTalent"><div class="modalBox" id="talentBox" style="max-width:520px;"></div></div>
+
+<!-- HERO MODAL -->
+<div class="modal" id="mHero"><div class="modalBox" id="heroBox"></div></div>
+<!-- MISSION MODAL -->
+<div class="modal" id="mMission"><div class="modalBox" id="missionBox"></div></div>
+<!-- BATTLE MODAL -->
+<div class="modal" id="mBattle"><div class="modalBox" style="max-width:560px;">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+    <div id="bTitle" style="font-weight:800;">Battle</div>
+    <div><button class="btn" id="muteBtn" onclick="toggleMute()" style="padding:4px 10px;font-size:13px;">🔊</button>
+    <button class="btn" onclick="closeBattle()" style="padding:4px 10px;font-size:12px;">✕</button></div>
+  </div>
+  <canvas id="cv" width="520" height="300"></canvas>
+  <div id="bStatus" class="center" style="margin-top:8px;min-height:26px;"></div>
+  <div class="center"><button class="btn" id="bSpeed">⏩ 1×</button></div>
+</div></div>
+<!-- EVENT MODAL -->
+<div class="modal" id="mEvent"><div class="modalBox" id="eventBox"></div></div>
+<!-- HOW MODAL -->
+<div class="modal" id="mHow"><div class="modalBox">
+  <h2 style="margin-top:0;">How to Play</h2>
+  <div class="small" style="line-height:1.7;color:#c6cde8;">
+  • <b>Summon</b> heroes at the Gate with gems (earned from missions).<br>
+  • <b>Deploy</b> up to 3 wardens on operations. They fight on their own — power, morale, and bonds decide the outcome.<br>
+  • <b>Free will:</b> heroes train, nap, argue, and bond by themselves. Morale below 30 and they may refuse deployment. Greedy ones demand bonuses.<br>
+  • <b>Rest</b> a hero to restore morale (30s, unavailable for ops).<br>
+  • <b>Bonds:</b> heroes who get along grant +8% power when deployed together.<br>
+  • <b>Duplicates</b> from the gate feed XP into the existing hero.<br>
+  • <b>Loot:</b> missions drop equipment (⚔️ weapon, 💠 charm) — tap a hero to equip. Bosses always drop high-rarity loot.<br>
+  • <b>Skills:</b> in battle, heroes use class skills — Oracle heals, Arcanist blasts all foes, Bulwark shields the team, Ranger snipes, Blade combos.<br>
+  • <b>Bosses</b> appear from Threat T4+ (👹 tag): ~30% tougher, double-plus rewards.<br>
+  • <b>Lobby:</b> idle wardens wander the courtyard. Tap buildings to build/upgrade — Training (idle XP), Tavern (morale + bonds), Moon Garden (morale), Forge (loot chance). Costs gold from missions.<br>
+  • <b>Vault & Workshop:</b> all loot is stored here (cap grows per level; overflow is auto-salvaged for gold). Upgrade items up to the vault's level — each upgrade adds permanent PWR.<br>
+  • <b>Work:</b> assign non-combat wardens to the Farmstead 🌾, Lumber Camp 🪵, or Quarry ⛏️ — they gather every 8s (Calm workers gather double, Lazy ones nap). Rations scale with threat tier; building requires 🪵 wood and 🪨 stone.<br>
+  • <b>Raids:</b> from Threat T5+, the Hollow periodically attacks the citadel (🚨). Answer within 90s or a building is damaged — or pay 200 gold tribute to skip.<br>
+  • <b>Ascension:</b> wardens at Lv10+ can ascend for gold — reset to Lv1 with +15% permanent power per ✦. Dismiss unwanted wardens for salvage gold.<br>
+  • <b>Captain:</b> appoint a Lv10+ <b>Loyal, Calm, or Strategist</b> warden (👑 from their page — eligible traits show a 👑 on their card). They rest low-morale heroes, staff work stations, and auto-deploy ops and raids by your standing orders — their trait bends the rules.<br>
+  • <b>Strategist:</b> a rare mind. Offers counsel (🧠 button in the Lobby, or speaks up on their own), talks the Captain out of reckless fights and bad raid odds, and gives unbiased odds-perfect Suggest advice.<br>
+  • <b>Telegraphs:</b> red zones in battle show incoming strikes — high-morale wardens dodge out, low morale may freeze or panic.<br>
+  • <b>Suggest:</b> in any deploy screen, 💡 Suggest asks a leader (your first pick, else the Captain, else the strongest) to propose a party with reasons — personality-biased advice, never a command.<br>
+  • Progress saves automatically, even offline. Refresh anytime.</div>
+  <div class="center" style="margin-top:14px;"><button class="btn" onclick="closeModal('mHow')">Close</button>
+  <button class="btn danger" onclick="if(confirm('Wipe all progress?')){localStorage.removeItem(KEY);location.reload();}">Reset Save</button></div>
+</div></div>
+
+<script>
 window.addEventListener('error',function(e){var d=document.getElementById('err');d.style.display='block';d.textContent='⚠ '+e.message;});
 var KEY='aetherfall_save_v1';
 var RARITY=[
@@ -2089,6 +2354,8 @@ function endExpedition(victory){
     save();render();
   }
 }
+function $(id){return document.getElementById(id);}
+function flashMsg(m){log('⚠ '+esc(m));save();render();}
 // ---------- wiring ----------
 function closePanel(id){document.getElementById(id).classList.remove('open');}
 document.querySelectorAll('#navBar button').forEach(function(b){
@@ -2217,6 +2484,7 @@ function importSave(){
     showReport();
   }else{newGame();}
   document.getElementById('saveNote').textContent=d?'A saved citadel awaits — tap Begin to continue.':'A new citadel awaits.';
-})();</script>
+})();
+</script>
 </body>
 </html>
