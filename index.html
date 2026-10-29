@@ -11,7 +11,7 @@
 }
 *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
 body{margin:0;background:radial-gradient(1200px 800px at 50% -10%,#1a2450 0%,var(--bg) 60%);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;}
-#err{position:fixed;left:8px;right:8px;bottom:8px;background:#5b1220;color:#ffd7dd;padding:10px 12px;border:1px solid #ff5b73;border-radius:10px;font-size:13px;display:none;z-index:999;}
+#err{position:fixed;left:8px;right:8px;top:8px;background:#5b1220;color:#ffd7dd;padding:10px 12px;border:1px solid #ff5b73;border-radius:10px;font-size:13px;display:none;z-index:999;}
 .screen{display:none;max-width:720px;margin:0 auto;padding:14px;padding-bottom:90px;}
 .screen.active{display:block;}
 h1{font-size:26px;margin:6px 0 2px;letter-spacing:1px;}
@@ -1460,7 +1460,7 @@ function loopLobby(){
   if(!LB.open)return;
   var cv=document.getElementById('lobbyCv');if(!cv)return;
   if(cv.width!==cv.clientWidth||cv.height!==cv.clientHeight){cv.width=cv.clientWidth;cv.height=cv.clientHeight;}
-  var ctx=cv.getContext('2d');
+  ctx=cv.getContext('2d');
   ctx.setTransform(1,0,0,1,0,0);
   ctx.fillStyle='#0a0d1a';ctx.fillRect(0,0,cv.width,cv.height);
   var scale=Math.min(cv.width/640,cv.height/320);
