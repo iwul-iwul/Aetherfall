@@ -191,6 +191,7 @@ h2{font-size:17px;margin:16px 0 8px;color:var(--gold);}
       <button class="btn gold" id="btnPull10">Summon ×10<br><span class="small" style="color:#ffe9b0;">💎 450</span></button>
     </div>
     <div class="small" style="margin-top:10px;">Mythic ★5: 2% · Epic ★4: 8% · Rare ★3: 20% · Guaranteed ★4+ within 30 pulls.</div>
+    <div id="pityNote" class="small" style="margin-top:6px;color:#8fc3ff;"></div>
   </div>
   <div id="summonResults" style="margin-top:10px;"></div>
 </div></div>
@@ -429,7 +430,7 @@ function xpNeed(h){return 40*h.lvl;}
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
 
 function newGame(){
-  S={gems:320,gold:0,pity:0,heroes:[],missions:[],log:[],inv:[],bld:{train:1,tavern:1,garden:0,forge:0,vault:0},res:{food:50,wood:60,stone:60},work:{farm:[],wood:[],stone:[]},last:Date.now(),mtier:1,nextIdle:Date.now()+12000,nextWork:Date.now()+8000,nextRaid:0,pendingReport:[],captain:null,orders:{minOdds:0.5,restBelow:35,staffJobs:true,autoDeploy:true,raidPolicy:'defend'},nextCaptain:Date.now()+45000,nextCounsel:Date.now()+90000,winsTier:0,party:[]};
+  S={gems:320,gold:0,pity:0,heroes:[],missions:[],log:[],inv:[],bld:{train:1,tavern:1,garden:0,forge:0,vault:0},res:{food:50,wood:60,stone:60},work:{farm:[],wood:[],stone:[]},last:Date.now(),mtier:1,nextIdle:Date.now()+12000,nextWork:Date.now()+8000,nextRaid:0,pendingReport:[],captain:null,orders:{minOdds:0.5,restBelow:35,staffJobs:true,autoDeploy:true,raidPolicy:'defend'},nextCaptain:Date.now()+60000,nextCounsel:Date.now()+90000,winsTier:0,party:[]};
   for(var i=0;i<3;i++)S.heroes.push(mkHero(rint(0,1)));
   genMissions();
   log('You lit the Starforge for the first time. Three wardens answered the call.');
@@ -443,7 +444,12 @@ function mkHero(forceR){
 }
 function rollRarityIdx(){
   var pool=[];
-  for(var i=0;i<RARITY.length;i++){var w=RARITY[i].rate;if(S.pity>=29&&i<3)w=0;for(var j=0;j<w;j++)pool.push(i);}
+  for(var i=0;i<RARITY.length;i++){
+    var w=RARITY[i].rate*10;
+    if(S.pity>=29&&i<3)w=0;
+    if(i>=3&&S.pity>=15)w+=Math.round((S.pity-14)*6);
+    for(var j=0;j<w;j++)pool.push(i);
+  }
   var r=pool[Math.floor(Math.random()*pool.length)];
   S.pity=(r>=3)?0:S.pity+1;
   return r;
@@ -1596,7 +1602,7 @@ setInterval(function(){
     if(sts.length){var cl=counselList();if(cl.length)log('🧠 <b>'+esc(rnd(sts).name)+':</b> "'+cl[0][1]+'"');}
   }
   if(S.captain&&Date.now()>=S.nextCaptain){
-    S.nextCaptain=Date.now()+45000;
+    S.nextCaptain=Date.now()+60000;
     captainAct();
   }
   var ur=S.missions.filter(function(m){return m.raid&&m.party.length===0;})[0];
@@ -1619,6 +1625,16 @@ setInterval(function(){
         return true;
       });
     });
+    var mouths=S.heroes.filter(function(h){return h.busy===null;}).length;
+    if(mouths>0){
+      var bite=Math.ceil(mouths/2);
+      if(S.res.food>=bite)S.res.food-=bite;
+      else{
+        S.res.food=0;
+        S.heroes.forEach(function(h){if(h.busy===null)h.morale=Math.max(0,h.morale-2);});
+        if(!S.lastHungerLog||Date.now()-S.lastHungerLog>60000){S.lastHungerLog=Date.now();log('🍞 <b>The granaries are empty.</b> Idle wardens go hungry — morale is slipping. Staff the Farmstead.');}
+      }
+    }
   }
   var b=S.bld;
   S.heroes.forEach(function(h){
@@ -1744,6 +1760,8 @@ function render(){
       (running?'<div class="bar" style="margin-top:8px;"><div class="progF" style="width:'+Math.min(100,m.prog)+'%"></div></div><button class="btn" style="margin-top:8px;width:100%;" onclick="openBattle('+m.id+')">👁 Watch Mission (2D)</button>':(S.party.length?'<button class="btn gold" style="margin-top:8px;width:100%;" onclick="quickDeploy('+m.id+')">⚔️ Quick Deploy ('+S.party.length+')</button><button class="btn" style="margin-top:8px;width:100%;" onclick="openMission('+m.id+')">Adjust Party</button>':'<button class="btn" style="margin-top:8px;width:100%;" onclick="openMission('+m.id+')">Deploy Wardens</button>'))+'</div>';
   });
   document.getElementById('logList').innerHTML=S.log.join('')||'<div class="small">Nothing yet.</div>';
+  var pn=document.getElementById('pityNote');
+  if(pn){var gl=Math.max(1,30-(S.pity||0));pn.innerHTML='🔮 <b>'+gl+'</b> pull'+(gl===1?'':'s')+' to ★4+ guarantee'+(S.pity>=15?' · soft pity active':'');}
   renderWork();
   renderCaptain();
   renderRosterStrip();
