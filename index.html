@@ -95,6 +95,7 @@ h2{font-size:17px;margin:16px 0 8px;color:var(--gold);}
   <p class="small" style="max-width:340px;margin:14px auto;">The sky-citadel of Veyra is falling. You are its last Warden. Summon heroes from across the shattered realms through the Starforge — but remember: every hero you call has a will of their own. They train, rest, argue, bond, and sometimes refuse your orders.</p>
   <button class="btn gold" id="btnStart" style="font-size:18px;padding:14px 34px;">⚔️ Begin</button>
   <div class="small" id="saveNote" style="margin-top:12px;"></div>
+  <div class="small" style="margin-top:16px;color:#3a4569;">build 2026-10-30c</div>
 </div>
 
 <!-- GAME -->
@@ -288,9 +289,9 @@ h2{font-size:17px;margin:16px 0 8px;color:var(--gold);}
 </div></div>
 
 <script>
-function showErr(m){var d=document.getElementById('err');if(!d)return;d.style.display='block';d.textContent='⚠ '+m;}
+function showErr(m){var d=document.getElementById('err');if(!d)return;d.style.display='block';d.innerHTML='<span style="float:right;cursor:pointer;padding:0 4px;" onclick="this.parentNode.style.display=\'none\'">✕</span>⚠ '+esc(m);}
 window.addEventListener('error',function(e){showErr(e.message||'script error');});
-window.addEventListener('unhandledrejection',function(e){showErr('Promise: '+((e.reason&&e.reason.message)||e.reason));});
+window.addEventListener('unhandledrejection',function(e){var r=e.reason||{};var msg=(r.message||String(r));if(r.name==='AbortError'||/abort|cancel|load failed|network|interrupt/i.test(msg))return;showErr('Promise: '+msg);});
 var KEY='aetherfall_save_v1';
 var RARITY=[
  {n:'Common',s:1,c:'#9aa5b1',base:12,rate:40},
@@ -2710,7 +2711,7 @@ function importSave(){
     location.reload();
   };
 }
-if('serviceWorker' in navigator&&location.protocol.indexOf('http')===0){try{navigator.serviceWorker.register('sw.js').catch(function(){});}catch(e){}}
+if('serviceWorker' in navigator&&location.protocol.indexOf('http')===0&&location.search.indexOf('nosw')<0){try{navigator.serviceWorker.register('sw.js').catch(function(){});}catch(e){}}
 (function init(){try{
   var d=load();
   if(d&&d.heroes&&d.heroes.length){S=d;
