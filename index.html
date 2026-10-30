@@ -4,6 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>AETHERFALL — Wardens of the Starforge</title>
+<meta name="theme-color" content="#0b0e1a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Aetherfall">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
 <style>
 :root{
   --bg:#0b0e1a; --panel:#141a2e; --panel2:#1b2340; --line:#2a3560;
@@ -102,6 +110,7 @@ h2{font-size:17px;margin:16px 0 8px;color:var(--gold);}
     <button class="btn" id="btnExp" style="padding:6px 10px;font-size:12px;" title="Backup save">💾</button>
     <button class="btn" id="btnImp" style="padding:6px 10px;font-size:12px;" title="Restore save">📥</button>
     <button class="btn" id="btnHow" style="padding:6px 12px;font-size:12px;">?</button>
+    <button class="btn" id="ambBtn" style="padding:6px 10px;font-size:12px;" title="Ambient sound">🔇</button>
   </div>
 
   <h2 style="margin-bottom:4px;">🏰 Citadel of Veyra</h2>
@@ -126,6 +135,8 @@ h2{font-size:17px;margin:16px 0 8px;color:var(--gold);}
   <button data-panel="chronicle"><span class="ic">📜</span>Log</button>
   <button data-panel="orders"><span class="ic">👑</span>Orders</button>
   <button data-panel="counsel"><span class="ic">🧠</span>Counsel</button>
+  <button data-panel="achievements"><span class="ic">🏆</span>Trophies</button>
+  <button data-panel="trade"><span class="ic">🪙</span>Trade</button>
 </div>
 
 <!-- PANELS -->
@@ -174,6 +185,18 @@ h2{font-size:17px;margin:16px 0 8px;color:var(--gold);}
   <div class="sub">A rare mind speaks plainly — counsel on the state of the citadel, odds-perfect suggestions, and veto power over reckless captains.</div>
   <div class="center" style="margin:12px 0;"><button class="btn" id="btnCounsel">🧠 Ask the Strategist</button></div>
   <div class="small">Requires a warden with the <b>Strategist</b> trait. They also speak up on their own from time to time.</div>
+</div>
+
+<div class="panel" id="panel-achievements">
+  <h2>🏆 Trophies</h2>
+  <div class="sub">Deeds remembered by the citadel. Unlocks are permanent across saves and devices — they live inside your save code.</div>
+  <div id="achList" style="margin-top:10px;"></div>
+</div>
+
+<div class="panel" id="panel-trade">
+  <h2>🪙 Trading Post</h2>
+  <div class="sub">The caravan calls at Veyra — gear, instincts, bread, and coin for salvage.</div>
+  <div id="tradeBox" style="margin-top:10px;"></div>
 </div>
 
 <!-- GATE MODAL -->
@@ -430,7 +453,7 @@ function xpNeed(h){return 40*h.lvl;}
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
 
 function newGame(){
-  S={gems:320,gold:0,pity:0,heroes:[],missions:[],log:[],inv:[],bld:{train:1,tavern:1,garden:0,forge:0,vault:0},res:{food:50,wood:60,stone:60},work:{farm:[],wood:[],stone:[]},last:Date.now(),mtier:1,nextIdle:Date.now()+12000,nextWork:Date.now()+8000,nextRaid:0,pendingReport:[],captain:null,orders:{minOdds:0.5,restBelow:35,staffJobs:true,autoDeploy:true,raidPolicy:'defend'},nextCaptain:Date.now()+60000,nextCounsel:Date.now()+90000,winsTier:0,party:[]};
+  S={gems:320,gold:0,pity:0,heroes:[],missions:[],log:[],inv:[],bld:{train:1,tavern:1,garden:0,forge:0,vault:0},res:{food:50,wood:60,stone:60},work:{farm:[],wood:[],stone:[]},last:Date.now(),mtier:1,nextIdle:Date.now()+12000,nextWork:Date.now()+8000,nextRaid:0,pendingReport:[],captain:null,orders:{minOdds:0.5,restBelow:35,staffJobs:true,autoDeploy:true,raidPolicy:'defend'},nextCaptain:Date.now()+60000,nextCounsel:Date.now()+90000,winsTier:0,party:[],ach:{},st:{summons:0,wins:0,bossWon:0,raidWon:0,talents:0,asc:0}};
   for(var i=0;i<3;i++)S.heroes.push(mkHero(rint(0,1)));
   genMissions();
   log('You lit the Starforge for the first time. Three wardens answered the call.');
@@ -455,6 +478,7 @@ function rollRarityIdx(){
   return r;
 }
 function summon(n){
+  S.st.summons+=n;
   var res=[],bonusGiven=false;
   for(var i=0;i<n;i++){
     var h=mkHero();
@@ -502,6 +526,7 @@ function deploy(mid,hids,quiet){
   m.party=hids;
   for(var k=0;k<hids.length;k++){var h=byId(hids[k]);h.busy=mid;if(h.trait==='Hot-headed')h._spark=true;}
   log('Deployed on <b>'+esc(m.name)+'</b>: '+hids.map(function(x){return esc(byId(x).name);}).join(', ')+'.');
+  buzz(30);
   closeModal('mMission');
   if(!quiet){
     (function(mission){
@@ -518,13 +543,14 @@ function resolveMission(m,silent){
   if(m.raid){
     var rn=S.heroes.filter(function(h){return h.busy===m.id;});
     if(ok){
-      S.gems+=m.gems;S.gold+=m.gold;
+      S.gems+=m.gems;S.gold+=m.gold;S.st.wins++;S.st.raidWon++;if(m.boss)S.st.bossWon++;
       rn.forEach(function(h){h.xp+=40*m.tier;h.busy=null;h.morale=Math.min(100,h.morale+8);checkLevel(h);});
       log('🛡️ <b>The citadel holds!</b> The raid was repelled. 💎+'+m.gems+' 🪙+'+m.gold+'.');
     }else{
       rn.forEach(function(h){h.busy=null;h.morale=Math.max(0,h.morale-14);});
       S.gold=Math.max(0,S.gold-80);
       damageBld();
+      if(m.mod==='siege'){damageBld();log('🏰 The siege engines broke a second building!');}
       log('💀 <b>The raid succeeded.</b> The Hollow broke through. (-80 🪙, building damaged)');
     }
     var ri=S.missions.indexOf(m);if(ri>=0)S.missions.splice(ri,1);
@@ -532,6 +558,7 @@ function resolveMission(m,silent){
   }
   var names=S.heroes.filter(function(h){return h.busy===m.id;});
   if(ok){
+    S.st.wins++;if(m.boss)S.st.bossWon++;
     var extra=0;
     for(var i=0;i<names.length;i++){var h=names[i];
       h.xp+=30*m.tier;h.busy=null;h.morale=Math.min(100,h.morale+6);
@@ -556,7 +583,7 @@ function checkLevel(h){
 function byId(id){for(var i=0;i<S.heroes.length;i++)if(S.heroes[i].id===id)return S.heroes[i];return null;}
 function toggleMute(){MUTE=!MUTE;var btn=$('muteBtn');if(btn)btn.textContent=MUTE?'🔇':'🔊';}
 function log(t){S.log.unshift('<div class="logline">'+t+'</div>');if(S.log.length>60)S.log.pop();}
-function save(){S.last=Date.now();try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+function save(){S.last=Date.now();checkAch();try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
 function load(){try{var d=localStorage.getItem(KEY);return d?JSON.parse(d):null;}catch(e){return null;}}
 
 // ---------- talents ----------
@@ -589,7 +616,7 @@ function buyTalent(hid,branch,node){
     var prev=h.talents[branch][node-1]||0;
     if(prev<1){flashMsg('Unlock previous node first.');return;}
   }
-  h.talents[branch][node]=1;
+  h.talents[branch][node]=1;S.st.talents++;
   log('✨ <b>'+esc(h.name)+'</b> unlocked <b>'+nodes[node].n+'</b>.');
   save();render();
 }
@@ -833,12 +860,13 @@ function damageBld(){
 }
 function startRaid(){
   var tier=S.mtier;
-  var m={id:uid++,name:'Defense of Veyra',ic:'⚔️',tier:tier,boss:tier>=8,raid:true,req:Math.round(30*tier*1.5),dur:60,prog:0,party:[],done:false,gems:30+tier*12,gold:60+tier*20,started:Date.now()};
+  var mod=rnd(RAIDMODS);
+  var m={id:uid++,name:mod.n+': '+rnd(RAIDNAMES),ic:mod.ic,tier:tier,boss:tier>=8,raid:true,req:Math.round(30*tier*1.5*mod.req),dur:60,prog:0,party:[],done:false,gems:Math.round((30+tier*12)*mod.g),gold:Math.round((60+tier*20)*mod.g),started:Date.now(),mod:mod.id};
   S.missions.unshift(m);
-  log('🚨 <b>RAID!</b> The Hollow assaults the citadel!');
+  log('🚨 <b>RAID!</b> '+m.ic+' <b>'+esc(m.name)+'</b> — '+mod.d);
   beep(196,0.3,'sawtooth');beep(147,0.4,'sawtooth',0.03);
   if(S.captain&&captainRaid(m))return;
-  askEvent('🚨','<b>The Hollow is attacking the citadel!</b><br><br>Threat T'+tier+' — required power ~'+m.req+'.<br><br>If the raid goes unanswered for 90 seconds, a building will be damaged.',[
+  askEvent('🚨','<b>'+m.ic+' '+esc(m.name)+'</b><br><br>'+mod.d+'<br><br>Threat T'+tier+' — required power ~'+m.req+' · reward 💎'+m.gems+' 🪙'+m.gold+'.<br><br>If the raid goes unanswered for '+(mod.id==='frenzy'?45:90)+' seconds, a building will be damaged.',[
     ['⚔️ To arms!',function(){openMission(m.id);return true;}],
     ['🪙 Pay tribute (200 gold)',function(){
       if(S.gold<200){var e=document.getElementById('rGold');e.parentElement.classList.add('shake');setTimeout(function(){e.parentElement.classList.remove('shake');},350);return false;}
@@ -877,7 +905,7 @@ function offlineResolve(){
         names.forEach(function(h){h.xp+=30*m.tier;h.busy=null;h.morale=Math.min(100,h.morale+6);checkLevel(h);});
         log('While you were away, <b>'+esc(m.name)+'</b> ended in <b style="color:#4ade80;">SUCCESS</b>.');}
       else{names.forEach(function(h){h.busy=null;h.morale=Math.max(0,h.morale-12);});
-        if(m.raid){S.gold=Math.max(0,S.gold-80);damageBld();rep.push('💀 The raid succeeded while you were away — a building was damaged.');}
+        if(m.raid){S.gold=Math.max(0,S.gold-80);damageBld();if(m.mod==='siege')damageBld();rep.push('💀 The raid succeeded while you were away — a building was damaged.');}
         else rep.push('❌ <b>'+esc(m.name)+'</b> failed.');
         log('While you were away, <b>'+esc(m.name)+'</b> <b style="color:#f87171;">FAILED</b>.');}
       S.missions.splice(i,1);
@@ -1363,7 +1391,7 @@ function loopBattle(){
   }
   ctx.fillStyle='#8b94b8';ctx.font='10px sans-serif';ctx.textAlign='left';ctx.fillText('WARDENS',10,32);
   if(!m&&!BT.done){BT.done=true;
-    if(BT.result){beep(523,0.1,'sine');setTimeout(function(){beep(659,0.1,'sine');},110);setTimeout(function(){beep(784,0.2,'sine');},220);}
+    if(BT.result){beep(523,0.1,'sine');setTimeout(function(){beep(659,0.1,'sine');},110);setTimeout(function(){beep(784,0.2,'sine');},220);buzz([40,60,40]);}
     else beep(185,0.35,'sawtooth',0.05);
     document.getElementById('bStatus').innerHTML=BT.result?
       '<b style="color:#4ade80;font-size:22px;">🏆 VICTORY</b> <span class="small">— rewards claimed</span>':
@@ -1536,6 +1564,7 @@ function loopLobby(){
   var hr=new Date().getHours();
   var dark=hr>=20||hr<5?0.28:(hr>=17||hr<8?0.12:0);
   if(dark>0){ctx.fillStyle='rgba(6,8,24,'+dark+')';ctx.fillRect(0,0,640,300);}
+  drawSeason(Date.now()/1000,640,300);
   LB.raf=requestAnimationFrame(loopLobby);
 }
 function openBld(key){
@@ -1606,7 +1635,7 @@ setInterval(function(){
     captainAct();
   }
   var ur=S.missions.filter(function(m){return m.raid&&m.party.length===0;})[0];
-  if(ur&&Date.now()>(ur.started+90000)){
+  if(ur&&Date.now()>(ur.started+(ur.mod==='frenzy'?45000:90000))){
     var ui=S.missions.indexOf(ur);if(ui>=0)S.missions.splice(ui,1);
     damageBld();
     log('⚠️ The raid went unanswered. The Hollow ransacked the citadel.');
@@ -1648,6 +1677,7 @@ setInterval(function(){
     var fr=S.heroes.filter(function(h){return h.busy===null&&Date.now()>h.restUntil;});
     if(fr.length>1){var p1=rnd(fr),p2=rnd(fr);
       if(p1.id!==p2.id){addBond(p1,p2,8);log('🍻 '+esc(p1.name)+' and '+esc(p2.name)+' shared a round at the tavern. (bond +8)');}}}
+  if(Math.random()<0.006)log('📖 '+rnd(TALES));
   idleTick();
   save();
   render();
@@ -1746,7 +1776,7 @@ function render(){
   list.forEach(function(h){
     var resting=Date.now()<h.restUntil;
     hg.innerHTML+='<div class="heroCard'+(h.busy!==null?' busy':'')+'" onclick="openHero('+h.id+')">'+
-      '<div class="heroName" style="color:'+RARITY[h.r].c+'">'+(S.captain===h.id?'👑 ':'')+(h.asc?'<span style="color:#fbbf24;">✦'+h.asc+'</span> ':'')+CLASSES[h.cls].ic+' '+esc(h.name)+'</div>'+
+      '<div class="heroName" style="color:'+RARITY[h.r].c+'">'+(S.captain===h.id?'👑 ':'')+(h.asc?'<span style="color:#fbbf24;">✦'+h.asc+'</span> ':'')+CLASSES[h.cls].ic+' '+esc(h.name)+titleChip(h)+'</div>'+
       '<div class="stars">'+stars(h.r)+'</div>'+
       '<div class="heroMeta">'+esc(h.cls)+' · Lv'+h.lvl+' · PWR '+heroPower(h)+'</div>'+
       '<div class="heroMeta">'+esc(h.trait)+(S.captain!==h.id&&QUAL.indexOf(h.trait)>=0?' · <span style="color:#8fc3ff;" title="captain-eligible">👑</span>':'')+(h.busy!==null?(typeof h.busy==='string'?' · <b style="color:#d9a441;">at work '+JOBS[h.busy].ic+'</b>':' · <b style="color:#8b5cf6;">on op</b>'):(resting?' · <b style="color:#4ade80;">resting</b>':''))+'</div>'+
@@ -1762,6 +1792,9 @@ function render(){
   document.getElementById('logList').innerHTML=S.log.join('')||'<div class="small">Nothing yet.</div>';
   var pn=document.getElementById('pityNote');
   if(pn){var gl=Math.max(1,30-(S.pity||0));pn.innerHTML='🔮 <b>'+gl+'</b> pull'+(gl===1?'':'s')+' to ★4+ guarantee'+(S.pity>=15?' · soft pity active':'');}
+  var achEl=document.getElementById('achList');
+  if(achEl){var dn=new Date();achEl.innerHTML=ACH.map(function(a){var un=S.ach[a.id];return '<div class="card" style="margin-bottom:6px;'+(un?'':'opacity:.55;')+'">'+(un?'🏆 ':'🔒 ')+'<b>'+esc(a.n)+'</b>'+(un?' <span class="small" style="color:#4ade80;">'+un.toLocaleDateString()+'</span>':'')+'<div class="small">'+a.d+'</div></div>';}).join('');}
+  renderTrade();
   renderWork();
   renderCaptain();
   renderRosterStrip();
@@ -1777,7 +1810,7 @@ function openHero(id){
   document.getElementById('heroBox').innerHTML=
     '<div class="center"><div style="font-size:44px;">'+CLASSES[h.cls].ic+'</div>'+
     '<h2 style="margin:4px 0;color:'+RARITY[h.r].c+'">'+esc(h.name)+'</h2>'+
-    '<div class="stars">'+stars(h.r)+'</div>'+
+    '<div class="stars">'+stars(h.r)+'</div>'+titlePicker(h)+
     '<div class="small">'+RARITY[h.r].n+' '+esc(h.cls)+' — '+CLASSES[h.cls].desc+'</div></div>'+
     '<div style="margin-top:12px;font-size:14px;line-height:1.8;">'+
     '<b>Level:</b> '+h.lvl+' · <b>Power:</b> '+heroPower(h)+'<br>'+
@@ -1828,7 +1861,7 @@ function ascendHero(id){
   var h=byId(id);if(!h||h.lvl<10)return;
   var cost=300*(h.r+1)*((h.asc||0)+1);
   if(S.gold<cost){var e=document.getElementById('rGold');e.parentElement.classList.add('shake');setTimeout(function(){e.parentElement.classList.remove('shake');},350);return;}
-  S.gold-=cost;h.asc=(h.asc||0)+1;h.lvl=1;h.xp=0;h.morale=Math.min(100,h.morale+20);
+  S.gold-=cost;h.asc=(h.asc||0)+1;S.st.asc++;h.lvl=1;h.xp=0;h.morale=Math.min(100,h.morale+20);
   beep(523,0.12,'sine');beep(659,0.12,'sine');beep(784,0.2,'sine');
   log('🌟 <b>'+esc(h.name)+'</b> ascended to <b>✦'+h.asc+'</b>! Reborn at Lv1 with deepened potential.');
   save();openHero(id);render();
@@ -1985,6 +2018,7 @@ function doPull(n){
     var h=r.h,rr=RARITY[h.r];
     setTimeout(function(){
       beep(280+h.r*130,0.14,'triangle',0.045);
+      buzz(15);
       var d=document.createElement('div');
       d.className='card center reveal';
       d.style.borderColor=rr.c;d.style.boxShadow='0 0 18px '+rr.c+'55';
@@ -2374,6 +2408,187 @@ function endExpedition(victory){
 }
 function $(id){return document.getElementById(id);}
 function flashMsg(m){log('⚠ '+esc(m));save();render();}
+
+// ---------- content: achievements / ambient / tales ----------
+var ACH=[
+ {id:'caller',n:'Gate Caller',d:'Summon 10 wardens at the Starforge.',k:function(){return S.st.summons>=10;}},
+ {id:'five',n:'Five As One',d:'Field a roster of 5 wardens.',k:function(){return S.heroes.length>=5;}},
+ {id:'dozen',n:'A Full Roster',d:'Field a roster of 12 wardens.',k:function(){return S.heroes.length>=12;}},
+ {id:'veteran',n:'Veteran Commander',d:'Win 10 operations.',k:function(){return S.st.wins>=10;}},
+ {id:'bossslayer',n:'Boss Slayer',d:'Defeat 3 boss missions.',k:function(){return S.st.bossWon>=3;}},
+ {id:'raidshield',n:'Shield of Veyra',d:'Repel 3 Hollow raids.',k:function(){return S.st.raidWon>=3;}},
+ {id:'ascendant',n:'Ascendant',d:'Ascend a warden at the Starforge.',k:function(){return S.st.asc>=1;}},
+ {id:'talented',n:'Deep Roots',d:'Unlock 10 talents across your wardens.',k:function(){return S.st.talents>=10;}},
+ {id:'architect',n:'Master Architect',d:'Raise any building to level 5.',k:function(){return Object.keys(S.bld).some(function(x){return S.bld[x]>=5;});}},
+ {id:'magnate',n:'Citadel Magnate',d:'Hold 2,000 gold at once.',k:function(){return S.gold>=2000;}},
+ {id:'gemlord',n:'Gemlord',d:'Hold 1,000 gems at once.',k:function(){return S.gems>=1000;}},
+ {id:'threat6',n:'Into the Dark',d:'Reach threat tier 6.',k:function(){return S.mtier>=6;}}
+];
+var TALES=['The first Warden carved the Starforge from a falling star. The gate remembers their name; no one else does.','Below Veyra, the Hollow hums in a language older than stone. Wardens say it sounds like counting.','A warden once traded three days of memories for a map of the Glass Dunes. The map was blank. It was worth it.','The Moon Garden only blooms when someone in the citadel is truly at peace. It blooms less every year.','The Hollow does not hate the light. It is simply very, very hungry.','Veyra\'s spires sink a finger\'s width each winter. The elders do not speak of it.','Every duplicate that dissolves into starlight returns to the gate, where it waits to be called again.','A tavern song says the Pale Matriarch was a Warden once. The Wardens do not sing it twice.','The ravens of the Ashfall Badlands fly backwards through ember-storms, to keep their eyes clear.','The Oracle \u039ewen foresaw the citadel\'s fall and stayed anyway. That is what wardens do.'];
+function toast(msg){
+  var d=document.createElement('div');
+  d.textContent=msg;
+  d.style.cssText='position:fixed;top:44px;left:50%;transform:translateX(-50%);background:#1b2340;border:1px solid #fbbf24;color:#ffd75e;padding:10px 16px;border-radius:12px;font-weight:700;font-size:13px;z-index:9999;box-shadow:0 6px 20px rgba(0,0,0,.5);transition:opacity .6s;pointer-events:none;';
+  document.body.appendChild(d);
+  setTimeout(function(){d.style.opacity='0';},2600);
+  setTimeout(function(){if(d.parentNode)d.remove();},3400);
+}
+function checkAch(){
+  if(!S)return;
+  var now=Date.now();
+  for(var i=0;i<ACH.length;i++){var a=ACH[i];
+    if(!S.ach[a.id]&&a.k()){
+      S.ach[a.id]=now;
+      log('🏆 <b>Achievement unlocked:</b> '+esc(a.n)+' — '+a.d);
+      toast('🏆 '+a.n);
+      beep(523,0.1,'sine');setTimeout(function(){beep(659,0.1,'sine');},110);setTimeout(function(){beep(784,0.16,'sine');},220);
+    }}
+}
+// ---------- content: ambient audio ----------
+var AMB={on:false,osc:[],timer:0};
+function toggleAmbient(){
+  AMB.on=!AMB.on;
+  var b=document.getElementById('ambBtn');if(b)b.textContent=AMB.on?'🎵':'🔇';
+  if(AMB.on)startAmbient();else stopAmbient();
+}
+function startAmbient(){
+  try{
+    if(!AC)AC=new (window.AudioContext||window.webkitAudioContext)();
+    if(AMB.osc.length)return;
+    [110,164.81,220].forEach(function(f,i){
+      var o=AC.createOscillator(),g=AC.createGain();
+      o.type='sine';o.frequency.value=f;o.detune.value=(i-1)*5;
+      g.gain.value=0;g.gain.linearRampToValueAtTime(0.011,AC.currentTime+3);
+      o.connect(g);g.connect(AC.destination);o.start();
+      AMB.osc.push({o:o,g:g});
+    });
+    AMB.timer=setInterval(function(){
+      if(MUTE||!AMB.on)return;
+      var notes=[523.25,587.33,659.25,783.99,880];
+      beep(notes[Math.floor(Math.random()*notes.length)],1.8,'sine',0.012);
+    },9000);
+  }catch(e){}
+}
+function stopAmbient(){
+  AMB.osc.forEach(function(x){try{x.g.gain.linearRampToValueAtTime(0,AC.currentTime+1);setTimeout(function(){try{x.o.stop();}catch(e){}},1300);}catch(e){}});
+  AMB.osc=[];clearInterval(AMB.timer);
+}
+
+
+// ---------- content: raid modifiers & seasonal decor ----------
+var RAIDMODS=[
+ {id:'swarm',n:'Swarm',ic:'🌊',d:'Numerous but fragile. Rewards +50%, required power -15%.',req:0.85,g:1.5},
+ {id:'elite',n:'Elite Warband',ic:'💀',d:'Fewer, deadlier. Rewards +100%, required power +35%.',req:1.35,g:2.0},
+ {id:'siege',n:'Siege',ic:'🏰',d:'They came for the walls. If they win, a second building is damaged.',req:1.1,g:1.25},
+ {id:'frenzy',n:'Blood Frenzy',ic:'🩸',d:'They strike fast — the unanswered timer is halved.',req:1.0,g:1.5}
+];
+var RAIDNAMES=['Defense of Veyra','Assault on the North Rampart','The Hollow Tide','Night Siege of Veyra','Siege at Starfall Bridge'];
+function drawSeason(t,w,h){
+  var mn=new Date().getMonth()+1,dy=new Date().getDate(),i,x,y;
+  if(mn===12||(mn===1&&dy<=6)){
+    ctx.fillStyle='rgba(240,246,255,0.8)';
+    for(i=0;i<42;i++){x=(i*97+t*(10+i%4)*3)%w;y=(i*61+t*(14+i%3)*4)%h;ctx.fillRect(x,y,2,2);}
+    if((mn===12&&dy>=26)||(mn===1&&dy<=2)){
+      for(i=0;i<5;i++){var fx=80+i*120,fy=40+((i*53)%90);
+        ctx.fillStyle='rgba(255,220,120,'+(0.5+0.4*Math.sin(t*5+i))+')';
+        ctx.fillRect(fx-4,fy,2,2);ctx.fillRect(fx+4,fy,2,2);ctx.fillRect(fx,fy-4,2,2);ctx.fillRect(fx,fy+4,2,2);ctx.fillRect(fx,fy,3,3);
+      }
+    }
+  }else if(mn===10){
+    for(i=0;i<16;i++){x=(i*131)%w;y=h-((i*47+t*16)%h);
+      ctx.fillStyle='rgba(255,'+(110+(i*37)%120)+',40,'+(0.25+0.3*Math.sin(t*2+i))+')';
+      ctx.fillRect(x,y,2,3);}
+  }else if(mn===4){
+    for(i=0;i<24;i++){x=(i*83+t*(8+i%5)*3)%w;y=(i*149+t*(6+i%3)*4)%h;
+      ctx.fillStyle='rgba(255,183,197,0.7)';
+      ctx.fillRect(x,y,3,2);}
+  }
+}
+
+
+// ---------- content: hero titles (cosmetics) ----------
+var TITLES={
+ caller:{n:'Gate Caller',c:'#67e8f9'},
+ five:{n:'Five As One',c:'#8fc3ff'},
+ dozen:{n:'Rosterlord',c:'#a5b4fc'},
+ veteran:{n:'Veteran',c:'#4ade80'},
+ bossslayer:{n:'Mawbane',c:'#ff8fa8'},
+ raidshield:{n:'Shield',c:'#60a5fa'},
+ ascendant:{n:'Ascendant',c:'#fbbf24'},
+ talented:{n:'Deep-Rooted',c:'#c084fc'},
+ architect:{n:'Architect',c:'#d9a441'},
+ magnate:{n:'Magnate',c:'#f0c060'},
+ gemlord:{n:'Gemlord',c:'#e879f9'},
+ threat6:{n:'Darkwalker',c:'#a78bfa'}
+};
+function titleChip(h){
+  if(!h.title||!TITLES[h.title]||!S.ach[h.title])return '';
+  var t=TITLES[h.title];
+  return ' <span style="font-size:9px;color:'+t.c+';border:1px solid '+t.c+';border-radius:6px;padding:0 4px;vertical-align:middle;" title="'+t.n+'">'+t.n+'</span>';
+}
+function titlePicker(h){
+  var un=Object.keys(TITLES).filter(function(k){return S.ach[k];});
+  if(!un.length)return '';
+  var cur=h.title&&TITLES[h.title]&&S.ach[h.title]?'<div style="color:'+TITLES[h.title].c+';font-weight:700;font-size:13px;margin-top:2px;">'+TITLES[h.title].n+'</div>':'';
+  return cur+'<div style="margin-top:6px;"><span class="small">Title: </span><select onchange="setTitle('+h.id+',this.value)" style="background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:4px;font-size:12px;">'+
+    '<option value="">\u2014 none \u2014</option>'+
+    un.map(function(k){return '<option value="'+k+'"'+(h.title===k?' selected':'')+'>'+TITLES[k].n+'</option>';}).join('')+'</select></div>';
+}
+function setTitle(hid,t){
+  var h=byId(hid);if(!h)return;
+  if(t)h.title=t;else delete h.title;
+  log('\u2728 <b>'+esc(h.name)+'</b> now bears the title \u201c'+(t?TITLES[t].n:'none')+'\u201d.');
+  save();openHero(hid);render();
+}
+// ---------- content: trading post ----------
+var TRADESEL=0;
+function renderTrade(){
+  var el=document.getElementById('tradeBox');if(!el||!S)return;
+  var idle=S.heroes.filter(function(h){return h.busy===null;});
+  if(!TRADESEL||!idle.some(function(h){return h.id===TRADESEL;}))TRADESEL=idle.length?idle[0].id:0;
+  var cost=150+S.mtier*80;
+  var html='<div class="card"><b>🎁 Commission Gear</b><div class="small">Caravan smiths forge gear fit for threat T'+S.mtier+'. Vault storage applies.</div>'+
+    '<button class="btn gold" style="width:100%;margin-top:8px;" onclick="buyGear()">Commission \u2014 🪙 '+cost+'</button></div>';
+  html+='<div class="card"><b>🔮 Retrain Instinct</b><div class="small">The caravan reader rewrites a warden\u2019s trait. Personality changes \u2014 levels and bonds stay.</div>';
+  html+=idle.length?('<select onchange="TRADESEL=parseInt(this.value)" style="width:100%;background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:8px;margin-top:8px;">'+idle.map(function(x){return '<option value="'+x.id+'"'+(x.id===TRADESEL?' selected':'')+'>'+esc(x.name)+' \u00b7 '+esc(x.trait)+'</option>';}).join('')+'</select>'+
+    '<button class="btn" style="width:100%;margin-top:8px;" onclick="retrainTrait()">Retrain \u2014 💎 25</button>'):'<div class="small">No idle wardens right now.</div>';
+  html+='</div>';
+  html+='<div class="card"><b>🌾 Buy Provisions</b><div class="small">The caravan always has bread. +50 food, straight to the granary.</div><button class="btn" style="width:100%;margin-top:8px;" onclick="buyFood()">Buy \u2014 🪙 100</button></div>';
+  html+='<div class="card"><b>🪙 Sell Salvage</b><div class="small">Unload excess gear. Price scales with rarity and upgrades.</div>';
+  html+=S.inv.length?S.inv.map(function(x,i){var p=20*(x.r+1)+12*x.upg;return '<div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--line);padding:6px 0;"><span style="font-size:12px;color:'+RARITY[x.r].c+'">'+esc(x.name)+(x.upg?' +'+x.upg:'')+'</span><button class="btn" style="padding:4px 10px;font-size:11px;" onclick="sellItem('+i+')">Sell 🪙'+p+'</button></div>';}).join(''):'<div class="small">The vault is empty \u2014 nothing to sell.</div>';
+  html+='</div>';
+  el.innerHTML=html;
+}
+function tpShake(id){var e=document.getElementById(id);if(!e)return;e.parentElement.classList.add('shake');setTimeout(function(){e.parentElement.classList.remove('shake');},350);}
+function buyGear(){
+  var cost=150+S.mtier*80;
+  if(S.gold<cost){tpShake('rGold');return;}
+  S.gold-=cost;addLoot(mkItem(S.mtier,false),S.mtier);save();render();
+}
+function retrainTrait(){
+  var h=byId(TRADESEL);if(!h){return;}
+  if(S.gems<25){tpShake('rGems');return;}
+  var keys=Object.keys(TRAITS).filter(function(t){return t!==h.trait;});
+  var nt=rnd(keys);
+  S.gems-=25;h.trait=nt;
+  log('🔮 <b>'+esc(h.name)+'</b> sat with the caravan reader. They return... different. ('+esc(nt)+': '+TRAITS[nt].d+')');
+  save();render();
+}
+function buyFood(){
+  if(S.gold<100){tpShake('rGold');return;}
+  S.gold-=100;S.res.food+=50;
+  log('🌾 Bought provisions from the caravan. (+50 food)');
+  save();render();
+}
+function sellItem(i){
+  var it=S.inv[i];if(!it)return;
+  var p=20*(it.r+1)+12*it.upg;
+  S.inv.splice(i,1);S.gold+=p;
+  log('🪙 Sold <b style="color:'+RARITY[it.r].c+'">'+esc(it.name)+'</b> to the caravan for '+p+' gold.');
+  save();render();
+}
+
+function buzz(p){try{if(navigator.vibrate)navigator.vibrate(p);}catch(e){}}
 // ---------- wiring ----------
 function closePanel(id){document.getElementById(id).classList.remove('open');}
 document.querySelectorAll('#navBar button').forEach(function(b){
@@ -2388,6 +2603,7 @@ document.getElementById('gateFab').onclick=function(){document.getElementById('m
 document.getElementById('btnExp').onclick=exportSave;
 document.getElementById('btnImp').onclick=importSave;
 document.getElementById('btnHow').onclick=function(){document.getElementById('mHow').classList.add('open');};
+document.getElementById('ambBtn').onclick=toggleAmbient;
 document.getElementById('btnPull1').onclick=function(){doPull(1);};
 document.getElementById('btnPull10').onclick=function(){doPull(10);};
 document.getElementById('btnStart').onclick=function(){
@@ -2399,6 +2615,9 @@ document.getElementById('btnStart').onclick=function(){
   document.getElementById('missionMarkers').style.display='block';
   document.getElementById('gateFab').style.display='flex';
   document.getElementById('ticker').style.display='block';
+  try{if(navigator.wakeLock)navigator.wakeLock.request('screen').catch(function(){});}catch(e){}
+  try{if(screen.orientation&&screen.orientation.lock)screen.orientation.lock('portrait').catch(function(){});}catch(e){}
+  startAmbient();
   startLobby();
   render();};
 document.getElementById('lobbyCv').addEventListener('click',function(e){
@@ -2479,6 +2698,7 @@ function importSave(){
     location.reload();
   };
 }
+if('serviceWorker' in navigator&&location.protocol.indexOf('http')===0){try{navigator.serviceWorker.register('sw.js').catch(function(){});}catch(e){}}
 (function init(){
   var d=load();
   if(d&&d.heroes&&d.heroes.length){S=d;
@@ -2497,10 +2717,16 @@ function importSave(){
     S.nextCounsel=S.nextCounsel||0;
     if(S.winsTier===undefined)S.winsTier=0;
     S.party=(S.party||[]).filter(function(id){return byId(id);});
+    S.ach=S.ach||{};S.st=S.st||{};['summons','wins','bossWon','raidWon','talents','asc'].forEach(function(k){if(S.st[k]===undefined)S.st[k]=0;});
     offlineResolve();log('You return to the citadel. The wardens kept watch.');
     S.heroes.forEach(function(h){h.busy=null;});
     showReport();
   }else{newGame();}
+  var _mn=new Date().getMonth()+1,_dy=new Date().getDate();
+  if((_mn===12&&_dy>=26)||(_mn===1&&_dy<=2))log('🎆 Starlight fireworks mark the turning of the year above Veyra.');
+  else if(_mn===12||(_mn===1&&_dy<=6))log('❄️ Snow drifts over the spires of Veyra.');
+  else if(_mn===10)log('🎃 Ember-sparks ride the wind from the Hollow. The wardens keep their blades close.');
+  else if(_mn===4)log('🌸 Petals from the Moon Garden spiral over the courtyard.');
   document.getElementById('saveNote').textContent=d?'A saved citadel awaits — tap Begin to continue.':'A new citadel awaits.';
 })();
 </script>
