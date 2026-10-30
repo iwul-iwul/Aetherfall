@@ -1174,6 +1174,7 @@ function useSkill(a){
 }
 // END OF PART 3A
 function loopBattle(){
+  try{
   var cv=document.getElementById('cv');ctx=cv.getContext('2d');
   var m=curMission();
   var prog=m?m.prog:100;
@@ -1401,6 +1402,7 @@ function loopBattle(){
   }
   ctx.restore();
   if(document.getElementById('mBattle').classList.contains('open'))BT.raf=requestAnimationFrame(loopBattle);
+  }catch(ex){showErr('battle: '+(ex&&ex.message));}
 }
 // END OF PART 3B
 // ---------- lobby ----------
@@ -1493,6 +1495,7 @@ function drawBld(k){
   ctx.restore();
 }
 function loopLobby(){
+  try{
   if(!LB.open)return;
   var cv=document.getElementById('lobbyCv');if(!cv)return;
   if(cv.width!==cv.clientWidth||cv.height!==cv.clientHeight){cv.width=cv.clientWidth;cv.height=cv.clientHeight;}
@@ -1568,6 +1571,7 @@ function loopLobby(){
   if(dark>0){ctx.fillStyle='rgba(6,8,24,'+dark+')';ctx.fillRect(0,0,640,300);}
   drawSeason(Date.now()/1000,640,300);
   LB.raf=requestAnimationFrame(loopLobby);
+  }catch(ex){showErr('lobby: '+(ex&&ex.message));}
 }
 function openBld(key){
   var b=BLD[key],l=S.bld[key],max=l>=5,cost=bldCost(key);
@@ -1797,7 +1801,7 @@ function render(){
   var pn=document.getElementById('pityNote');
   if(pn){var gl=Math.max(1,30-(S.pity||0));pn.innerHTML='🔮 <b>'+gl+'</b> pull'+(gl===1?'':'s')+' to ★4+ guarantee'+(S.pity>=15?' · soft pity active':'');}
   var achEl=document.getElementById('achList');
-  if(achEl){var dn=new Date();achEl.innerHTML=ACH.map(function(a){var un=S.ach[a.id];return '<div class="card" style="margin-bottom:6px;'+(un?'':'opacity:.55;')+'">'+(un?'🏆 ':'🔒 ')+'<b>'+esc(a.n)+'</b>'+(un?' <span class="small" style="color:#4ade80;">'+un.toLocaleDateString()+'</span>':'')+'<div class="small">'+a.d+'</div></div>';}).join('');}
+  if(achEl){var dn=new Date();achEl.innerHTML=ACH.map(function(a){var un=S.ach[a.id];return '<div class="card" style="margin-bottom:6px;'+(un?'':'opacity:.55;')+'">'+(un?'🏆 ':'🔒 ')+'<b>'+esc(a.n)+'</b>'+(un?' <span class="small" style="color:#4ade80;">'+new Date(un).toLocaleDateString()+'</span>':'')+'<div class="small">'+a.d+'</div></div>';}).join('');}
   renderTrade();
   renderWork();
   renderCaptain();
@@ -2041,7 +2045,7 @@ function doPull(n){
 // ---------- expedition ----------
 var EXP={active:false,map:[],w:0,h:0,ts:24,party:[],camera:{x:0,y:0},fog:[],objective:{type:'hunt',x:0,y:0,reached:false},enemies:[],dayNight:0,seed:0,raf:0,mission:null,state:'travel',skMsg:'',cmd:'advance',shouts:[],trail:[],tCamp:0};
 
-function expRNG(s){var x=s;return function(){x=(x*9301+49297)%233280;return x/233280;};}
+function expRNG(s){var x=(s>>>0)||1;return function(){x=(Math.imul(x,1664525)+1013904223)>>>0;return x/4294967296;};}
 function generateExpMap(tier){
   var seed=Date.now()+Math.random()*100000|0;
   var rng=expRNG(seed);
@@ -2063,7 +2067,7 @@ function generateExpMap(tier){
     var rx=(rng()*w)|0,ry=(rng()*h)|0;
     for(var j=0;j<20;j++){if(rx>=0&&rx<w&&ry>=0&&ry<h)tiles[ry][rx].biome='water';rx+=(rng()*3-1)|0;ry+=(rng()*3-1)|0;}
   }
-  for(var i=0;i<3+tier;i++){var lx=(rng()*(w-4))|0+2;var ly=(rng()*(h-4))|0+2;if(tiles[ly][lx].biome!=='water')tiles[ly][lx].loot=true;}
+  for(var i=0;i<3+tier;i++){var lx=2+((rng()*(w-4))|0);var ly=2+((rng()*(h-4))|0);if(tiles[ly][lx].biome!=='water')tiles[ly][lx].loot=true;}
   var enemies=[];
   var count=2+tier*2;
   for(var i=0;i<count;i++){
@@ -2282,6 +2286,7 @@ function renderExpedition(){
 }
 
 function expTick(){
+  try{
   if(!EXP.active)return;
   if(EXP.state==='travel'){
     EXP.party.forEach(function(p){
@@ -2335,6 +2340,7 @@ function expTick(){
   if(EXP.dayNight>2)EXP.dayNight=0;
   renderExpedition();
   EXP.raf=requestAnimationFrame(expTick);
+  }catch(ex){showErr('exp: '+(ex&&ex.message));}
 }
 
 function runSkirmish(enemy){
