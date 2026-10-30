@@ -19,7 +19,7 @@
 }
 *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
 body{margin:0;background:radial-gradient(1200px 800px at 50% -10%,#1a2450 0%,var(--bg) 60%);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;}
-#err{position:fixed;left:8px;right:8px;top:8px;background:#5b1220;color:#ffd7dd;padding:10px 12px;border:1px solid #ff5b73;border-radius:10px;font-size:13px;display:none;z-index:999;}
+#err{margin:6px 8px 0;padding:10px 12px;background:#5b1220;color:#ffd7dd;padding:10px 12px;border:1px solid #ff5b73;border-radius:10px;font-size:13px;display:none;z-index:999;}
 .screen{display:none;max-width:720px;margin:0 auto;padding:14px;padding-bottom:90px;}
 .screen.active{display:block;}
 h1{font-size:26px;margin:6px 0 2px;letter-spacing:1px;}
@@ -288,7 +288,9 @@ h2{font-size:17px;margin:16px 0 8px;color:var(--gold);}
 </div></div>
 
 <script>
-window.addEventListener('error',function(e){var d=document.getElementById('err');d.style.display='block';d.textContent='⚠ '+e.message;});
+function showErr(m){var d=document.getElementById('err');if(!d)return;d.style.display='block';d.textContent='⚠ '+m;}
+window.addEventListener('error',function(e){showErr(e.message||'script error');});
+window.addEventListener('unhandledrejection',function(e){showErr('Promise: '+((e.reason&&e.reason.message)||e.reason));});
 var KEY='aetherfall_save_v1';
 var RARITY=[
  {n:'Common',s:1,c:'#9aa5b1',base:12,rate:40},
@@ -1607,6 +1609,7 @@ function upgradeBld(key){
 // ---------- main loop ----------
 setInterval(function(){
   if(!S)return;
+  try{
   var dt=1;
   for(var i=S.missions.length-1;i>=0;i--){var m=S.missions[i];
     if(m.party.length===0)continue;
@@ -1681,6 +1684,7 @@ setInterval(function(){
   idleTick();
   save();
   render();
+  }catch(ex){showErr('tick: '+(ex&&ex.message));}
 },1000);
 
 // ---------- work ----------
@@ -2617,9 +2621,11 @@ document.getElementById('btnStart').onclick=function(){
   document.getElementById('ticker').style.display='block';
   try{if(navigator.wakeLock)navigator.wakeLock.request('screen').catch(function(){});}catch(e){}
   try{if(screen.orientation&&screen.orientation.lock)screen.orientation.lock('portrait').catch(function(){});}catch(e){}
+  try{
   startAmbient();
   startLobby();
-  render();};
+  render();
+  }catch(ex){showErr('start: '+(ex&&ex.message));}};
 document.getElementById('lobbyCv').addEventListener('click',function(e){
   var r=e.target.getBoundingClientRect();
   var x=(e.clientX-r.left)*640/r.width,y=(e.clientY-r.top)*300/r.height;
@@ -2699,7 +2705,7 @@ function importSave(){
   };
 }
 if('serviceWorker' in navigator&&location.protocol.indexOf('http')===0){try{navigator.serviceWorker.register('sw.js').catch(function(){});}catch(e){}}
-(function init(){
+(function init(){try{
   var d=load();
   if(d&&d.heroes&&d.heroes.length){S=d;
     var mx=0;S.heroes.forEach(function(h){mx=Math.max(mx,h.id);if(!h.eq)h.eq={wpn:null,chn:null};if(h.asc===undefined)h.asc=0;});uid=mx+1;
@@ -2728,7 +2734,7 @@ if('serviceWorker' in navigator&&location.protocol.indexOf('http')===0){try{navi
   else if(_mn===10)log('🎃 Ember-sparks ride the wind from the Hollow. The wardens keep their blades close.');
   else if(_mn===4)log('🌸 Petals from the Moon Garden spiral over the courtyard.');
   document.getElementById('saveNote').textContent=d?'A saved citadel awaits — tap Begin to continue.':'A new citadel awaits.';
-})();
+  }catch(ex){showErr('init: '+(ex&&ex.message));}})();
 </script>
 </body>
 </html>
