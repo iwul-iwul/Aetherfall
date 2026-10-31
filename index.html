@@ -115,7 +115,7 @@ h2{font-size:17px;margin:16px 0 8px;color:var(--gold);}
   <button class="btn gold" id="btnStart" style="font-size:18px;padding:14px 34px;">⚔️ Begin</button>
   <div class="small" id="saveNote" style="margin-top:12px;"></div>
   <img src="mascot-blade.png" style="position:absolute;bottom:70px;left:2px;width:92px;filter:drop-shadow(0 4px 10px rgba(0,0,0,.6));">
-  <div class="small" style="margin-top:16px;color:#3a4569;">build 2026-10-31AML</div>
+  <div class="small" style="margin-top:16px;color:#3a4569;">build 2026-10-31ANML</div>
 </div>
 
 <!-- GAME -->
@@ -1448,7 +1448,7 @@ function loopBattle(){
     }
     var wn=WALKFRAMES[e.h.cls];
     if(u.fr&&wn){
-      var wi=walkFrame(e.h.cls,((e.wt/9)|0)%wn);
+      var wi=walkFrame(e.h.cls,((e.wt/11)|0)%wn);
       if(wi.complete&&wi.naturalWidth>0){
         var wh2=96;
         var ww=wi.width*(wh2/wi.height);
@@ -1774,7 +1774,7 @@ function loopLobby(){
     if(a.state==='inside')return;
     var wn=WALKFRAMES[a.h.cls];
     if(wn){
-      var wi=walkFrame(a.h.cls,((a.wt/9)|0)%wn);
+      var wi=walkFrame(a.h.cls,((a.wt/11)|0)%wn);
       if(wi.complete&&wi.naturalWidth>0){
         var wh2=108;
         var ww=wi.width*(wh2/wi.height);
@@ -3229,7 +3229,7 @@ function drawAuthored(n,x,y,w,a){
   return false;
 }
 var WALKIMG={};
-var WALKFRAMES={Blade:2,Arcanist:2,Bulwark:2,Ranger:2,Oracle:2};
+var WALKFRAMES={Blade:4,Arcanist:4,Bulwark:4,Ranger:4,Oracle:4};
 function walkFrame(cls,i){
   var key=cls+'_'+i;
   if(!WALKIMG[key]){var im=new Image();im.src='walk-'+cls.toLowerCase()+'-'+i+'.png';WALKIMG[key]=im;}
