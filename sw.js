@@ -1,25 +1,32 @@
-// Aetherfall service worker — network-first, cache fallback (offline boot)
-var CACHE = 'aetherfall-appkit-v43';
-var CORE = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './keyart.jpg', './portrait-blade.png', './portrait-arcanist.png', './portrait-bulwark.png', './portrait-ranger.png', './portrait-oracle.png', './wardens-lineup.png', './boss-splash.jpg', './tile-grass1.png', './tile-grass2.png', './tile-dirt1.png', './tile-dirt2.png', './tile-stone1.png', './tile-stone2.png', './tile-stone3.png', './tile-stone4.png', './prop-tree.png', './prop-rock.png', './prop-chest.png', './prop-sign.png', './prop-crystal.png', './icon-sword.png', './icon-charm.png', './icon-shield.png', './icon-bow.png', './icon-staff.png', './bld-train.png', './bld-tavern.png', './bld-garden.png', './bld-forge.png', './bld-vault.png', './foe-crawler.png', './foe-witch.png', './foe-brute.png', './foe-boss.png', './mascot-blade.png', './mount-warden.png', './walk0.png', './walk1.png', './walk2.png', './walk3.png', './walk4.png', './walk5.png', './walk6.png', './walk7.png', './walk-blade-0.png', './walk-blade-1.png', './walk-arcanist-0.png', './walk-arcanist-1.png', './walk-bulwark-0.png', './walk-bulwark-1.png', './walk-oracle-0.png', './walk-oracle-1.png', './walk-ranger-0.png', './walk-ranger-1.png', './walk-blade-2.png', './walk-blade-3.png', './walk-arcanist-2.png', './walk-arcanist-3.png', './walk-bulwark-2.png', './walk-bulwark-3.png', './walk-oracle-2.png', './walk-oracle-3.png', './walk-ranger-2.png', './walk-ranger-3.png'];
-self.addEventListener('install', function(e) {
-  e.waitUntil(caches.open(CACHE).then(function(c) { return c.addAll(CORE); }).then(function() { return self.skipWaiting(); }));
+// Aetherfall service worker: network first, cache fallback so the game also opens offline.
+// The pixel font (Google Fonts) is kept in its own cache that survives game updates, so menus
+// keep their pixel lettering offline after the first online visit.
+var CACHE = 'aetherfall-v3-37';
+var FONTS = 'aetherfall-fonts-1';
+var CORE = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
+self.addEventListener('install', function (e) {
+  e.waitUntil(caches.open(CACHE).then(function (c) { return c.addAll(CORE); }).then(function () { return self.skipWaiting(); }));
 });
-self.addEventListener('activate', function(e) {
-  e.waitUntil(caches.keys().then(function(keys) {
-    return Promise.all(keys.filter(function(k) { return k !== CACHE; }).map(function(k) { return caches.delete(k); }));
-  }).then(function() { return self.clients.claim(); }));
+self.addEventListener('activate', function (e) {
+  e.waitUntil(caches.keys().then(function (keys) {
+    return Promise.all(keys.filter(function (k) { return k !== CACHE && k !== FONTS; }).map(function (k) { return caches.delete(k); }));
+  }).then(function () { return self.clients.claim(); }));
 });
-self.addEventListener('fetch', function(e) {
+function isFont(url) { return url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com'; }
+self.addEventListener('fetch', function (e) {
   if (e.request.method !== 'GET') return;
-  e.respondWith(
-    fetch(e.request).then(function(res) {
-      if (res && res.status === 200 && res.type === 'basic') {
-        var copy = res.clone();
-        caches.open(CACHE).then(function(c) { c.put(e.request, copy); });
-      }
-      return res;
-    }).catch(function() {
-      return caches.match(e.request, { ignoreSearch: true });
-    })
-  );
+  var url = new URL(e.request.url);
+  if (isFont(url)) {
+    // fonts: cache first (they never change), fetch and store on a miss
+    e.respondWith(caches.open(FONTS).then(function (c) {
+      return c.match(e.request).then(function (hit) {
+        return hit || fetch(e.request).then(function (r) { if (r && (r.ok || r.type === 'opaque')) c.put(e.request, r.clone()); return r; });
+      });
+    }));
+    return;
+  }
+  e.respondWith(fetch(e.request).then(function (r) {
+    if (r && r.ok && url.origin === location.origin) { var copy = r.clone(); caches.open(CACHE).then(function (c) { c.put(e.request, copy); }); }
+    return r;
+  }).catch(function () { return caches.match(e.request).then(function (m) { return m || caches.match('./index.html'); }); }));
 });
