@@ -232,6 +232,8 @@ img{image-rendering:pixelated;image-rendering:crisp-edges;-webkit-user-drag:none
 .li.tdone{opacity:.6}.li.tdone .tchk{box-shadow:inset 0 0 0 2px #7dff9c}
 .grade{position:absolute;left:3px;top:3px;min-width:16px;padding:0 3px;font:800 10px/14px system-ui,sans-serif;text-align:center;color:#0d0b1c;background:var(--gc);box-shadow:0 0 0 1px rgba(0,0,0,.6)}
 .sect .grade,.stat .grade,.li .grade,.rcard .grade{position:static;display:inline-block;margin-left:4px;vertical-align:1px}
+.bheads{display:flex;gap:2px;flex-shrink:0}.bheads img{width:30px;height:30px;image-rendering:pixelated;background:rgba(8,10,28,.5)}
+.presets{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.preset{display:flex;flex-direction:column;gap:6px;padding:8px;background:rgba(8,10,28,.55);box-shadow:inset 0 0 0 2px #3a4380}.preset.on{box-shadow:inset 0 0 0 2px #ffc65a}.preset .pn{display:flex;justify-content:space-between;align-items:center;gap:4px}.preset .pn b{font:700 12px var(--px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.preset .pren{background:none;color:var(--dim);font-size:14px;padding:0 4px;min-height:24px}.preset .bheads{min-height:22px;flex-wrap:wrap}.preset .bheads img{width:22px;height:22px}.preset .btn{flex:1;min-height:32px;font-size:12px;padding:0 4px}
 .chips{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 8px}.chip{min-height:30px;padding:0 10px;font:700 12px var(--px);background:#1a1e40;box-shadow:inset 0 0 0 2px #3a4380;color:var(--dim)}.chip.on{background:linear-gradient(#4a54a8,#2f3678);color:#fff;box-shadow:inset 0 0 0 2px #9aa4ec}
 .slot .lk{position:absolute;right:3px;top:12px;width:15px;height:15px;background:rgba(8,10,28,.75)}.slot .lk img{width:15px;height:15px;image-rendering:pixelated}
 .slot .pf2{position:absolute;right:2px;bottom:2px;display:flex;align-items:center;background:rgba(8,10,28,.75);padding-right:2px}.slot .pf2 img{width:14px;height:14px;image-rendering:pixelated}.slot .pf2 b{font:700 10px var(--px)}
@@ -555,7 +557,7 @@ body.mopen .glass{-webkit-backdrop-filter:none;backdrop-filter:none}
 
 <script>
 // shown in Settings so players can confirm which build their device is running
-const APP_VER = '3.59';
+const APP_VER = '3.64';
 'use strict';
 /* ================= core utilities ================= */
 const $ = s => document.querySelector(s), $$ = s => Array.from(document.querySelectorAll(s));
@@ -1532,6 +1534,7 @@ function buildIcons() {
   sigIc('rift', '#d06bff', p => { p.e(8, 8, 3, 3, '#14082a'); p.e(8, 8, 1.5, 1.5, '#d06bff'); });
   sigIc('miracle', '#fff1a8', p => { p.r(7, 4, 2, 9, '#ffffff'); p.r(5, 6, 6, 2, '#ffffff'); });
   sigIc('grove', '#7dff9c', p => { p.r(7, 8, 2, 5, '#5a3826'); p.e(8, 6, 3, 3, '#3f9a3a'); p.p(7, 5, '#a8f0a0'); });
+  icon('craft', p => { p.r(2, 7, 12, 3, '#6d6c98'); p.r(2, 7, 12, 1, '#a8a7cc'); p.r(1, 8, 2, 1, '#6d6c98'); p.r(5, 10, 6, 2, '#4a4f7a'); p.r(3, 12, 10, 2, '#5a5980'); p.r(9, 1, 2, 6, '#8a5530'); p.r(7, 1, 6, 2, '#c8d0e8'); p.p(7, 1, '#ffffff'); p.p(3, 6, '#ffd36b'); p.p(13, 5, '#ffb35b'); p.p(12, 3, '#ffd36b'); });
   icon('herb', p => { p.r(7, 7, 2, 8, '#2f7a2e'); p.e(5, 7, 3, 2, '#5fc95a'); p.e(11, 5, 3, 2, '#5fc95a'); p.e(8, 3, 2, 2, '#7fe07a'); p.p(4, 6, '#a8f0a0'); p.p(10, 4, '#a8f0a0'); p.r(7, 1, 2, 2, '#e86aa0'); });
   $$('img[data-ic]').forEach(im => { if (ICON[im.dataset.ic]) im.src = ICON[im.dataset.ic]; });
 }
@@ -1637,31 +1640,40 @@ function genArea(o) {
 }
 
 /* the Spire: one floor */
+// special Spire floors: every fifth floor cycle has an Endurance holdout and a Trial of Strength
+// in every ten floors: 2 Endurance, 4 Strength, 7 Escort, 9 Defend (from floor 7 on)
+const SPIRE_KINDS = { 2: 'endure', 4: 'brute', 7: 'escort', 9: 'defend' };
+const spireKind = (n, ev) => ev || n < 7 ? '' : SPIRE_KINDS[n % 10] || '';
+const endureSecs = n => Math.round(40 + Math.min(30, n * 0.6));
+const BRUTE_ADJ = ['Hulking', 'Ironhide', 'Ancient', 'Dread', 'Towering', 'Elder'];
 function genFloor(n, ev) {
   const theme = ev ? ev.theme : floorTheme(n), th = THEMES[theme], R = RNG(n * 977 + 13 + (ev ? ev.seed * 7919 : 0)), boss = ev ? ev.boss : n % 5 === 0;
-  const W = 62, H = 38, cy = 19;
+  const W = 62, H = 38, cy = 19, kind = spireKind(n, ev);
   const ny = () => 10 + Math.floor(R() * 18);
   const nodes = [
     { x: 6, y: cy, r: 4, floor: 'stone' }, { x: 20, y: ny(), r: 6, floor: 'dirt' }, { x: 34, y: ny(), r: 7, floor: 'dirt' },
-    { x: 48, y: cy, r: boss ? 9 : 7, floor: boss ? 'ring' : 'dirt' }, { x: 57, y: cy, r: 3, floor: 'stone' }
+    { x: 48, y: cy, r: boss || (kind && kind !== 'escort') ? 9 : 7, floor: boss || (kind && kind !== 'escort') ? 'ring' : 'dirt' }, { x: 57, y: cy, r: 3, floor: 'stone' }
   ];
   const m = genArea({ w: W, h: H, seed: n * 131 + 7, theme, kind: 'spire', name: 'Floor ' + n, nodes, edges: [[0, 1], [1, 2], [2, 3], [3, 4]], ponds: 2 + (n % 3), density: 0.46, villages: 2 });
-  m.floor = n; m.boss = boss;
+  m.floor = n; m.boss = boss; m.special = kind; if (kind === 'escort') m.route = nodes.slice(1).map(nd => ({ x: nd.x * TS + 8, y: nd.y * TS + 8 }));
   m.start = { x: nodes[0].x * TS + 8, y: nodes[0].y * TS + 8 };
   addObj(m, { k: 'glyph', spr: prop('portal'), x: nodes[0].x * TS + 8, y: nodes[0].y * TS + 18, ax: 23, ay: 38, light: { r: 60, col: '#6fe3f5', dy: 16 }, portal: 'spent' });
   const ex = nodes[4]; m.exit = { x: ex.x * TS + 8, y: ex.y * TS + 8, active: false };
   addObj(m, { k: 'portal', spr: prop('portal'), x: ex.x * TS + 8, y: ex.y * TS + 18, ax: 23, ay: 38, portal: 'exit', light: { r: 70, col: th.crystal, dy: 16 } });
   [[nodes[0].x - 3, nodes[0].y - 3], [nodes[0].x + 3, nodes[0].y - 3], [ex.x - 2, ex.y - 3], [ex.x + 2, ex.y - 3]].forEach(([x, y]) => placeProp(m, 'crystal', x, y, th.crystal, true).light = null);
   [[nodes[0].x - 3, nodes[0].y - 3], [nodes[0].x + 3, nodes[0].y - 3], [ex.x - 2, ex.y - 3], [ex.x + 2, ex.y - 3]].forEach(([x, y]) => m.lights.push({ x: x * TS + 8, y: y * TS, r: 40, col: th.crystal }));
-  if (boss) { const c = nodes[3]; for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2; placeProp(m, 'pillar', Math.round(c.x + Math.cos(a) * (c.r + 0.5)), Math.round(c.y + Math.sin(a) * (c.r + 0.5) * 0.8), i % 3 === 0 ? 'b' : null, true); } }
+  if (boss || (kind && kind !== 'escort')) { const c = nodes[3]; for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2; placeProp(m, 'pillar', Math.round(c.x + Math.cos(a) * (c.r + 0.5)), Math.round(c.y + Math.sin(a) * (c.r + 0.5) * 0.8), i % 3 === 0 ? 'b' : null, true); } }
   // encounters
   const lvl = n, foes = (ev && ev.foes) || th.foes;
   const size = Math.min(6, 2 + Math.floor(n / 3));
   [1, 2, 3].forEach((ni, k) => {
     const nd = nodes[ni], group = [];
     if (boss && ni === 3) { group.push({ type: ev && ev.bossType ? ev.bossType : (n === 50 || (n > 50 && n % 10 === 0)) && !ev ? 'firstcmd' : 'boss', lvl: lvl + 1 }); if (!(ev && ev.bossSolo)) { group.push({ type: foes[0], lvl }); group.push({ type: foes[1 % foes.length], lvl }); } }
-    else for (let j = 0; j < size + (k === 2 ? 1 : 0); j++) group.push({ type: foes[Math.floor(R() * Math.min(foes.length, 2 + Math.floor(n / 4)))], lvl: lvl + (R() < 0.25 ? 1 : 0) });
-    m.enc.push({ x: nd.x * TS + 8, y: nd.y * TS + 8, r: nd.r * TS, group, cleared: false, label: ni === 3 ? (boss ? 'Guardian' : 'Last stand') : 'Clearing ' + (k + 1) });
+    else if (kind === 'brute' && ni === 3) { const nb = n >= 25 ? 3 : 2, pool = foes.slice(0, Math.min(foes.length, 2 + Math.floor(n / 4))); for (let j = 0; j < nb; j++) { const t = pool[Math.floor(R() * pool.length)]; group.push({ type: t, lvl, elite: 1, brute: 1, name: BRUTE_ADJ[Math.floor(R() * BRUTE_ADJ.length)] + ' ' + FOES[t].name }); } }
+    else if (kind === 'endure' && ni === 3) { for (let j = 0; j < Math.max(3, size - 1); j++) group.push({ type: foes[Math.floor(R() * Math.min(foes.length, 2 + Math.floor(n / 4)))], lvl }); }
+    else for (let j = 0; j < size + (k === 2 ? 1 : 0) - (kind && k < 2 ? 1 : 0); j++) group.push({ type: foes[Math.floor(R() * Math.min(foes.length, 2 + Math.floor(n / 4)))], lvl: lvl + (R() < 0.25 ? 1 : 0) });
+    const sp = ni === 3 && kind && kind !== 'escort';
+    m.enc.push({ x: nd.x * TS + 8, y: nd.y * TS + 8, r: nd.r * TS, group, cleared: false, label: ni === 3 ? (boss ? 'Guardian' : kind === 'endure' ? 'Holdout' : kind === 'brute' ? 'Trial of Strength' : kind === 'defend' ? 'The Waystone' : 'Last stand') : 'Clearing ' + (k + 1), endure: sp && kind === 'endure' ? endureSecs(n) : 0, brute: sp && kind === 'brute' ? 1 : 0, defend: sp && kind === 'defend' ? (n >= 25 ? 4 : 3) : 0, pool: foes.slice(0, Math.min(foes.length, 2 + Math.floor(n / 4))), lvl });
   });
   m.labels = [{ x: m.start.x, y: m.start.y, t: 'Arrival' }, { x: m.exit.x, y: m.exit.y, t: 'Exit' }].concat(m.enc.map(e => ({ x: e.x, y: e.y, t: e.label })));
   renderGround(m);
@@ -1758,10 +1770,15 @@ function renderGround(m) {
   for (let y = 0; y < m.h; y++) for (let x = 0; x < m.w; x++) {
     if (m.tile[y * m.w + x] !== T.STONE) continue; const px = x * TS, py = y * TS;
     p.r(px, py, TS, TS, th.stone[0]); const off = (y % 2) * 4;
+    const hh = (a, b) => ((x * 7349 + y * 9151 + a * 131 + b * 17) * 2654435761 >>> 0) % 1000;
+    [[0, 0], [8, 0], [0, 8], [8, 8]].forEach(([sx2, sy2], j) => { const v = hh(j, 1); if (v < 260) { p.g.globalAlpha = 0.18; p.r(px + sx2, py + sy2, 8, 7, v < 130 ? '#ffffff' : '#0a0814'); p.g.globalAlpha = 1; } });
     p.r(px, py + 7, TS, 1, th.stone[1]); p.r(px, py + 15, TS, 1, th.stone[1]);
     p.r(px + off, py, 1, 7, th.stone[1]); p.r(px + off + 8, py + 8, 1, 7, th.stone[1]);
     p.r(px + off + 1, py, 6, 1, th.stone[2]); p.r(px + ((off + 9) % 16), py + 8, 6, 1, th.stone[2]);
     if (R() < 0.2) p.r(px + R() * 12, py + R() * 12, 2, 1, th.stone[1]);
+    if (hh(5, 2) < 70) { const cx2 = px + 3 + (hh(6, 3) % 9), cy2 = py + 2 + (hh(7, 4) % 9); p.p(cx2, cy2, th.stone[1]); p.p(cx2 + 1, cy2 + 1, th.stone[1]); p.p(cx2 + 1, cy2 + 2, th.stone[1]); p.p(cx2 + 2, cy2 + 3, th.stone[1]); }
+    const edge = tAt(m, x, y - 1) !== T.STONE || tAt(m, x, y + 1) !== T.STONE || tAt(m, x - 1, y) !== T.STONE || tAt(m, x + 1, y) !== T.STONE;
+    if (edge || hh(8, 5) < 40) { const mc = th.grass[1], ml = th.grass[2]; for (let q = 0; q < (edge ? 4 : 2); q++) { const v = hh(9 + q, 6); const mx = px + (v % 16), my = py + (v % 2 ? 7 : 15); p.p(mx, my, mc); if (v % 3 === 0) p.p(mx + 1, my, ml); } }
     const ns = (dx, dy) => tAt(m, x + dx, y + dy) !== T.STONE, rim = shade(th.stone[1], -0.25);
     if (ns(0, -1)) p.r(px, py, TS, 1, th.stone[2]); if (ns(0, 1)) { p.r(px, py + 15, TS, 1, rim); p.r(px, py + 14, TS, 1, th.stone[1]); }
     if (ns(-1, 0)) p.r(px, py, 1, TS, rim); if (ns(1, 0)) p.r(px + 15, py, 1, TS, rim);
@@ -2004,9 +2021,11 @@ function makeFoe(type, lvl, x, y, enc) {
   const tint = type === 'slime' ? th.slime : type === 'wisp' ? th.wisp : null;
   const e = actor({ team: 'f', type, name: d.name, lvl, x, y, hx: x, hy: y, enc, r: d.r, spd: d.spd, range: d.range, rate: d.rate, d, art: enemyArt(d.art, tint), boss: !!d.boss, t: rand(0, 2), spawnT: 0.7, wind: 0 });
   // the Spire ramps up: gentle early, steep toward the top. The first Guardian is softened for new parties.
-  const L1 = lvl - 1, climb = (G.mode === 'spire' || G.mode === 'ev' || G.mode === 'forge' || G.mode === 'deep') && !d.final && !d.noClimb, qh = climb ? 0.0035 * L1 * L1 : 0, qa = climb ? 0.0025 * L1 * L1 : 0, first = climb && d.boss && lvl <= 5;
-  e.hpMax = Math.round(d.hp * (k + qh) * (d.boss ? 1 + 0.06 * L1 : 1) * (first ? 0.8 : 1)); e.hp = e.hpMax; e.atk = d.atk * (1 + 0.17 * L1 + qa) * (first ? 0.85 : 1); e.def = d.def * (1 + 0.1 * L1);
+  const L1 = lvl - 1, climb = (G.mode === 'spire' || G.mode === 'ev' || G.mode === 'forge' || G.mode === 'deep') && !d.final && !d.noClimb, qh = climb ? 0.0035 * L1 * L1 : 0, qa = climb ? 0.0025 * L1 * L1 : 0, first = climb && d.boss && lvl <= 6;
+  e.hpMax = Math.round(d.hp * (k + qh) * (d.boss ? 1 + 0.06 * L1 : 1) * (first ? 0.5 : 1)); e.hp = e.hpMax; e.atk = d.atk * (1 + 0.17 * L1 + qa) * (first ? 0.7 : 1); e.def = d.def * (1 + 0.1 * L1);
   if (type === 'knight') e.wpn = weaponSprite('sword', '#ff4d6d');
+  // armoured foes stand taller than the small critters
+  const SC = { knight: 1.22, banner: 1.18, sentinel: 1.15, shepherd: 1.2 }; if (SC[type] && !e.scale) e.scale = SC[type];
   if (G.mode === 'ev') { const E = evNow(); e.atk *= E.atk; e.hpMax = Math.round(e.hpMax * E.hp); e.hp = e.hpMax; }
   // echo modifiers above floor 50
   if (hasAffix('frenzy')) { e.spd *= 1.25; e.rate *= 0.8; }
@@ -2031,6 +2050,8 @@ function lineClear(x0, y0, x1, y1) { const n = Math.ceil(Math.hypot(x1 - x0, y1 
 /* ================= effects ================= */
 function num(x, y, v, kind) {
   if (typeof v === 'number' && kind !== 'skill') { const m = G.nums.find(n => n.t < 0.3 && n.kind === kind && n.v != null && Math.abs(n.bx - x) < 6 && Math.abs(n.by - y) < 6); if (m) { m.v += v; m.txt = String(Math.round(m.v)); m.multi = (m.multi || 1) + 1; m.t = 0; return; } }
+  // skill callouts and other words stack upward instead of piling on top of each other
+  if (typeof v !== 'number') for (let i = 0; i < 4 && G.nums.some(n => n.v == null && n.t < 0.7 && Math.abs(n.bx - x) < 34 && Math.abs(n.by - y) < 10); i++) y -= 11;
   if (G.nums.length > 60) G.nums.shift(); G.nums.push({ x: x + rand(-4, 4), y, bx: x, by: y, v: typeof v === 'number' ? v : null, txt: String(v), kind, t: 0 });
 }
 function burst(x, y, n, col, spd) { sparks(x, y, n, col, spd || 70, 20); }
@@ -2095,7 +2116,7 @@ function heal(t, a, quiet, src) { if (!t || t.dead) return; if (t.team === 'h' &
 function die(e, src) {
   deepFallen(e);
   if (e.wb) setTimeout(() => wbEnd('kill'), 900);
-  if (e.npc) { e.dead = true; e.hp = 0; flash(e.x, e.y - 14, 50, '#ff5b73', 0.5); dust(e.x, e.y, 16, '#5a4a3a'); expComplete(false, 'The caravan was destroyed.'); return; }
+  if (e.npc) { e.dead = true; e.hp = 0; flash(e.x, e.y - 14, 50, '#ff5b73', 0.5); dust(e.x, e.y, 16, '#5a4a3a'); npcFell(e); return; }
   e.dead = true; e.hp = 0; e.deadT = 0;
   if (e.team === 'f') foeSplit(e);
   if (e.team === 'f' && hasAffix('volatile')) { const x = e.x, y = e.y; tele(x, y, 26, 0.6, '#ff9a3a', () => { if (!G.on) return; shock(x, y, 30, '#ff9a3a', 4, 0.4); flash(x, y - 6, 34, '#ff9a3a', 0.3); heroesAlive().forEach(h => { if (Math.hypot(h.x - x, h.y - y) < 30) hurt(e, h, 1.2, { skill: 1 }); }); sfx('boom'); }); }
@@ -2269,7 +2290,7 @@ function moveAway(a, from) { const an = ang(from, a); setWant(a, a.x + Math.cos(
 function stop(a) { a.wx = a.wy = 0; a.moving = false; }
 const SLOTS = [[0, 0], [-22, 12], [22, 12], [0, 26]];
 function advanceGoal() {
-  const m = G.map; if (m.kind === 'exp') return expGoal(); if (m.exit && m.exit.active) return m.exit;
+  const m = G.map; if (m.kind === 'exp') return expGoal(); if (m.special) { const sg = spireGoal(); if (sg) return sg; } if (m.exit && m.exit.active) return m.exit;
   const c = partyCenter(); let best = null, bd = 1e9;
   for (const e of m.enc) { if (e.cleared) continue; if (m.kind === 'spire') return e; const d = Math.hypot(e.x - c.x, e.y - c.y); if (d < bd) { bd = d; best = e; } }
   return best;
@@ -2882,8 +2903,11 @@ function expComplete(ok, why) {
 }
 function drawCaravan(g, c) {
   const t = G.time, b = c.moving ? Math.round(Math.sin(t * 10)) * 0.5 : 0;
-  g.drawImage(c.spr, Math.round(c.x - 20), Math.round(c.y - 28 + b));
-  if (c.flash > 0) { g.globalAlpha = 0.5; g.drawImage(silhouette(c.spr, '#ffffff'), Math.round(c.x - 20), Math.round(c.y - 28)); g.globalAlpha = 1; }
+  const ox = c.ox || 20, oy = c.oy || 28;
+  if (c.stone) { g.save(); g.globalCompositeOperation = 'lighter'; glowAt(g, c.x, c.y - 22, 40, '#7af0d8', 0.22 + 0.08 * Math.sin(t * 3)); g.restore(); }
+  if (c.esc) drawRefugees(g, c);
+  g.drawImage(c.spr, Math.round(c.x - ox), Math.round(c.y - oy + b));
+  if (c.flash > 0) { g.globalAlpha = 0.5; g.drawImage(silhouette(c.spr, '#ffffff'), Math.round(c.x - ox), Math.round(c.y - oy)); g.globalAlpha = 1; }
 }
 function drawExpMarks(g, mapToMini) {
   const m = G.map, o = m.obj; if (!o) return;
@@ -2903,6 +2927,107 @@ function expObjText() {
 }
 function makeElite(f, name) {
   f.elite = 1; f.name = name || f.name; f.hpMax = Math.round(f.hpMax * 6); f.hp = f.hpMax; f.atk *= 1.6; f.def *= 1.5; f.r = 10; f.range += 8;
+}
+/* ================= special Spire floors: Escort to safety and Defend the Waystone ================= */
+// Escort: a cart of refugees crosses the floor to the exit. It stops when foes are near or nobody walks with it.
+// Defend: a Waystone shields a hamlet. Waves of foes come for it; keep it standing until the last wave falls.
+let STONE = null;
+function stoneSprite() {
+  if (STONE) return STONE;
+  const c = cv(32, 46), p = painter(c);
+  p.e(16, 42, 14, 3, 'rgba(8,6,20,.35)'); p.r(5, 34, 22, 8, '#6d6c98'); p.r(5, 34, 22, 2, '#a3a2c8'); p.r(8, 30, 16, 5, '#8a89ba');
+  p.r(13, 4, 6, 27, '#7af0d8'); p.r(9, 12, 5, 19, '#3fb8a8'); p.r(18, 10, 5, 21, '#5ad8c4'); p.r(14, 2, 3, 3, '#e8fff8'); p.r(14, 6, 2, 14, '#c8fff0');
+  return STONE = outline(c);
+}
+// little villagers who walk beside the refugee cart
+const REFUGEE_LOOKS = [['#c8323f', '#f1c09a', '#5a3a22'], ['#3f8a3c', '#d9a47c', '#1a1a22'], ['#d9a02a', '#a8704e', '#c86a2a'], ['#5b3fb0', '#f3d2b5', '#e8c070']];
+let REFUGEE_SPR = null;
+function refugeeSprites() {
+  if (REFUGEE_SPR) return REFUGEE_SPR;
+  return REFUGEE_SPR = REFUGEE_LOOKS.map(([cl, sk, hr], i) => [0, 1].map(f => {
+    const c = cv(10, 16), p = painter(c);
+    p.e(5, 15, 3, 1, 'rgba(8,6,20,.35)'); p.r(3, 11, 2, 4 - f, '#3a2a22'); p.r(6, 11, 2, 3 + f, '#3a2a22');
+    p.r(2, 6, 6, 6, cl); p.r(2, 6, 6, 1, shade(cl, 0.2)); p.r(1, 7, 1, 3, sk); p.r(8, 7, 1, 3, sk);
+    p.r(3, 1, 4, 5, sk); p.r(3, 1, 4, 1, hr); p.r(2, 2, 1, 2, hr); p.p(4, 3, '#1b1530'); p.p(6, 3, '#1b1530');
+    if (i === 1) p.r(7, 4, 2, 7, '#8a5530'); if (i === 3) p.r(1, 5, 3, 3, '#e8e3d0');
+    return outline(c);
+  }));
+}
+function drawRefugees(g, c) {
+  const S = refugeeSprites(), t = G.time;
+  [[-16, 6], [-24, -2], [14, 8]].forEach(([dx, dy], i) => { const f = c.moving ? Math.floor(t * 6 + i) % 2 : 0, bob = c.moving ? Math.round(Math.sin(t * 10 + i)) : 0; g.drawImage(S[i % S.length][f], Math.round(c.x + dx - 5), Math.round(c.y + dy - 15 + bob)); });
+}
+function makeRefugees(m) {
+  const n = m.floor, c = actor({ team: 'h', npc: 1, name: 'Refugees', x: m.start.x + 22, y: m.start.y + 8, r: 10, spd: 22, def: 4 + n * 0.3 });
+  c.hpMax = Math.round(420 * (1 + 0.2 * (n - 1))); c.hp = c.hpMax; c.ri = 0; c.ambT = 8; c.spr = wagonSprite(); c.esc = 1; return c;
+}
+function makeWaystone(enc) {
+  const n = G.floor, c = actor({ team: 'h', npc: 1, name: 'Waystone', x: enc.x, y: enc.y, r: 12, spd: 0, def: 6 + n * 0.4 });
+  c.hpMax = Math.round(900 * (1 + 0.2 * (n - 1))); c.hp = c.hpMax; c.spr = stoneSprite(); c.ox = 16; c.oy = 42; c.stone = 1; c.static = 1; return c;
+}
+// where the party should walk on these floors
+function spireGoal() {
+  const m = G.map, c = G.caravan;
+  if (m.special === 'escort' && c && !c.dead && !c.safe) { const r = m.route[Math.min(c.ri, m.route.length - 1)], a = Math.atan2(r.y - c.y, r.x - c.x); return { x: c.x + Math.cos(a) * 26, y: c.y + Math.sin(a) * 26 }; }
+  return null;
+}
+function spireSpecialTick(dt) {
+  const m = G.map, c = G.caravan; if (!c || c.dead) return;
+  c.flash = Math.max(0, (c.flash || 0) - dt); if (c.bubble) { c.bubble.t -= dt; if (c.bubble.t <= 0) c.bubble = null; }
+  if (m.special === 'escort' && !c.safe) {
+    const tgt = m.route[c.ri], threat = foesAlive().some(e => dist(e, c) < 80), escorted = heroesAlive().some(h => dist(h, c) < 110);
+    if (threat) { stop(c); if (!c.bubble && Math.random() < dt * 0.6) say(c, pick(['Help us!', 'They\'re coming!', 'Don\'t leave us!']), true); }
+    else if (!escorted) { stop(c); if (!c.bubble && Math.random() < dt * 0.4) say(c, 'Wait for us!', true); }
+    else if (tgt) {
+      if (Math.hypot(tgt.x - c.x, tgt.y - c.y) < 10) { c.ri++; if (c.ri >= m.route.length) { c.safe = true; stop(c); say(c, 'We made it! Thank you!', true); banner('They\'re safe!', 'The refugees reached the portal'); sfx('level'); m.enc.forEach(e => { if (!e.spawned) { e.spawned = true; e.cleared = true; } }); spireExitCheck(); return; } }
+      else moveTo(c, tgt.x, tgt.y);
+    }
+    physics(c, dt);
+    c.ambT -= dt;
+    if (c.ambT <= 0 && c.moving) {
+      c.ambT = rand(14, 20); const th = m.th, n = 3 + Math.floor(G.floor / 8), pool = th.foes.slice(0, Math.min(th.foes.length, 2 + Math.floor(G.floor / 4)));
+      for (let i = 0; i < n; i++) { let x, y, tries = 0; do { const a = rand(0, 6.28), r = rand(110, 150); x = c.x + Math.cos(a) * r; y = c.y + Math.sin(a) * r; tries++; } while (solidAt(m, x, y) && tries < 20); if (tries >= 20) continue; const f = makeFoe(pick(pool), G.floor, x, y, null); f.aggro = Math.random() < 0.7 ? c : null; f.spawnT = 0.3; G.foes.push(f); smoke(x, y); }
+      banner('Ambush!', 'Protect the refugees'); sfx('boss');
+    }
+  }
+}
+// defend: waves come for the Waystone
+function defendTick(e, dt) {
+  const c = G.caravan;
+  if (e.wave == null) { e.wave = 1; e.wt = 0; }
+  const alive = G.foes.filter(f => f.enc === e && !f.dead).length;
+  e.wt += dt;
+  if ((alive <= 1 || e.wt > 18) && e.wave < e.defend) {
+    e.wave++; e.wt = 0; defendWave(e);
+    banner('Wave ' + e.wave + ' of ' + e.defend, e.wave === e.defend ? 'The last wave!' : 'Hold the Waystone'); sfx('boss'); shake(2);
+  } else if (alive === 0 && e.wave >= e.defend) {
+    banner('The Waystone stands!', 'The hamlet is safe'); sfx('level'); clearEnc(e);
+  }
+}
+function defendWave(e) {
+  const n = G.floor, cnt = Math.min(11, 4 + Math.floor(n / 5) + e.wave), c = G.caravan;
+  for (let i = 0; i < cnt; i++) {
+    const a = rand(0, 6.28), r = e.r * rand(1.15, 1.45); let x = e.x + Math.cos(a) * r, y = e.y + Math.sin(a) * r * 0.7; if (solidAt(G.map, x, y)) { x = e.x + Math.cos(a) * e.r * 0.8; y = e.y + Math.sin(a) * e.r * 0.55; }
+    const f = makeFoe(pick(e.pool), e.lvl + (e.wave === e.defend && i === 0 ? 1 : 0), x, y, e); f.aggro = c && !c.dead && Math.random() < 0.65 ? c : null; f.spawnT = 0.5; G.foes.push(f); smoke(x, y);
+    if (e.wave === e.defend && i === 0) makeElite(f, 'Raid Captain');
+  }
+}
+function spireExitCheck() {
+  const m = G.map; if (m.kind !== 'spire' || m.exit.active) return;
+  if (m.special === 'escort' && !(G.caravan && G.caravan.safe)) return;
+  if (m.enc.every(e => e.cleared)) { m.exit.active = true; banner('Floor cleared!', 'The exit portal is open'); sfx('level'); updateCmds(); }
+}
+function npcFell(c) {
+  if (G.map.kind === 'exp') { expComplete(false, 'The caravan was destroyed.'); return; }
+  banner(c.stone ? 'The Waystone shatters' : 'The refugees fell', 'The floor is lost'); sfx('die');
+  G.heroes.forEach(h => { if (!h.dead) h.mor = Math.max(0, h.mor - 6); });
+  setTimeout(partyDown, 1400);
+}
+function spireSpecialText() {
+  const m = G.map, c = G.caravan;
+  if (m.special === 'escort' && c) return c.dead ? 'The refugees fell' : c.safe ? 'They\'re safe! Exit open' : 'Escort the refugees · ' + Math.round(c.ri / m.route.length * 100) + '% · HP ' + Math.max(0, Math.round(c.hp / c.hpMax * 100)) + '%';
+  if (m.special === 'defend') { const e = m.enc.find(x => x.defend && x.spawned && !x.cleared); if (e && c) return 'Defend the Waystone · wave ' + e.wave + '/' + e.defend + ' · HP ' + Math.max(0, Math.round(c.hp / c.hpMax * 100)) + '%'; }
+  return '';
 }
 
 /* ================= hero bonds (trust with the Commander) ================= */
@@ -3365,7 +3490,7 @@ const jobCap = k => 60 + 40 * (workOf().lv[k] - 1);
 const forageCap = () => Math.round(jobCap('wood') * 0.3);
 const jobUpCost = k => { const lv = workOf().lv[k]; return { wood: 20 * lv + (k === 'wood' ? 0 : 10), gold: 120 * lv }; };
 function workers(k) { const W = workOf(); return Object.keys(W.as).filter(id => W.as[id] === k); }
-function canWork(id) { return !!SV.owned[id] && SV.party.indexOf(id) < 0 && !injOf(id); }
+function canWork(id) { return !!SV.owned[id] && SV.party.indexOf(id) < 0 && !injOf(id) && !(typeof onBounty === 'function' && onBounty(id)); }
 function heroRate(id, k) {
   const H = HEROES[id], o = SV.owned[id] || {}; let r = WORK_BASE * (1 + 0.12 * (H.star - 1));
   if (JOB_LOVE[H.trait] === k) r *= 1.4; if (H.trait === 'lazy') r *= 0.75; if ((o.mor == null ? 70 : o.mor) < 25) r *= 0.5;
@@ -3377,7 +3502,7 @@ function cookOf() { return workers('cook').find(canWork) || null; }
 function cookQ() { const id = cookOf(); if (!id) return 0; const H = HEROES[id]; return Math.round((1 + 0.06 * (H.star - 1) + (JOB_LOVE[H.trait] === 'cook' ? 0.2 : 0) + 0.08 * (workOf().lv.cook - 1) + (profOf(id) && profOf(id).k === 'cook' ? 0.12 * profOf(id).lv : 0)) * 100) / 100; }
 function workTick() {
   if (!SV) return; const W = workOf(), now = Date.now();
-  Object.keys(W.as).forEach(id => { if (!SV.owned[id] || SV.party.indexOf(id) >= 0 || !JOBS[W.as[id]]) delete W.as[id]; });
+  Object.keys(W.as).forEach(id => { if (!SV.owned[id] || SV.party.indexOf(id) >= 0 || !JOBS[W.as[id]] || onBounty(id)) delete W.as[id]; });
   const hrs = Math.max(0, Math.min(48, (now - W.t) / 3600000)); W.t = now;
   if (hrs > 0) {
     GJOBS.forEach(k => { W.st[k] = Math.min(jobCap(k), W.st[k] + jobRate(k) * hrs); });
@@ -3452,7 +3577,7 @@ function screenWork(pickFor) {
   if (pickFor) {
     const J = JOBS[pickFor], W = workOf(), love = id => JOB_LOVE[HEROES[id].trait] === pickFor;
     const pm = id => profOf(id) && PROFS[profOf(id).k].job === pickFor ? profOf(id).lv : 0;
-    const list = Object.keys(SV.owned).filter(id => SV.party.indexOf(id) < 0).sort((a, b) => pm(b) - pm(a) || love(b) - love(a) || HEROES[b].star - HEROES[a].star);
+    const list = Object.keys(SV.owned).filter(id => SV.party.indexOf(id) < 0 && !onBounty(id)).sort((a, b) => pm(b) - pm(a) || love(b) - love(a) || HEROES[b].star - HEROES[a].star);
     h += '<div class="sect">' + (J.kitchen ? 'Choose a cook' : 'Choose a warden for the ' + J.name.toLowerCase()) + '</div>';
     if (!list.length) h += '<p class="muted">Every warden you own is in your party. Summon more at the Starforge, and those who stay home can work here.</p>';
     list.forEach(id => {
@@ -3658,7 +3783,7 @@ const legendIds = () => Object.keys(HEROES).filter(id => !HEROES[id].gen);
 // releasing a generated warden: they leave Veyra with your thanks, and leave some Starlight behind
 const RELEASE_LIGHT = [0, 1, 2, 4, 10, 25];
 function releaseHero(id, quiet) {
-  if (!isGen(id) || !SV.owned[id] || SV.owned[id].lock) return false; const H = HEROES[id], e = SV.owned[id].eq || {};
+  if (!isGen(id) || !SV.owned[id] || SV.owned[id].lock || onBounty(id)) return false; const H = HEROES[id], e = SV.owned[id].eq || {};
   GSLOTS.forEach(s => { if (e[s]) SV.inv.push(e[s]); });
   SV.party = SV.party.filter(x => x !== id); if (!SV.party.length) SV.party = Object.keys(SV.owned).filter(x => x !== id).slice(0, 1);
   if (SV.work && SV.work.as) delete SV.work.as[id];
@@ -3677,7 +3802,7 @@ const gradeIdx = id => GRADES.indexOf(gradeOf(id)); // 0 = SS ... 7 = F
 // bulk release candidates: recruits only, never locked, never in the party, never at a work post
 function bulkList(maxGrade, maxStar) {
   const gi = GRADES.findIndex(g => g[1] === maxGrade);
-  return Object.keys(SV.owned).filter(id => isGen(id) && !isLocked(id) && SV.party.indexOf(id) < 0 && !isWorking(id) && HEROES[id].star <= maxStar && gradeIdx(id) >= gi);
+  return Object.keys(SV.owned).filter(id => isGen(id) && !isLocked(id) && SV.party.indexOf(id) < 0 && !isWorking(id) && !onBounty(id) && HEROES[id].star <= maxStar && gradeIdx(id) >= gi);
 }
 function bulkRelease(ids) {
   let light = 0, gold = 0, n = 0;
@@ -3745,6 +3870,156 @@ function screenBulk() {
     go: () => { const ids = bulkList(BULK.g, BULK.s); if (!ids.length) return; openConfirm('Release ' + ids.length + ' recruits?', 'They leave Veyra for good. You get ' + light + ' Starlight and ' + fmt(gold) + ' gold.', 'Release', () => { const r = bulkRelease(ids); sfx('coin'); toast(r.n + ' recruits set off on their own roads · +' + r.light + ' Starlight', 'gold'); SCREENS.wardens(); }); }
   } });
 }
+/* ================= Bounty Board and team presets ================= */
+// Benched wardens take timed jobs around Veyra. Each job checks one main stat and one side stat,
+// so a weak fighter with sharp Agility can still be the best scout in the village.
+const BOUNTY_JOBS = {
+  pow: [['Clear the bandit camp', 'blade'], ['Break the boar stampede', 'bulwark'], ['Haul the fallen bridge stones', 'bulwark'], ['Drive off the hill trolls', 'blade']],
+  vit: [['Hold the river ford', 'bulwark'], ['Guard the mill through the night', 'bulwark'], ['Carry supplies over the pass', 'blade'], ['Dig out the snowed-in farm', 'bulwark']],
+  foc: [['Escort the travelling healer', 'oracle'], ['Study the glowing ruins', 'arcanist'], ['Calm the haunted well', 'oracle'], ['Read the old star charts', 'arcanist']],
+  agi: [['Scout the ridge', 'ranger'], ['Chase the thieving sprites', 'ranger'], ['Run letters to Ashford', 'ranger'], ['Map the hollow caves', 'arcanist']]
+};
+const BOUNTY_TIER = [
+  null,
+  { name: 'Bronze', col: '#d89a5a', size: 1, mins: [30, 45], per: 30 },
+  { name: 'Silver', col: '#c8d0e8', size: 2, mins: [60, 90], per: 38 },
+  { name: 'Gold', col: '#ffc65a', size: 2, mins: [120, 240], per: 46 },
+  { name: 'Mythic', col: '#ff6dd8', size: 3, mins: [360, 480], per: 54 }
+];
+const BOUNTY_N = 5, BOUNTY_REROLL_GEMS = 30;
+const bountySlots = () => 3 + (SV.lvl >= 25 ? 1 : 0) + (SV.lvl >= 45 ? 1 : 0);
+function bountyOf() {
+  const B = SV.bounty || (SV.bounty = { day: '', list: [], act: [], rr: '' });
+  if (B.day !== today()) { B.day = today(); B.list = []; for (let i = 0; i < BOUNTY_N; i++) B.list.push(makeBounty()); }
+  return B;
+}
+function makeBounty() {
+  const r = Math.random(), hi = Math.min(1, SV.lvl / 40);
+  const tier = r < 0.42 - 0.2 * hi ? 1 : r < 0.75 - 0.15 * hi ? 2 : r < 0.94 - 0.05 * hi ? 3 : 4;
+  const T = BOUNTY_TIER[tier], st = pick(Object.keys(BOUNTY_JOBS)), [name, cls] = pick(BOUNTY_JOBS[st]);
+  const side = pick(Object.keys(BOUNTY_JOBS).filter(k => k !== st)), mins = pick(T.mins);
+  return { id: 'b' + Date.now().toString(36) + Math.floor(Math.random() * 1e4), tier, st, side, cls, name, mins, target: T.per * T.size };
+}
+const onBounty = id => !!(SV.bounty && SV.bounty.act.find(a => a.ids.indexOf(id) >= 0));
+const bountyOfHero = id => SV.bounty && SV.bounty.act.find(a => a.ids.indexOf(id) >= 0);
+// how much a warden brings to this job
+function bountyFit(id, b) { const s = statsOf(id), H = HEROES[id]; return s[b.st] * 2 + s[b.side] + H.star * 2 + (H.cls === b.cls ? 6 : 0); }
+function bountyChance(ids, b) { const sc = ids.reduce((a, id) => a + bountyFit(id, b), 0), r = sc / b.target; return Math.max(0.1, Math.min(0.97, 0.7 + (r - 1) * 1.2)); }
+const BOUNTY_RES = { pow: 'ore', vit: 'wood', foc: 'herb', agi: 'berry' };
+function bountyRew(b) {
+  const t = b.tier, lv = SV.lvl;
+  return { gold: Math.round(150 * t * (1 + 0.05 * lv) * (b.mins / BOUNTY_TIER[t].mins[0])), res: BOUNTY_RES[b.st], resN: 5 + 5 * t, gems: [0, 0, 5, 20, 60][t], gear: [0, 0.15, 0.35, 0.6, 1][t], light: t >= 4 ? 2 : 0 };
+}
+const bountyFree = id => SV.owned[id] && SV.party.indexOf(id) < 0 && !onBounty(id) && !(injOf(id) >= 3);
+function bountySend(b, ids) {
+  const B = bountyOf(); if (B.act.length >= bountySlots() || !ids.length || ids.length > BOUNTY_TIER[b.tier].size || !ids.every(bountyFree)) return false;
+  const W = workOf(); ids.forEach(id => delete W.as[id]);
+  const ch = bountyChance(ids, b);
+  B.act.push({ b, ids, t0: Date.now(), end: Date.now() + b.mins * 60000, ok: Math.random() < ch, ch });
+  B.list = B.list.filter(x => x.id !== b.id); save(); if (LOBBY.map) hubWalkers(); return true;
+}
+const bountyDone = a => Date.now() >= a.end;
+const bountiesReady = () => (SV.bounty ? SV.bounty.act.filter(bountyDone) : []);
+function bountyLeftTxt(a) { const m = Math.max(0, Math.ceil((a.end - Date.now()) / 60000)); return m >= 60 ? Math.floor(m / 60) + 'h ' + (m % 60) + 'm' : m + 'm'; }
+// bring a team home: returns a short summary line
+function bountyReturn(a, quiet) {
+  const B = bountyOf(), R = bountyRew(a.b), got = []; B.act = B.act.filter(x => x !== a);
+  if (a.ok) {
+    SV.gold += R.gold; got.push(fmt(R.gold) + ' gold');
+    workOf(); SV.res[R.res] = (SV.res[R.res] || 0) + R.resN; got.push(R.resN + ' ' + RES_NAME[R.res]);
+    if (R.gems) { SV.gems += R.gems; got.push(R.gems + ' gems'); }
+    if (R.light) { pityOf().light += R.light; got.push(R.light + ' Starlight'); }
+    if (Math.random() < R.gear) { const it = genItem(SV.lvl, Math.min(3, a.b.tier - 1)); SV.inv.push(it); got.push(it.name); }
+    a.ids.forEach(id => { const o = SV.owned[id]; if (o) { o.mor = Math.min(100, o.mor + 5); addBond(id, 1); } });
+  } else {
+    const g = Math.round(R.gold * 0.3); SV.gold += g; got.push(fmt(g) + ' gold');
+    a.ids.forEach(id => { const o = SV.owned[id]; if (o) o.mor = Math.max(0, o.mor - 8); });
+  }
+  if (!quiet) { sfx(a.ok ? 'gem' : 'ui'); toast((a.ok ? '<b>' + esc(a.b.name) + '</b>: success! ' : '<b>' + esc(a.b.name) + '</b> went badly. ') + got.join(', '), a.ok ? 'gold' : ''); }
+  return { ok: a.ok, got };
+}
+function claimBounties() {
+  const L = bountiesReady(); if (!L.length) return 0; let ok = 0, gold = 0; const g0 = SV.gold;
+  L.forEach(a => { if (bountyReturn(a, true).ok) ok++; }); gold = SV.gold - g0;
+  sfx('gem'); toast(L.length + ' bount' + (L.length > 1 ? 'ies' : 'y') + ' back · ' + ok + ' succeeded · +' + fmt(gold) + ' gold' + (ok ? ' and more' : ''), 'gold');
+  save(); return L.length;
+}
+
+/* ---- Bounty Board screen ---- */
+const BSEL = { b: null, ids: [] };
+function screenBounty() {
+  const B = bountyOf(), slots = bountySlots(), free = slots - B.act.length;
+  if (BSEL.b && !B.list.find(x => x.id === BSEL.b)) { BSEL.b = null; BSEL.ids = []; }
+  if (BSEL.b) return screenBountyPick();
+  const rdy = bountiesReady().length;
+  let h = '<p class="muted" style="font-size:12px;margin:0 0 10px">Send benched wardens on jobs around Veyra. Each job checks one main stat and one side stat. A good fit means a better chance. Your party and anyone sent out can\'t work at the posts. New jobs every day.</p>';
+  if (rdy > 1) h += '<div class="row" style="justify-content:flex-end;margin:0 0 10px"><button class="btn pf gold" data-act="all">Bring everyone home · ' + rdy + '</button></div>';
+  h += '<div class="sect">Out on jobs · ' + B.act.length + ' / ' + slots + (SV.lvl < 45 ? ' <span class="muted" style="font-size:11px">(more at Commander Lv ' + (SV.lvl < 25 ? 25 : 45) + ')</span>' : '') + '</div><div class="lst">';
+  if (!B.act.length) h += '<p class="muted" style="font-size:12px;margin:0 0 6px">Nobody is out. Pick a job below.</p>';
+  B.act.forEach((a, i) => {
+    const T = BOUNTY_TIER[a.b.tier], done = bountyDone(a), pct = Math.min(100, Math.round((Date.now() - a.t0) / (a.end - a.t0) * 100));
+    h += '<div class="li"><div class="bheads">' + a.ids.map(id => '<img src="' + heroHeadURL(id) + '" alt="">').join('') + '</div><div class="grow"><b><span style="color:' + T.col + '">' + T.name + '</span> · ' + esc(a.b.name) + '</b><small>' + a.ids.map(id => esc(HEROES[id].name)).join(', ') + ' · ' + Math.round(a.ch * 100) + '% chance</small><div class="prog"><i style="width:' + pct + '%;background:' + T.col + '"></i></div></div>'
+      + (done ? '<button class="btn pf gold" data-act="ret" data-v="' + i + '">Return</button>' : '<span class="muted" style="font:700 12px var(--px);min-width:56px;text-align:right">' + bountyLeftTxt(a) + '</span>') + '</div>';
+  });
+  h += '</div><div class="sect" style="display:flex;justify-content:space-between;align-items:center;gap:8px"><span>Today\'s jobs · ' + B.list.length + '</span><button class="btn pf" data-act="rr" style="min-height:32px;font-size:12px">' + (B.rr === today() ? 'New jobs · ' + price('gem', BOUNTY_REROLL_GEMS) : 'New jobs · free') + '</button></div><div class="lst">';
+  if (!B.list.length) h += '<p class="muted" style="font-size:12px">You took every job today. More tomorrow.</p>';
+  B.list.forEach(b => {
+    const T = BOUNTY_TIER[b.tier], R = bountyRew(b), iS = ISTAT.find(s => s[0] === b.st)[1], sS = ISTAT.find(s => s[0] === b.side)[1];
+    h += '<div class="li"><span class="sico" style="box-shadow:inset 0 0 0 2px ' + T.col + '">' + icoImg(BOUNTY_RES[b.st]) + '</span><div class="grow"><b><span style="color:' + T.col + '">' + T.name + '</span> · ' + esc(b.name) + '</b><small>Needs <span style="color:#ffd36b;font-weight:700">' + iS + '</span>, helps: ' + sS + ' · ' + CLASSES[b.cls].name + 's do well · up to ' + T.size + ' warden' + (T.size > 1 ? 's' : '') + ' · ' + (b.mins >= 60 ? b.mins / 60 + 'h' : b.mins + 'm') + '</small><small>' + price('gold', R.gold) + ' · ' + R.resN + ' ' + RES_NAME[R.res] + (R.gems ? ' · ' + price('gem', R.gems) : '') + (R.light ? ' · ' + R.light + ' Starlight' : '') + (R.gear ? ' · ' + Math.round(R.gear * 100) + '% gear' : '') + '</small></div><button class="btn pf' + (free > 0 ? ' gold' : '') + '" data-act="pick" data-v="' + b.id + '"' + (free > 0 ? '' : ' disabled') + '>' + (free > 0 ? 'Choose team' : 'No slots') + '</button></div>';
+  });
+  h += '</div>';
+  openModal('Bounty Board', h, { side: 'r', name: 'bounty', act: {
+    pick: v => { BSEL.b = v; BSEL.ids = []; screenBounty(); },
+    ret: v => { const a = bountyOf().act[+v]; if (a && bountyDone(a)) { bountyReturn(a); save(); if (LOBBY.map) hubWalkers(); refreshLobby(); } screenBounty(); },
+    all: () => { claimBounties(); if (LOBBY.map) hubWalkers(); refreshLobby(); screenBounty(); },
+    rr: () => { const B2 = bountyOf(); if (B2.rr === today()) { if (SV.gems < BOUNTY_REROLL_GEMS) { toast('Not enough gems', ''); return; } SV.gems -= BOUNTY_REROLL_GEMS; } B2.rr = today(); B2.list = []; for (let i = 0; i < BOUNTY_N; i++) B2.list.push(makeBounty()); save(); sfx('ui'); screenBounty(); }
+  } });
+}
+function screenBountyPick() {
+  const B = bountyOf(), b = B.list.find(x => x.id === BSEL.b), T = BOUNTY_TIER[b.tier];
+  BSEL.ids = BSEL.ids.filter(bountyFree);
+  const pool = Object.keys(SV.owned).filter(bountyFree).sort((x, y) => bountyFit(y, b) - bountyFit(x, b));
+  const ch = BSEL.ids.length ? bountyChance(BSEL.ids, b) : 0, iS = ISTAT.find(s => s[0] === b.st)[1], sS = ISTAT.find(s => s[0] === b.side)[1];
+  let h = '<div class="li" style="margin-bottom:10px"><div class="grow"><b><span style="color:' + T.col + '">' + T.name + '</span> · ' + esc(b.name) + '</b><small>Main stat <span style="color:#ffd36b;font-weight:700">' + iS + '</span> counts double, ' + sS + ' helps, ' + CLASSES[b.cls].name + 's get a bonus, higher stars help a little. Takes ' + (b.mins >= 60 ? b.mins / 60 + ' hours' : b.mins + ' minutes') + '.</small></div></div>';
+  h += '<div class="sect">Team · ' + BSEL.ids.length + ' / ' + T.size + '</div><div class="grid" style="grid-template-columns:repeat(' + Math.max(3, T.size) + ',minmax(0,1fr))">';
+  for (let i = 0; i < T.size; i++) { const id = BSEL.ids[i]; h += id ? '<button class="slot r' + (HEROES[id].star - 1) + '" data-act="tog" data-v="' + id + '"><img src="' + heroSmallURL(id) + '" alt=""><span class="lv ol">' + bountyFit(id, b) + '</span>' + gradeTag(id) + '</button>' : '<div class="slot empty"><span class="muted" style="font:700 11px var(--px)">Empty</span></div>'; }
+  h += '</div><div class="stat" style="margin-top:8px"><span>Chance of success</span><b style="color:' + (ch >= 0.85 ? '#7dff9c' : ch >= 0.55 ? '#ffd36b' : '#ff8a9a') + '">' + Math.round(ch * 100) + '%</b></div><div class="prog" style="margin:0 0 6px"><i style="width:' + Math.round(ch * 100) + '%;background:' + (ch >= 0.85 ? '#7dff9c' : ch >= 0.55 ? '#ffd36b' : '#ff8a9a') + '"></i></div>';
+  h += '<div class="row" style="gap:8px;flex-wrap:wrap;margin:8px 0"><button class="btn pf" data-act="back">Back</button><button class="btn pf" data-act="auto">Best fit</button><button class="btn pf gold" data-act="send"' + (BSEL.ids.length ? '' : ' disabled') + '>Send · ' + (b.mins >= 60 ? b.mins / 60 + 'h' : b.mins + 'm') + '</button></div>';
+  h += '<div class="sect">Available · fit score shown, best first</div><div class="grid">';
+  pool.forEach(id => { const on = BSEL.ids.indexOf(id) >= 0, H = HEROES[id], s = statsOf(id); h += '<button class="slot r' + (H.star - 1) + (on ? ' sel' : '') + '" data-act="tog" data-v="' + id + '"><img src="' + heroSmallURL(id) + '" alt=""><span class="lv ol">' + bountyFit(id, b) + '</span>' + gradeTag(id) + '<span class="pw ol">' + s[b.st] + '</span></button>'; });
+  if (!pool.length) h += '<p class="muted" style="grid-column:1/-1">Everyone is in your party or already out. Summon more wardens, or take someone out of the party.</p>';
+  h += '</div><p class="muted" style="font-size:12px;margin-top:10px">The big number on each card is their fit for this job. The small gold number is their ' + iS + '. A failed job still pays a little, but the team comes home tired.</p>';
+  openModal('Bounty Board', h, { side: 'r', name: 'bounty', act: {
+    back: () => { BSEL.b = null; BSEL.ids = []; screenBounty(); },
+    tog: v => { const i = BSEL.ids.indexOf(v); if (i >= 0) BSEL.ids.splice(i, 1); else if (BSEL.ids.length < T.size) BSEL.ids.push(v); else { BSEL.ids.pop(); BSEL.ids.push(v); } screenBounty(); },
+    auto: () => { BSEL.ids = pool.slice(0, T.size); screenBounty(); },
+    send: () => { const names = BSEL.ids.map(id => HEROES[id].name).join(', '); if (bountySend(b, BSEL.ids.slice())) { sfx('ui'); toast(names + ' set off: ' + esc(b.name), ''); refreshLobby(); } BSEL.b = null; BSEL.ids = []; screenBounty(); }
+  } });
+}
+
+/* ---- team presets ---- */
+const PRESET_N = 3, PRESET_NAMES = ['Spire team', 'Rootdeep team', 'Boss team'];
+function presetsOf() { const P = SV.presets || (SV.presets = []); for (let i = P.length; i < PRESET_N; i++) P.push({ n: PRESET_NAMES[i], ids: [] }); return P; }
+function presetSave(i) { const P = presetsOf()[i]; P.ids = SV.party.slice(); save(); }
+function presetLoad(i) {
+  const P = presetsOf()[i], ids = P.ids.filter(id => SV.owned[id] && !onBounty(id)).slice(0, 4);
+  if (!ids.length) return { n: 0, miss: P.ids.length };
+  SV.party = ids; workOf(); save(); refreshHeroStats(); if (LOBBY.map) hubWalkers(); refreshLobby();
+  return { n: ids.length, miss: P.ids.length - ids.length };
+}
+function presetsHTML() {
+  const P = presetsOf(); let h = '<div class="sect">Team presets · tap Load to swap your whole party</div><div class="presets">';
+  P.forEach((p, i) => {
+    const same = p.ids.length && p.ids.join() === SV.party.join();
+    h += '<div class="preset' + (same ? ' on' : '') + '"><div class="pn"><b>' + esc(p.n) + '</b><button class="pren" data-act="pren" data-v="' + i + '" aria-label="Rename">✎</button></div><div class="bheads">' + (p.ids.length ? p.ids.map(id => HEROES[id] ? '<img src="' + heroHeadURL(id) + '" alt=""' + (SV.owned[id] && !onBounty(id) ? '' : ' style="opacity:.35"') + '>' : '').join('') : '<span class="muted" style="font-size:11px">Empty</span>') + '</div><div class="row" style="gap:6px"><button class="btn pf' + (p.ids.length && !same ? ' gold' : '') + '" data-act="pload" data-v="' + i + '"' + (p.ids.length && !same ? '' : ' disabled') + '>' + (same ? 'Active' : 'Load') + '</button><button class="btn pf" data-act="psave" data-v="' + i + '">Save</button></div></div>';
+  });
+  return h + '</div>';
+}
+const presetActs = redraw => ({
+  pload: v => { const r = presetLoad(+v); if (!r.n) toast('Nobody from that team is free', ''); else { sfx('ui'); toast(presetsOf()[+v].n + ' ready' + (r.miss ? ' · ' + r.miss + ' missing (out on a bounty or gone)' : ''), r.miss ? '' : 'gold'); } redraw(); },
+  psave: v => { presetSave(+v); sfx('ui'); toast('Saved your party as ' + presetsOf()[+v].n, ''); redraw(); },
+  pren: v => { const p = presetsOf()[+v]; let n = null; try { n = prompt('Name this team', p.n); } catch (e) {} if (n && n.trim()) { p.n = n.trim().slice(0, 18); save(); } redraw(); }
+});
 
 /* ================= story: the Chronicle of the Spire ================= */
 // speakers: 'lead' / 'second' / 'third' = heroes in your party (lines vary by personality),
@@ -4084,6 +4359,7 @@ function foeSighted(type) {
   const now = Date.now(), at = Math.max(now + 900, (G.sightAt || 0) + 2600); G.sightAt = at;
   setTimeout(() => toast('<b>New foe: ' + esc(FOES[type].name) + '</b> · ' + BESTIARY[type].tip, ''), at - now);
 }
+const BEST_SCROLL = { y: 0 };
 function screenBestiary(sel) {
   const seen = BEST_ORDER.filter(bestSeen).length;
   let h = '<p class="muted" style="font-size:12px;margin:0 0 10px">Every foe you meet in the Spire is recorded here. Defeat 10, 50 and 200 of a kind for gem rewards.</p>';
@@ -4095,6 +4371,7 @@ function screenBestiary(sel) {
       + (next ? '<button class="btn pf' + (n >= next[0] ? ' gold' : '') + '" data-act="claim" data-v="' + sel + '"' + (n >= next[0] ? '' : ' disabled') + '>Claim ' + price('gem', next[1]) + '</button>' : '') + '</div>';
     h += '<div class="row" style="justify-content:flex-end;margin-top:12px"><button class="btn pf" data-act="back">All foes</button></div>';
   } else {
+    h += claimAllBtn(BEST_ORDER.filter(bestClaimable).length);
     h += '<div class="sect">Recorded · ' + seen + ' / ' + BEST_ORDER.length + '</div><div class="bgrid">';
     BEST_ORDER.forEach(k => {
       const s = bestSeen(k);
@@ -4103,8 +4380,10 @@ function screenBestiary(sel) {
     h += '</div>';
   }
   openModal('Bestiary', h, {
+    scroll: sel ? 0 : BEST_SCROLL.y, keep: false,
     act: {
-      sel: k => screenBestiary(k), back: () => screenBestiary(),
+      all: () => { BEST_SCROLL.y = $('#mBody').scrollTop; claimBest(); save(); refreshLobby(); screenBestiary(); },
+      sel: k => { BEST_SCROLL.y = $('#mBody').scrollTop; screenBestiary(k); }, back: () => screenBestiary(),
       claim: k => { if (!bestClaimable(k)) return; const r = BEST_MS[bestClaimed(k)][1]; SV.bestC = SV.bestC || {}; SV.bestC[k] = bestClaimed(k) + 1; SV.gems += r; save(); sfx('coin'); toast('+' + r + ' gems', 'gold'); refreshLobby(); screenBestiary(k); }
     }
   });
@@ -4341,6 +4620,7 @@ function todayItems() {
     { t: 'World boss · ' + wbNow().name, d: W.got >= WB_MS.length ? 'Every milestone claimed this week.' : W.got + ' of ' + WB_MS.length + ' milestones this week. Fight it at least once today.', done: W.got >= WB_MS.length || W.day === today(), go: () => SCREENS.mode() }
   ];
   if (bench) L.push({ t: 'Work Yard', d: !hasWork ? 'Nobody is working. Give your benched wardens a job.' : stock ? stock + ' storehouse' + (stock > 1 ? 's are' : ' is') + ' filling up. Collect them.' : 'Storehouses are still filling.', done: hasWork && !stock, free: stock > 0, go: () => SCREENS.work() });
+  if (bench) { const BB = bountyOf(), fr = bountySlots() - BB.act.length, rb = bountiesReady().length; L.push({ t: 'Bounty Board', d: (rb ? rb + ' team' + (rb > 1 ? 's' : '') + ' back with rewards. ' : '') + (fr > 0 && BB.list.length ? fr + ' slot' + (fr > 1 ? 's' : '') + ' free, ' + BB.list.length + ' jobs posted.' : BB.act.length ? 'Teams are out working.' : 'No jobs left today.'), done: !rb && (fr <= 0 || !BB.list.length), free: rb > 0, go: () => screenBounty() }); }
   if (SV.gold >= REFINE_GOLD || refinedToday() > 0) L.push({ t: 'Refine Starlight', d: (REFINE_DAY - refinedToday()) + ' of ' + REFINE_DAY + ' left today, ' + fmt(REFINE_GOLD) + ' gold each.', done: refinedToday() >= REFINE_DAY, go: () => SCREENS.spark() });
   return L;
 }
@@ -4348,10 +4628,11 @@ const todayDot = () => { const d = $('#todayDot'); if (d) d.classList.toggle('hi
 function screenToday() {
   const L = todayItems(), left = L.filter(x => !x.done).length, all = left === 0, got = SV.todayC === today();
   let h = '<p class="muted" style="font-size:12px;margin:0 0 10px">Everything that resets each day, in one place. Finish the whole list for a bonus.</p>';
+  const rdy = allReady(); if (rdy) h += '<div class="li" style="margin-bottom:10px"><span class="sico">' + icoImg('gem') + '</span><div class="grow"><b>Rewards waiting</b><small>' + rdy + ' from Trials, the Starpass, the Bestiary and the Bounty Board</small></div><button class="btn pf gold" data-act="claimall">Claim all</button></div>';
   L.forEach((x, i) => { h += '<div class="li' + (x.done ? ' tdone' : '') + '"><span class="tchk">' + (x.done ? '✓' : '') + '</span><div class="grow"><b>' + x.t + '</b><small>' + x.d + '</small></div>' + (x.done ? '' : '<button class="btn pf' + (x.free ? ' gold' : '') + '" data-act="go" data-v="' + i + '">Go</button>') + '</div>'; });
   h += '<div class="li' + (got ? ' tdone' : '') + '" style="margin-top:10px"><span class="sico">' + icoImg('gem') + '</span><div class="grow"><b>All done bonus</b><small>' + (got ? 'Claimed. See you tomorrow.' : all ? 'Everything is finished for today.' : left + ' thing' + (left > 1 ? 's' : '') + ' left.') + '</small></div>' + (got ? '' : '<button class="btn pf' + (all ? ' gold' : '') + '" data-act="bonus"' + (all ? '' : ' disabled') + '>Claim ' + price('gem', 50) + '</button>') + '</div>';
   h += '<p class="muted" style="font-size:12px;margin:10px 0 0">Sweep tickets today: ' + sweepLeft() + ' of ' + SWEEP_DAY + '. Use them in the mode screen on floors and forge tiers you have already beaten.</p>';
-  openModal('Today', h, { act: {
+  openModal('Today', h, { act: { claimall: () => { claimEverything(); screenToday(); todayDot(); },
     go: i => { const x = L[+i]; if (x) x.go(); },
     bonus: () => { if (!all || got) return; SV.todayC = today(); SV.gems += 50; save(); sfx('coin'); toast('+50 gems', 'gold'); refreshLobby(); screenToday(); }
   } });
@@ -5010,7 +5291,7 @@ function startRun(mode, floor) {
   tired.forEach(id => toast(HEROES[id].name + (grave(id) ? ' is gravely wounded and cannot fight' : ' refuses to go (morale too low)'), ''));
   Object.assign(G, { heroes: [], foes: [], projs: [], parts: [], nums: [], drops: [], fx: [], teles: [], zones: [], time: 0, order: 'advance', flag: null, focus: null, potCd: 0, state: 'explore', shake: 0, paused: false, lastHit: null, run: { gold: 0, gems: 0, xp: 0, kills: 0, items: 0 }, mode });
   G.caravan = null;
-  if (mode === 'spire') { G.floor = floor; G.map = genFloor(floor); }
+  if (mode === 'spire') { G.floor = floor; G.map = genFloor(floor); if (G.map.special === 'escort') G.caravan = makeRefugees(G.map); if (G.map.special === 'defend') G.caravan = makeWaystone(G.map.enc.find(e => e.defend)); }
   else if (mode === 'ev') { G.floor = floor; G.map = genFloor(evLevel(floor), evMapOpts(floor)); }
   else if (mode === 'wb') { G.floor = 1; G.map = wbMap(); }
   else if (mode === 'deep') { G.floor = floor; G.map = deepMap(floor); }
@@ -5092,6 +5373,7 @@ function update(dt) {
   G.heroes.concat(G.foes).forEach(a => physics(a, dt));
   updateProjs(dt); updateZones(dt); updateEffects(dt); updateDrops(dt); updateEncounters(dt);
   if (G.map.kind === 'exp') expUpdate(dt);
+  else if (G.map.kind === 'spire' && G.caravan) spireSpecialTick(dt);
   if (G.order === 'regroup' && G.flag && heroesAlive().every(h => Math.hypot(h.x - G.flag.x, h.y - G.flag.y) < 34)) { G.order = 'hold'; updateCmds(); }
   if (G.flag) G.flag.t += dt;
   const m = G.map;
@@ -5173,11 +5455,32 @@ function updateEncounters(dt) {
   for (const e of m.enc) {
     if (e.cleared) { if (m.kind === 'woods' && e.respawn > 0) { e.respawn -= dt; if (e.respawn <= 0 && !hs.some(h => dist(h, e) < e.r + 220)) { e.cleared = false; e.spawned = false; } } continue; }
     if (!e.spawned) { if (hs.some(h => dist(h, e) < e.r + 70)) spawnEnc(e); continue; }
+    if (e.endure) { endureTick(e, dt); continue; }
+    if (e.defend) { defendTick(e, dt); continue; }
     if (!G.foes.some(f => f.enc === e && !f.dead)) clearEnc(e);
   }
   G.state = G.foes.some(f => !f.dead) ? 'fight' : 'explore'; banterTick(dt);
 }
+// Endurance: hold the ring until the timer runs out while the horde keeps coming
+function endureFoe(enc, lvl) {
+  const a = rand(0, 6.28), r = enc.r * rand(0.85, 1.05); let x = enc.x + Math.cos(a) * r, y = enc.y + Math.sin(a) * r * 0.7; if (solidAt(G.map, x, y)) { x = enc.x + Math.cos(a) * enc.r * 0.5; y = enc.y + Math.sin(a) * enc.r * 0.35; }
+  const f = makeFoe(pick(enc.pool), lvl, x, y, enc); f.hpMax = Math.round(f.hpMax * 0.9); f.hp = f.hpMax; G.foes.push(f); smoke(x, y); return f;
+}
+function endureTick(e, dt) {
+  if (e.left == null) { e.left = e.endure; e.sp = 2; e.surge = 15; }
+  e.left -= dt; e.sp -= dt; e.surge -= dt;
+  const alive = G.foes.filter(f => f.enc === e && !f.dead).length, cap = Math.min(13, 6 + Math.floor(G.floor / 5));
+  if (e.left > 3) {
+    if (e.sp <= 0) { e.sp = Math.max(1.1, 2.1 - G.floor * 0.02); const n = Math.min(cap - alive, Math.random() < 0.5 ? 2 : 1); for (let i = 0; i < n; i++) endureFoe(e, e.lvl + (Math.random() < 0.2 ? 1 : 0)); }
+    if (e.surge <= 0) { e.surge = 14; const n = Math.max(0, Math.min(cap + 3 - alive, 4)); if (n) { for (let i = 0; i < n; i++) endureFoe(e, e.lvl); banner('Another wave!', Math.ceil(e.left) + ' seconds to hold'); sfx('boss'); shake(2); } }
+  }
+  if (e.left <= 0) {
+    G.foes.forEach(f => { if (f.enc === e && !f.dead) { f.dead = true; f.hp = 0; f.deadT = 0.4; smoke(f.x, f.y); } });
+    banner('You held the line!', 'The horde breaks and scatters'); sfx('level'); clearEnc(e);
+  }
+}
 function spawnEnc(enc) {
+  if (enc.defend) { enc.spawned = true; enc.wave = 1; enc.wt = 0; defendWave(enc); banner('Defend the Waystone', 'Hold off ' + enc.defend + ' waves'); sfx('boss'); shake(3); enc.pool.forEach(foeSighted); setFxFightStart(); return; }
   enc.spawned = true; const grp = G.map.kind === 'woods' ? woodsGroup(enc) : enc.group;
   grp.forEach((g, i) => {
     const a = i / grp.length * 6.28 + rand(-0.3, 0.3), r = g.type === 'boss' ? 0 : rand(enc.r * 0.25, enc.r * 0.6);
@@ -5188,7 +5491,9 @@ function spawnEnc(enc) {
   else if (grp.some(g => g.type === 'boss')) { banner('Hollow Warden', 'The guardian awakens'); sfx('boss'); shake(4); }
   grp.forEach(g => foeSighted(g.type)); setFxFightStart();
   if (grp.some(g => g.type === 'firstcmd')) { if (G.floor > 50) banner('Echo of the First Commander', 'A memory that will not stay down'); else banner('The First Commander', 'Ruler of the Spire'); sfx('boss'); shake(6); }
-  const eg = grp.find(g => g.elite); if (eg) { banner(eg.name, 'Your quarry'); sfx('boss'); shake(3); }
+  if (enc.endure) { banner('Endurance', 'Survive for ' + enc.endure + ' seconds'); sfx('boss'); shake(3); }
+  const eg = grp.find(g => g.elite); if (enc.brute) { G.foes.forEach(f => { if (f.enc === enc && f.elite) { f.hpMax = Math.round(f.hpMax * 0.8); f.hp = f.hpMax; f.scale = 1.35; } }); banner('Trial of Strength', 'Fell ' + grp.length + ' mighty foes'); sfx('boss'); shake(4); }
+  else if (eg) { banner(eg.name, 'Your quarry'); sfx('boss'); shake(3); }
   log('Foes emerge at <b>' + esc(enc.label) + '</b>!');
 }
 function clearEnc(enc) {
@@ -5197,7 +5502,7 @@ function clearEnc(enc) {
   if (G.map.kind === 'woods') { enc.respawn = 75; toast(enc.label + ' cleared', 'gold'); }
   if (G.map.kind === 'exp' && enc.nest) { toast(enc.label + ' purged', 'gold'); }
   log('<b>' + esc(enc.label) + '</b> cleared.');
-  if (G.map.kind === 'spire' && G.map.enc.every(e => e.cleared)) { G.map.exit.active = true; banner('Floor cleared!', 'The exit portal is open'); sfx('level'); updateCmds(); }
+  spireExitCheck();
 }
 
 /* ================= render ================= */
@@ -5414,8 +5719,11 @@ function drawOverlayText(g, Z, ox, oy) {
   g.textAlign = 'center'; g.textBaseline = 'alphabetic'; g.lineJoin = 'round';
   const font = (s, w) => (w || 700) + ' ' + Math.round(s * D) + 'px "Pixelify Sans",system-ui,sans-serif';
   // hero tags
-  G.heroes.forEach(h => {
-    const x = sx(h.x), y = sy(h.y - 44);
+  // name tags step upward when heroes crowd together, so names never print over each other
+  const placed = []; if (G.caravan && !G.caravan.dead) placed.push([sx(G.caravan.x), sy(G.caravan.y - (G.caravan.stone ? 50 : 34))]);
+  const place = (x, y) => { for (let i = 0; i < 4 && placed.some(p => Math.abs(p[0] - x) < 36 * D && Math.abs(p[1] - y) < 13 * D); i++) y -= 13 * D; placed.push([x, y]); return y; };
+  G.heroes.slice().sort((a, b) => b.y - a.y).forEach(h => {
+    const x = sx(h.x), y = place(x, sy(h.y - 44));
     if (!h.dead) {
       const bw = 28 * D, bh = 4 * D; g.fillStyle = '#0a0b1c'; g.fillRect(x - bw / 2 - D, y + 2 * D - D, bw + 2 * D, bh + 2 * D);
       g.fillStyle = '#3ad66a'; g.fillRect(x - bw / 2, y + 2 * D, bw * clamp(h.hp / h.hpMax, 0, 1), bh);
@@ -5424,7 +5732,7 @@ function drawOverlayText(g, Z, ox, oy) {
     g.font = font(10); g.lineWidth = 3 * D; g.strokeStyle = '#0d0b1c'; g.strokeText(h.name, x, y - D); g.fillStyle = STARC[h.star]; g.fillText(h.name, x, y - D);
     if (h.bubble) drawBubble(g, x, y - 14 * D, h.bubble.txt, D);
   });
-  if (G.caravan && !G.caravan.dead) { const c = G.caravan, x = sx(c.x), y = sy(c.y - 34), bw = 34 * D, bh = 4 * D; g.fillStyle = '#0a0b1c'; g.fillRect(x - bw / 2 - D, y - D, bw + 2 * D, bh + 2 * D); g.fillStyle = '#ffcf6b'; g.fillRect(x - bw / 2, y, bw * clamp(c.hp / c.hpMax, 0, 1), bh); g.font = font(10); g.lineWidth = 3 * D; g.strokeStyle = '#0d0b1c'; g.strokeText('Caravan', x, y - 3 * D); g.fillStyle = '#ffe08a'; g.fillText('Caravan', x, y - 3 * D); if (c.bubble) drawBubble(g, x, y - 16 * D, c.bubble.txt, D); }
+  if (G.caravan && !G.caravan.dead) { const c = G.caravan, x = sx(c.x), y = sy(c.y - (c.stone ? 50 : 34)), bw = 34 * D, bh = 4 * D; g.fillStyle = '#0a0b1c'; g.fillRect(x - bw / 2 - D, y - D, bw + 2 * D, bh + 2 * D); g.fillStyle = '#ffcf6b'; g.fillRect(x - bw / 2, y, bw * clamp(c.hp / c.hpMax, 0, 1), bh); g.font = font(10); g.lineWidth = 3 * D; g.strokeStyle = '#0d0b1c'; g.strokeText(c.name, x, y - 3 * D); g.fillStyle = '#ffe08a'; g.fillText(c.name, x, y - 3 * D); if (c.bubble) drawBubble(g, x, y - 16 * D, c.bubble.txt, D); }
   G.foes.forEach(e => {
     if (G.map.fog && !seenAt(G.map, e.x, e.y)) return;
     if (e.dead || e.spawnT > 0 || e.boss) { if (e.bubble && !e.dead) drawBubble(g, sx(e.x), sy(e.y - 72), e.bubble.txt, D); return; }
@@ -5470,7 +5778,7 @@ function updateHUD(dt) {
   });
   const M = G.map;
   const afxHTML = G.affix && G.affix.length ? ' <span class="afx">' + G.affix.map(k => '<i style="--c:' + ECHO_AFFIX[k].col + '" title="' + ECHO_AFFIX[k].desc + '">' + ECHO_AFFIX[k].name + '</i>').join('') + '</span>' : '';
-  if (G.mode === 'spire') { $('#zTitle').innerHTML = (G.floor > 50 ? 'Echo ' : 'Floor ') + G.floor + afxHTML; const c = M.enc.filter(e => e.cleared).length; $('#zObj').textContent = M.exit.active ? 'Exit open. Onward!' : (G.state === 'fight' ? 'Battle! ' : 'The Spire · ') + c + '/' + M.enc.length + ' cleared'; }
+  if (G.mode === 'spire') { $('#zTitle').innerHTML = (G.floor > 50 ? 'Echo ' : 'Floor ') + G.floor + afxHTML; const c = M.enc.filter(e => e.cleared).length, ee = M.enc.find(e => e.endure && e.spawned && !e.cleared), bb = M.enc.find(e => e.brute && e.spawned && !e.cleared), stx = spireSpecialText(); $('#zObj').textContent = M.exit.active ? 'Exit open. Onward!' : stx ? stx : ee ? 'Survive! ' + Math.max(0, Math.ceil(ee.left == null ? ee.endure : ee.left)) + 's left' : bb ? 'Trial of Strength · ' + G.foes.filter(f => f.enc === bb && !f.dead).length + ' left' : (G.state === 'fight' ? 'Battle! ' : (M.special === 'endure' ? 'Endurance floor · ' : M.special === 'brute' ? 'Strength floor · ' : M.special === 'defend' ? 'Defend floor · ' : 'The Spire · ')) + c + '/' + M.enc.length + ' cleared'; }
   else if (G.mode === 'ev') { const E = evNow(); $('#zTitle').innerHTML = esc(E.name) + ' · ' + G.floor + '/' + EV_STAGES + afxHTML; const c = M.enc.filter(e => e.cleared).length; $('#zObj').textContent = M.exit.active ? 'Exit open. Onward!' : (G.state === 'fight' ? 'Battle! ' : 'Event · ') + c + '/' + M.enc.length + ' cleared'; }
   else if (G.mode === 'deep') { $('#zTitle').innerHTML = '<span style="color:#7af0d8">Depth ' + G.floor + '</span>'; const c = M.enc.filter(e => e.cleared).length; $('#zObj').textContent = M.exit.active ? 'Exit open. Onward!' : (G.state === 'fight' ? 'Battle! ' : 'The Rootdeep · ') + c + '/' + M.enc.length + ' cleared'; }
   else if (G.mode === 'wb') { const B = wbNow(); $('#zTitle').innerHTML = '<span style="color:' + B.col + '">' + B.name + '</span>'; const t = Math.ceil(G.wbT || WB_TIME); $('#zObj').textContent = G.wbOn ? 'Damage ' + fmt(Math.round(G.wbDmg || 0)) + ' · ' + Math.floor(t / 60) + ':' + String(t % 60).padStart(2, '0') : G.wbDmg ? 'Fight over' : 'Approach the boss'; }
@@ -5611,12 +5919,14 @@ function drawFxPass(g, Z, ox, oy, t) {
     else { const s = Math.max(1.5, p.size * 0.6); g.fillRect(p.x - s / 2, p.y - s / 2, s, s); }
   }
   drawLiveFx(g, t);
-  // effects
+  // effects: when many bright bursts stack up, dim them together so the fighters stay readable
+  let E = 0; for (const f of G.fx) if (f.k === 'flash' || f.k === 'star' || f.k === 'beam') E += (1 - clamp(f.t / f.dur, 0, 1)) * f.r * f.r * (f.k === 'beam' ? 2 : 1);
+  const fs = E > 2600 ? Math.sqrt(2600 / E) : 1;
   for (const f of G.fx) {
     const k = clamp(f.t / f.dur, 0, 1);
     if (f.k === 'cres') drawCres2(g, f, k);
-    else if (f.k === 'star') drawStar(g, f.x, f.y, f.r * (0.55 + k * 0.8), f.rot, f.col, 1 - k);
-    else if (f.k === 'flash') glowAt(g, f.x, f.y, f.r * (0.6 + 0.6 * k), f.col, 0.9 * (1 - k));
+    else if (f.k === 'star') drawStar(g, f.x, f.y, f.r * (0.55 + k * 0.8), f.rot, f.col, (1 - k) * (0.4 + 0.6 * fs));
+    else if (f.k === 'flash') glowAt(g, f.x, f.y, f.r * (0.55 + 0.5 * k), f.col, 0.6 * (1 - k) * fs);
     else if (f.k === 'shock') {
       const e = ease(k), r = f.r * (0.25 + 0.75 * e);
       g.globalAlpha = 0.18 * (1 - k); g.fillStyle = f.col; g.beginPath(); g.ellipse(f.x, f.y, r, r * 0.6, 0, 0, 6.283); g.fill();
@@ -5625,10 +5935,10 @@ function drawFxPass(g, Z, ox, oy, t) {
     }
     else if (f.k === 'beam') {
       const w = (f.w || 9) * (1 - k * 0.6), h = f.h || 110;
-      for (let y = 0; y < h; y += 18) glowAt(g, f.x, f.y - y, w * 2.2, f.col, 0.35 * (1 - k));
-      g.globalAlpha = 0.85 * (1 - k); g.fillStyle = f.col; g.fillRect(f.x - w / 2, f.y - h, w, h);
+      for (let y = 0; y < h; y += 18) glowAt(g, f.x, f.y - y, w * 2.2, f.col, 0.3 * (1 - k) * fs);
+      g.globalAlpha = 0.8 * (1 - k) * (0.5 + 0.5 * fs); g.fillStyle = f.col; g.fillRect(f.x - w / 2, f.y - h, w, h);
       g.fillStyle = '#ffffff'; g.fillRect(f.x - w / 5, f.y - h, w / 2.5, h);
-      glowAt(g, f.x, f.y, w * 3, f.col, 0.8 * (1 - k));
+      glowAt(g, f.x, f.y, w * 3, f.col, 0.6 * (1 - k) * fs);
     }
     else if (f.k === 'spin' && f.e) {
       drawVortex(g, f.e, f.r, f.col, k, t);
@@ -6022,7 +6332,7 @@ function workerUpdate(w, k, dt, m) {
 function hubWalkers() {
   if (SV) workTick();
   const m = LOBBY.map, W = SV.work ? SV.work.as : {}, home = id => SV.party.indexOf(id) < 0;
-  const ids = SV.party.filter(id => SV.owned[id]).concat(Object.keys(SV.owned).filter(id => home(id) && W[id]), Object.keys(SV.owned).filter(id => home(id) && !W[id])).slice(0, 10);
+  const ids = SV.party.filter(id => SV.owned[id]).concat(Object.keys(SV.owned).filter(id => home(id) && W[id]), Object.keys(SV.owned).filter(id => home(id) && !W[id] && !onBounty(id))).slice(0, 10);
   LOBBY.walkers = ids.map((id, i) => {
     const L = heroLook(id), c = CLASSES[HEROES[id].cls];
     const w = actor({ team: 'h', id, name: HEROES[id].name, star: HEROES[id].star, trait: HEROES[id].trait, look: L, sheet: heroSheet('h_' + id, L), wpn: weaponSprite(c.weapon, L.glow), ranged: c.ranged, spd: 26 + Math.random() * 6, party: SV.party.indexOf(id) >= 0 }); applyGearVis(w);
@@ -6112,7 +6422,7 @@ function renderLobby(dt) {
     if (h.small) return; const x = sx(h.x), y = sy(h.y) + 26 * D; g.font = fnt(11); const tw = g.measureText(h.label).width, bw = tw + 30 * D, bh = 20 * D, bx = Math.round(x - bw / 2), by = Math.round(y - bh);
     h.rect = [bx, by, bw, bh];
     g.fillStyle = 'rgba(13,11,28,.85)'; g.fillRect(bx - 2 * D, by - 2 * D, bw + 4 * D, bh + 4 * D); g.fillStyle = 'rgba(28,32,66,.92)'; g.fillRect(bx, by, bw, bh); g.fillStyle = 'rgba(113,123,189,.6)'; g.fillRect(bx, by, bw, D);
-    g.imageSmoothingEnabled = false; g.drawImage(ICONCV[h.ic], bx + 4 * D, by + 3 * D, 14 * D, 14 * D);
+    g.imageSmoothingEnabled = false; if (ICONCV[h.ic]) g.drawImage(ICONCV[h.ic], bx + 4 * D, by + 3 * D, 14 * D, 14 * D);
     g.fillStyle = '#eef0ff'; g.textBaseline = 'middle'; g.fillText(h.label, x + 9 * D, by + bh / 2 + D); g.textBaseline = 'alphabetic';
     const dot = (h.k === 'board' && TRIALS().some(q => q.prog >= q.need && !q.done)) || (h.k === 'forge' && SV.freePull !== today()) || (h.k.indexOf('work_') === 0 && SV.work && jobReady(h.k.slice(5)) >= jobCap(h.k.slice(5)) * 0.5);
     if (dot) { g.fillStyle = '#0d0b1c'; g.fillRect(bx + bw - 3 * D, by - 5 * D, 9 * D, 9 * D); g.fillStyle = '#ff3b5c'; g.fillRect(bx + bw - 2 * D, by - 4 * D, 7 * D, 7 * D); }
@@ -6194,11 +6504,12 @@ function setupLobby() {
 /* ================= modal system ================= */
 let ACT = {}, CUR = null;
 function openModal(title, html, o) {
-  o = o || {}; $('#mHead').textContent = title; $('#mBody').innerHTML = html; $('#mBody').scrollTop = 0;
+  o = o || {}; const same = !!$('#modal').className && $('#mHead').textContent === title && o.keep !== false, prevTop = $('#mBody').scrollTop, toTop = o.scroll != null ? o.scroll : same ? prevTop : 0;
+  $('#mHead').textContent = title; $('#mBody').innerHTML = html; $('#mBody').scrollTop = toTop;
   const box = $('#mBox'); box.className = 'pf' + (o.narrow ? ' narrow' : '') + (o.parch ? ' parch' : '');
   $('#modal').className = 'on' + (o.side ? ' drawer-' + o.side : ''); ACT = o.act || {}; CUR = o.name || null;
-  // reset the scroll only once the panel is visible: hidden elements ignore scroll changes and keep the old position
-  $('#mBody').scrollTop = 0;
+  // set the scroll only once the panel is visible: hidden elements ignore scroll changes and keep the old position
+  $('#mBody').scrollTop = toTop;
   if (G.on) G.paused = true;
 }
 function closeModal() { const wasOpen = !!$('#modal').className; $('#modal').className = ''; ACT = {}; CUR = null; if (wasOpen && LOBBY.on && SV.bondQ && SV.bondQ.length && !STORYST.on) setTimeout(() => { if (!$('#modal').className && !STORYST.on) showBondUps(); }, 350); if (G.on && $('#down').classList.contains('hidden') && $('#clear').classList.contains('hidden')) G.paused = false; if (LOBBY.on) refreshLobby(); FORGE.anim = false; }
@@ -6214,7 +6525,7 @@ const SCREENS = {};
 SCREENS.work = screenWork; SCREENS.today = screenToday; SCREENS.craft = st => screenCraft(st && typeof st === 'object' ? st : null); SCREENS.bestiary = screenBestiary; SCREENS.echo = screenEcho; SCREENS.gift = screenGift; SCREENS.spark = screenSpark; SCREENS.chronicle = screenChronicle; SCREENS.outfits = screenOutfits;
 const WF = { f: 'all', c: '', s: 'best' };
 const WSORT = [['best', 'Best'], ['grade', 'Grade'], ['power', 'Power'], ['prof', 'Profession'], ['new', 'Newest']];
-SCREENS.train = id => screenTrain(id); SCREENS.bulk = screenBulk;
+SCREENS.train = id => screenTrain(id); SCREENS.bulk = screenBulk; SCREENS.bounty = screenBounty;
 SCREENS.wardens = function (sel) {
   const owned = Object.keys(HEROES).filter(id => SV.owned[id]), gsc = id => SV.owned[id] ? statTotal(statsOf(id)) : -1, ord = Object.keys(SV.owned);
   const pk = id => { const p = profOf(id); return p ? Object.keys(PROFS).indexOf(p.k) * 10 - p.lv : 99; };
@@ -6234,7 +6545,7 @@ SCREENS.wardens = function (sel) {
   all.sort((a, b) => (!!SV.owned[b] - !!SV.owned[a]) || (SV.owned[a] ? cmp(a, b) : HEROES[b].star - HEROES[a].star));
   let h = '<div class="sect">Your party · the first warden leads · tap a hero below for details</div><div class="grid" style="grid-template-columns:repeat(4,minmax(0,1fr))">';
   for (let i = 0; i < 4; i++) { const id = SV.party[i]; h += id ? '<button class="slot r' + (HEROES[id].star - 1) + '" data-act="det" data-v="' + id + '"><img src="' + heroSmallURL(id) + '" alt=""><span class="lv ol">' + (i === 0 ? 'Lead' : stars(HEROES[id].star)) + '</span></button>' : '<div class="slot empty"><span class="muted" style="font:700 11px var(--px)">Empty</span></div>'; }
-  h += '</div><div class="row" style="gap:8px;margin-top:10px;flex-wrap:wrap"><button class="btn pf gold" data-act="train">Training Grounds</button><button class="btn pf red" data-act="bulk">Release recruits…</button></div>';
+  h += '</div>' + presetsHTML() + '<div class="row" style="gap:8px;margin-top:10px;flex-wrap:wrap"><button class="btn pf gold" data-act="bounty">Bounty Board' + (bountiesReady().length ? ' · ' + bountiesReady().length + ' back' : '') + '</button><button class="btn pf gold" data-act="train">Training Grounds</button><button class="btn pf red" data-act="bulk">Release recruits…</button></div>';
   h += '<div class="sect">Wardens · ' + owned.length + ' · Legends ' + legendIds().filter(id => SV.owned[id]).length + ' / ' + legendIds().length + '</div>';
   h += '<div class="chips">' + [['all', 'All'], ['rec', 'Recruits'], ['leg', 'Legends'], ['lock', 'Locked']].map(([k, n]) => '<button class="chip' + (WF.f === k ? ' on' : '') + '" data-act="wf" data-v="' + k + '">' + n + '</button>').join('') + '</div>';
   h += '<div class="chips"><button class="chip' + (!WF.c ? ' on' : '') + '" data-act="wc" data-v="">Any class</button>' + Object.keys(CLASSES).map(k => '<button class="chip' + (WF.c === k ? ' on' : '') + '" data-act="wc" data-v="' + k + '">' + CLASSES[k].name + '</button>').join('') + '</div>';
@@ -6242,7 +6553,7 @@ SCREENS.wardens = function (sel) {
   all.forEach(id => { const o = SV.owned[id], H = HEROES[id], p = o && profOf(id); h += '<button class="slot r' + (H.star - 1) + (o ? '' : ' empty') + '" data-act="det" data-v="' + id + '"><img src="' + heroSmallURL(id, !o) + '" alt=""><span class="lv ol">' + (o ? stars(H.star) + (o.lb ? ' +' + o.lb : '') : '?') + '</span>' + (o ? gradeTag(id) : '') + (o && o.lock ? '<span class="lk">' + icoImg('lock') + '</span>' : '') + (WF.s === 'prof' && p ? '<span class="pf2">' + icoImg(PROFS[p.k].ic) + '<b>' + p.lv + '</b></span>' : '') + (WF.s === 'power' && o ? '<span class="pw ol">' + fmt(heroPower(id)) + '</span>' : '') + (o && talFree(id) > 0 ? '<span class="dot"></span>' : '') + '</button>'; });
   if (!all.length) h += '<p class="muted" style="grid-column:1/-1">Nobody here with these filters.</p>';
   h += '</div><p class="muted" style="margin-top:14px;font-size:12px">Every warden rolls their own stats and grade (F to SS) when they join, so a 5★ can be weak and a 3★ can be great. Train them at the Training Grounds. Legends are the named heroes: duplicates limit-break them. Everyone else is one of a kind. Lock a warden on their page to keep them safe from release.</p>';
-  openModal('Wardens', h, { side: 'r', name: 'wardens', act: { det: id => heroDetail(id), wf: v => { WF.f = v; SCREENS.wardens(); }, wc: v => { WF.c = v; SCREENS.wardens(); }, ws: v => { WF.s = v; SCREENS.wardens(); }, train: () => screenTrain(SV.party[0]), bulk: () => screenBulk() } });
+  openModal('Wardens', h, { side: 'r', name: 'wardens', act: Object.assign(presetActs(() => SCREENS.wardens()), { bounty: () => screenBounty(), det: id => heroDetail(id), wf: v => { WF.f = v; SCREENS.wardens(); }, wc: v => { WF.c = v; SCREENS.wardens(); }, ws: v => { WF.s = v; SCREENS.wardens(); }, train: () => screenTrain(SV.party[0]), bulk: () => screenBulk() }) });
 };
 function heroDetail(id) {
   const H = HEROES[id], o = SV.owned[id], C = CLASSES[H.cls], s = heroStats(id), inP = SV.party.indexOf(id);
@@ -6251,7 +6562,7 @@ function heroDetail(id) {
   h += '<div class="stat"><span>Personality</span><b>' + TRAITS[H.trait].name + '</b></div><div class="muted" style="font-size:12px;margin:4px 0 6px">' + TRAITS[H.trait].desc + '</div>';
   if (o) { h += '<div class="stat"><span>Morale</span><b style="color:' + (o.mor < 25 ? '#ff9ab0' : '#f29ac0') + '">' + o.mor + ' / 100</b></div>' + (injOf(id) ? '<div class="stat"><span>Condition</span><b style="color:' + INJ[injOf(id)].col + '">' + INJ[injOf(id)].name + ' · heals in ' + injLeftTxt(id) + '</b></div>' : '<div class="stat"><span>Condition</span><b style="color:#7dff9c">Healthy</b></div>') + '<div class="stat"><span>Knows you?</span><b style="color:' + (isAware(id) ? '#7dff9c' : '#a8aed8') + '">' + (isAware(id) ? 'Yes, aware of you' : 'Not yet') + '</b></div>' + (isAware(id) ? '' : '<div class="muted" style="font-size:12px;margin:4px 0 6px">Wakes up to you at: ' + AWAKEN[H.trait].need + ' Or at limit break 3.</div>') + (isAware(id) ? '<div class="stat"><span>Relies on you</span><b style="color:' + relyCol(relyOf(id)) + '">' + relyName(relyOf(id)) + ' · ' + relyOf(id) + '</b></div><div class="muted" style="font-size:12px;margin:4px 0 6px">' + esc(H.name) + ' knows this is a game to you, and survival to them. Orders that keep them alive raise this; orders that get them knocked out lower it.</div>' : '') + '<div class="stat"><span>Bond</span><b>' + bondHearts(bondLv(id)) + ' <span style="color:#ff9ac8">' + BOND_NAME[bondLv(id)] + '</span></b></div><div class="prog" style="margin:0 0 6px"><i style="width:' + Math.round(bondProg(id) * 100) + '%;background:#ff9ac8"></i></div><div class="stat"><span>Limit break</span><b>' + o.lb + ' / 5</b></div><div class="stat"><span>Power</span><b>' + fmt(heroPower(id)) + '</b></div>'; }
   h += '<div class="stat"><span>HP · ATK · DEF</span><b>' + s.hpMax + ' · ' + Math.round(s.atk) + ' · ' + Math.round(s.def) + '</b></div><div class="stat"><span>Crit</span><b>' + Math.round(s.crit * 100) + '%</b></div>';
-  if (o) { const st = statsOf(id); h += '<div class="sect" style="margin-top:10px">Individual stats · grade ' + gradeTag(id) + '</div><div class="istats">' + ISTAT.map(([k, n, d]) => '<div title="' + d + '"><span>' + n + '</span><div class="prog"><i style="width:' + st[k] * 5 + '%;background:' + (st[k] >= 15 ? '#ffc65a' : st[k] >= 9 ? '#8fc3ff' : '#ff8a9a') + '"></i></div><b>' + st[k] + '</b></div>').join('') + '</div><div class="stat"><span>Trained</span><b>' + trainedOf(id) + ' / ' + trainCap(id) + '</b></div><div class="stat"><span>Profession</span><b>' + profTag(id) + '</b></div>' + (profOf(id) ? '<div class="muted" style="font-size:12px;margin:2px 0 6px">' + PROFS[profOf(id).k].desc + '</div>' : '') + '<div class="row" style="margin-top:6px;gap:8px;flex-wrap:wrap"><button class="btn pf gold" data-act="train" data-v="' + id + '">Train</button><button class="btn pf" data-act="lock" data-v="' + id + '">' + icoImg('lock', 'bi') + (o.lock ? ' Unlock' : ' Lock') + '</button>' + (isGen(id) ? '<button class="btn pf red" data-act="rel" data-v="' + id + '"' + (o.lock ? ' disabled' : '') + '>' + (o.lock ? 'Locked' : 'Release · +' + RELEASE_LIGHT[H.star] + ' Starlight') + '</button>' : '') + '</div>'; }
+  if (o) { const st = statsOf(id); h += '<div class="sect" style="margin-top:10px">Individual stats · grade ' + gradeTag(id) + '</div><div class="istats">' + ISTAT.map(([k, n, d]) => '<div title="' + d + '"><span>' + n + '</span><div class="prog"><i style="width:' + st[k] * 5 + '%;background:' + (st[k] >= 15 ? '#ffc65a' : st[k] >= 9 ? '#8fc3ff' : '#ff8a9a') + '"></i></div><b>' + st[k] + '</b></div>').join('') + '</div>' + (onBounty(id) ? '<div class="stat"><span>Away</span><b style="color:#ffd36b">' + esc(bountyOfHero(id).b.name) + ' · ' + (bountyDone(bountyOfHero(id)) ? 'back now' : bountyLeftTxt(bountyOfHero(id))) + '</b></div>' : '') + '<div class="stat"><span>Trained</span><b>' + trainedOf(id) + ' / ' + trainCap(id) + '</b></div><div class="stat"><span>Profession</span><b>' + profTag(id) + '</b></div>' + (profOf(id) ? '<div class="muted" style="font-size:12px;margin:2px 0 6px">' + PROFS[profOf(id).k].desc + '</div>' : '') + '<div class="row" style="margin-top:6px;gap:8px;flex-wrap:wrap"><button class="btn pf gold" data-act="train" data-v="' + id + '">Train</button><button class="btn pf" data-act="lock" data-v="' + id + '">' + icoImg('lock', 'bi') + (o.lock ? ' Unlock' : ' Lock') + '</button>' + (isGen(id) ? '<button class="btn pf red" data-act="rel" data-v="' + id + '"' + (o.lock ? ' disabled' : '') + '>' + (o.lock ? 'Locked' : 'Release · +' + RELEASE_LIGHT[H.star] + ' Starlight') + '</button>' : '') + '</div>'; }
   if (o) { const others = Object.keys(SV.owned).filter(x => x !== id && (pairXP(id, x) > 0)).sort((a, b) => pairXP(id, b) - pairXP(id, a)).slice(0, 6); if (others.length) { h += '<div class="sect" style="margin-top:10px">Relationships</div><div class="rels">' + others.map(x => '<span><img src="' + heroHeadURL(x) + '" alt=""><b>' + esc(HEROES[x].name) + '</b><i style="color:' + pairCol(id, x) + '">' + pairName(id, x) + '</i></span>').join('') + '</div><div class="muted" style="font-size:11px;margin-bottom:6px">Comrades fight harder side by side and avenge each other. Rivals both crit more. Bonds grow from clearing floors together.</div>'; } }
   h += wishHTML(id);
   h += hsHTML(id);
@@ -6261,11 +6572,11 @@ function heroDetail(id) {
   h += '<div class="row" style="margin-top:12px">';
   if (o) {
     const fp = talFree(id); h += '<button class="btn pf' + (bagUpgradeFor(id) ? ' gold' : '') + '" data-act="gear" data-v="' + id + '">Equipment' + (bagUpgradeFor(id) ? ' ▲' : '') + '</button>' + '<button class="btn pf' + (fp > 0 ? ' gold' : '') + '" data-act="tal" data-v="' + id + '">Talents' + (fp > 0 ? ' · ' + fp + ' free' : '') + '</button><button class="btn pf' + (giftToday(id) ? '' : ' pink') + '" data-act="gift" data-v="' + id + '">' + (giftToday(id) ? 'Gifted today' : '♥ Gift') + '</button><button class="btn pf" data-act="fit" data-v="' + id + '">Outfit</button>';
-    if (inP < 0) h += '<button class="btn pf gold" data-act="join" data-v="' + id + '"' + (SV.party.length >= 4 ? ' disabled' : '') + '>' + (SV.party.length >= 4 ? 'Party full' : 'Join party') + '</button>';
+    if (inP < 0) h += '<button class="btn pf gold" data-act="join" data-v="' + id + '"' + (SV.party.length >= 4 || onBounty(id) ? ' disabled' : '') + '>' + (onBounty(id) ? 'Out on a bounty' : SV.party.length >= 4 ? 'Party full' : 'Join party') + '</button>';
     else { h += '<button class="btn pf" data-act="leave" data-v="' + id + '"' + (SV.party.length <= 1 ? ' disabled' : '') + '>Leave party</button>'; if (inP > 0) h += '<button class="btn pf gold" data-act="lead" data-v="' + id + '">Make lead</button>'; }
   } else h += '<button class="btn pf gold" data-open="forge">Summon at the Starforge</button>';
   h += '<button class="btn pf" data-act="back">Back</button></div></div></div>';
-  openModal(H.name, h, { side: 'r', act: { train: v => screenTrain(v), lock: v => { toggleLock(v); sfx('ui'); toast(esc(HEROES[v].name) + (isLocked(v) ? ' is locked and safe from release' : ' is unlocked'), ''); heroDetail(v); }, rel: v => openConfirm('Release ' + HEROES[v].name + '?', HEROES[v].name + ' leaves Veyra for good. Their gear returns to your bag, and they leave ' + RELEASE_LIGHT[HEROES[v].star] + ' Starlight and ' + 100 * HEROES[v].star + ' gold behind.', 'Release', () => { const n = HEROES[v].name; if (releaseHero(v)) { toast(n + ' sets off on their own road', ''); SCREENS.wardens(); } }), tal: v => SCREENS.talents(v), gear: v => SCREENS.loadout(v), fit: v => screenOutfits(v), gift: v => SCREENS.gift(v), wish: v => { closeModal(); grantWish(v); }, hs: v => { const [hid, i] = v.split('|'); closeModal(); playHS(hid, +i, () => heroDetail(hid)); }, back: () => SCREENS.wardens(), join: v => { if (SV.party.length < 4) SV.party.push(v); save(); heroDetail(v); }, leave: v => { SV.party = SV.party.filter(x => x !== v); save(); heroDetail(v); }, lead: v => { SV.party = [v].concat(SV.party.filter(x => x !== v)); save(); heroDetail(v); } } });
+  openModal(H.name, h, { side: 'r', act: { train: v => screenTrain(v), lock: v => { toggleLock(v); sfx('ui'); toast(esc(HEROES[v].name) + (isLocked(v) ? ' is locked and safe from release' : ' is unlocked'), ''); heroDetail(v); }, rel: v => openConfirm('Release ' + HEROES[v].name + '?', HEROES[v].name + ' leaves Veyra for good. Their gear returns to your bag, and they leave ' + RELEASE_LIGHT[HEROES[v].star] + ' Starlight and ' + 100 * HEROES[v].star + ' gold behind.', 'Release', () => { const n = HEROES[v].name; if (releaseHero(v)) { toast(n + ' sets off on their own road', ''); SCREENS.wardens(); } }), tal: v => SCREENS.talents(v), gear: v => SCREENS.loadout(v), fit: v => screenOutfits(v), gift: v => SCREENS.gift(v), wish: v => { closeModal(); grantWish(v); }, hs: v => { const [hid, i] = v.split('|'); closeModal(); playHS(hid, +i, () => heroDetail(hid)); }, back: () => SCREENS.wardens(), join: v => { if (SV.party.length < 4 && !onBounty(v)) SV.party.push(v); save(); heroDetail(v); }, leave: v => { SV.party = SV.party.filter(x => x !== v); save(); heroDetail(v); }, lead: v => { SV.party = [v].concat(SV.party.filter(x => x !== v)); save(); heroDetail(v); } } });
 }
 SCREENS.talents = function (id) {
   const H = HEROES[id], cls = H.cls, t = talOf(id), free = talFree(id), tot = talTotal(id), cost = respecCost(id);
@@ -6386,10 +6697,26 @@ function TRIALS() {
   q.forEach(x => x.done = x.daily ? !!D.claimed[x.id] : !!SV.claimed[x.id]);
   return q;
 }
+// claim many rewards at once and show one summary toast
+function giveRewMany(list) {
+  const t = { gems: 0, gold: 0, potions: 0 }, titles = [], items = [];
+  list.forEach(r => { t.gems += r.gems || 0; t.gold += r.gold || 0; t.potions += r.potions || 0; if (r.title) { SV.titles = SV.titles || []; if (SV.titles.indexOf(r.title) < 0) { SV.titles.push(r.title); titles.push(r.title); } } if (r.item) { SV.inv.push(r.item); items.push(r.item.name); } });
+  SV.gems += t.gems; SV.gold += t.gold; SV.potions += t.potions;
+  const parts = [t.gems ? fmt(t.gems) + ' gems' : '', t.gold ? fmt(t.gold) + ' gold' : '', t.potions ? t.potions + ' potions' : '', items.length ? items.length + ' gear' : '', titles.length ? titles.length + ' title' + (titles.length > 1 ? 's' : '') : ''].filter(Boolean);
+  if (parts.length) { sfx('gem'); toast('Claimed ' + list.length + ' reward' + (list.length > 1 ? 's' : '') + ': ' + parts.join(', '), 'gold'); }
+}
+const trialsReady = () => TRIALS().filter(x => !x.done && x.prog >= x.need);
+const passReady = () => PASS.map((r, i) => i).filter(i => !SV.pass[i] && SV.lvl >= PASS[i].lv);
+function claimTrials() { const L = trialsReady(); L.forEach(x => { if (x.daily) SV.daily.claimed[x.id] = 1; else SV.claimed[x.id] = 1; }); giveRewMany(L.map(x => x.rew)); return L.length; }
+function claimPass() { const L = passReady(); giveRewMany(L.map(i => { SV.pass[i] = 1; const r = PASS[i]; return r.crate ? { item: genItem(SV.lvl, r.crate) } : r; })); return L.length; }
+function claimBest() { let n = 0, g = 0; BEST_ORDER.forEach(k => { while (bestClaimable(k)) { g += BEST_MS[bestClaimed(k)][1]; SV.bestC = SV.bestC || {}; SV.bestC[k] = bestClaimed(k) + 1; n++; } }); if (n) { SV.gems += g; sfx('gem'); toast('Claimed ' + n + ' Bestiary reward' + (n > 1 ? 's' : '') + ': ' + fmt(g) + ' gems', 'gold'); } return n; }
+const allReady = () => trialsReady().length + passReady().length + BEST_ORDER.filter(bestClaimable).length + bountiesReady().length;
+function claimEverything() { const n = claimTrials() + claimPass() + claimBest() + claimBounties(); save(); refreshHeroStats(); refreshLobby(); return n; }
+const claimAllBtn = (n, act) => n ? '<div class="row" style="justify-content:flex-end;margin:0 0 10px"><button class="btn pf gold" data-act="' + (act || 'all') + '">Claim all · ' + n + '</button></div>' : '';
 function giveRew(r) { const parts = []; if (r.title) { SV.titles = SV.titles || []; if (SV.titles.indexOf(r.title) < 0) SV.titles.push(r.title); parts.push('the title \u201c' + r.title + '\u201d'); } if (r.gems) { SV.gems += r.gems; parts.push(r.gems + ' gems'); } if (r.gold) { SV.gold += r.gold; parts.push(r.gold + ' gold'); } if (r.potions) { SV.potions += r.potions; parts.push(r.potions + ' potions'); } if (r.item) { SV.inv.push(r.item); parts.push(r.item.name); } sfx('gem'); toast('Received ' + parts.join(', '), 'gold'); }
 const rewTxt = r => [r.gems ? price('gem', r.gems) : '', r.gold ? price('gold', r.gold) : '', r.potions ? price('potion', r.potions) : '', r.title ? '<span class="ttl">Title: ' + esc(r.title) + '</span>' : ''].join(' ');
 SCREENS.trials = function () {
-  const q = TRIALS(); let h = '';
+  const q = TRIALS(); let h = claimAllBtn(trialsReady().length);
   const ready = q.filter(x => !x.daily && x.done).length, all = q.filter(x => !x.daily).length;
   h += '<p class="muted" style="font-size:12px;margin:0 0 6px">Achievements: ' + ready + ' / ' + all + ' complete' + (SV.titles && SV.titles.length ? ' · ' + SV.titles.length + ' title' + (SV.titles.length > 1 ? 's' : '') + ' earned (choose one on your Profile)' : '') + '</p>';
   [['Daily · resets at midnight', q.filter(x => x.daily)], ['The climb', q.filter(x => !x.daily && !x.cat)], ['Collection', q.filter(x => x.cat === 'col')], ['Hearts', q.filter(x => x.cat === 'heart')], ['The wilds', q.filter(x => x.cat === 'wild')]].forEach(([title, list]) => {
@@ -6397,7 +6724,7 @@ SCREENS.trials = function () {
     list.sort((a, b) => (a.done - b.done) || ((b.prog >= b.need) - (a.prog >= a.need))).forEach(x => { const ok = x.prog >= x.need; h += '<div class="li"><div class="grow"><b>' + x.t + '</b><small>' + Math.min(x.prog, x.need) + ' / ' + x.need + ' · ' + rewTxt(x.rew) + '</small><div class="prog"><i style="width:' + Math.min(100, x.prog / x.need * 100) + '%"></i></div></div><button class="btn pf' + (ok && !x.done ? ' gold' : '') + '" data-act="claim" data-v="' + x.id + '"' + (ok && !x.done ? '' : ' disabled') + '>' + (x.done ? 'Done' : 'Claim') + '</button></div>'; });
     h += '</div>';
   });
-  openModal('Trials', h, { act: { claim: id => { const x = TRIALS().find(z => z.id === id); if (!x || x.done || x.prog < x.need) return; if (x.daily) SV.daily.claimed[id] = 1; else SV.claimed[id] = 1; giveRew(x.rew); save(); SCREENS.trials(); } } });
+  openModal('Trials', h, { act: { all: () => { claimTrials(); save(); SCREENS.trials(); }, claim: id => { const x = TRIALS().find(z => z.id === id); if (!x || x.done || x.prog < x.need) return; if (x.daily) SV.daily.claimed[id] = 1; else SV.claimed[id] = 1; giveRew(x.rew); save(); SCREENS.trials(); } } });
 };
 SCREENS.tavern = function () {
   const ids = Object.keys(SV.owned).sort((a, b) => SV.owned[a].mor - SV.owned[b].mor), can = SV.gold >= 150;
@@ -6428,10 +6755,10 @@ SCREENS.shop = function () {
 };
 const PASS = []; (function () { const pat = [{ gems: 50 }, { potions: 3 }, { gold: 400 }, { gems: 100 }, { crate: 1 }, { gold: 700 }, { gems: 150 }, { potions: 5 }, { crate: 2 }, { gems: 250 }]; for (let lv = 2; lv <= 31; lv++) PASS.push(Object.assign({ lv }, pat[(lv - 2) % pat.length])); })();
 SCREENS.pass = function () {
-  let h = '<p class="muted" style="margin:0 0 12px;font-size:13px">Every Commander level unlocks a Starpass reward. Climb and fight to level up.</p><div class="lst">';
+  let h = '<p class="muted" style="margin:0 0 12px;font-size:13px">Every Commander level unlocks a Starpass reward. Climb and fight to level up.</p>' + claimAllBtn(passReady().length) + '<div class="lst">';
   PASS.forEach((r, i) => { const ok = SV.lvl >= r.lv, got = SV.pass[i]; const txt = r.gems ? price('gem', r.gems) : r.gold ? price('gold', r.gold) : r.potions ? price('potion', r.potions) + ' potions' : (r.crate === 2 ? 'Aether crate' : 'Iron crate'); h += '<div class="li" style="' + (ok ? '' : 'opacity:.55') + '"><img class="ic" src="' + ICON[got ? 'star' : ok ? 'pass' : 'lock'] + '" alt=""><div class="grow"><b>Level ' + r.lv + '</b><small>' + txt + '</small></div><button class="btn pf' + (ok && !got ? ' gold' : '') + '" data-act="claim" data-v="' + i + '"' + (ok && !got ? '' : ' disabled') + '>' + (got ? 'Claimed' : ok ? 'Claim' : 'Locked') + '</button></div>'; });
   h += '</div>';
-  openModal('Starpass', h, { act: { claim: v => { const i = +v, r = PASS[i]; if (!r || SV.pass[i] || SV.lvl < r.lv) return; SV.pass[i] = 1; if (r.crate) { const it = genItem(SV.lvl, r.crate); giveRew({ item: it }); } else giveRew(r); save(); SCREENS.pass(); } } });
+  openModal('Starpass', h, { act: { all: () => { claimPass(); save(); SCREENS.pass(); }, claim: v => { const i = +v, r = PASS[i]; if (!r || SV.pass[i] || SV.lvl < r.lv) return; SV.pass[i] = 1; if (r.crate) { const it = genItem(SV.lvl, r.crate); giveRew({ item: it }); } else giveRew(r); save(); SCREENS.pass(); } } });
 };
 SCREENS.mail = function () {
   const w = SV.mail.welcome;
