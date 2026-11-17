@@ -209,7 +209,7 @@ img{image-rendering:pixelated;image-rendering:crisp-edges;-webkit-user-drag:none
 .btile img{width:60px;height:60px;image-rendering:pixelated}.btile.unk img{filter:brightness(0) opacity(.55)}.btile.unk{cursor:default;color:var(--dim)}.btile .dot{top:4px;right:4px}
 .bdet{display:flex;gap:14px;align-items:center;margin-bottom:10px}.bdet .bart{width:96px;height:96px;flex:none;display:grid;place-items:center;background:radial-gradient(circle,rgba(255,255,255,.08),rgba(0,0,0,0) 70%),rgba(8,10,28,.6);box-shadow:inset 0 0 0 2px #3a4180}.bdet .bart img{width:88px;height:88px;image-rendering:pixelated}.bdet p{margin:6px 0 0;font-size:13px}.bdet small{color:var(--dim);display:block;margin-top:2px}.bdet b{display:block}
 /* ---- per-hero loadout ---- */
-.hpick{display:flex;gap:6px;overflow-x:auto;padding:2px 2px 8px;margin-bottom:6px;touch-action:pan-x;overscroll-behavior:contain}
+.hpick{display:flex;gap:6px;overflow-x:auto;padding:2px 2px 8px;margin-bottom:6px;overscroll-behavior-x:contain}
 .hpick .hp{position:relative;flex:none;width:46px;height:46px;padding:0;border:0;cursor:pointer;background:#141633;box-shadow:inset 0 0 0 2px #3a4180;opacity:.75}
 .hpick .hp.party{box-shadow:inset 0 0 0 2px #6a74c8}.hpick .hp.on{opacity:1;box-shadow:inset 0 0 0 3px #f5c451,0 0 10px rgba(245,196,81,.4)}
 .hpick .hp img{width:42px;height:42px;image-rendering:pixelated}.hpick .hp .up{position:absolute;right:1px;top:-1px;font-style:normal;font-size:11px;color:#7dff9c;text-shadow:0 1px 0 #000}
@@ -225,6 +225,9 @@ img{image-rendering:pixelated;image-rendering:crisp-edges;-webkit-user-drag:none
 .forge b{color:var(--sc);font-size:13px}.forge small{color:var(--dim);font-size:11px}.forge.sel{box-shadow:inset 3px 0 0 0 var(--sc),inset 0 0 0 2px var(--sc)}.forge.shut{opacity:.4;cursor:default}
 .essd{display:inline-block;width:10px;height:10px;background:var(--sc);transform:rotate(45deg);margin:0 4px 0 2px;box-shadow:0 0 4px var(--sc)}
 .tabs .tab img{width:16px;height:16px;vertical-align:-3px;image-rendering:pixelated}.li.made{box-shadow:inset 3px 0 0 0 #7dff9c,0 0 0 1px rgba(125,255,156,.3)}
+.wbres{display:flex;flex-direction:column;align-items:center;gap:4px;margin:6px auto 10px;max-width:360px}.wbres b{font:700 34px var(--px)}.wbres small{color:var(--dim)}.wbres .prog{width:100%}
+.wbms{display:flex;gap:4px;margin:8px 0 6px;flex-wrap:wrap}.wbms span{flex:1 1 90px;display:flex;flex-direction:column;padding:4px 6px;background:rgba(8,10,28,.55);box-shadow:inset 0 0 0 1px rgba(113,123,189,.3);font-size:10px}
+.wbms span b{font:700 13px var(--px);color:var(--text)}.wbms span small{color:var(--dim);font-size:10px}.wbms span.got{box-shadow:inset 0 0 0 2px #7dff9c}.wbms span.got b::after{content:' ✓';color:#7dff9c}
 .wbtns{display:flex;flex-direction:column;gap:6px;align-self:center}
 @media (max-width:600px){.li:has(>.wbtns){flex-wrap:wrap}.li:has(>.wbtns) .grow{flex:1 1 0;min-width:0}.li>.wbtns{flex-direction:row;flex-basis:100%;flex-wrap:wrap}.li>.wbtns .btn{flex:1}.li.job{flex-wrap:wrap}.li.job .grow{flex:1 1 0;min-width:0}.li.job .wbtns{flex-direction:row;flex-basis:100%;padding-left:44px}.li.job .wbtns .btn{flex:1}}
 .pf.red{background:linear-gradient(#ff6a7a,#d12a37);box-shadow:var(--frame),inset 0 0 0 2px #ffb0b8,inset 0 0 0 4px #7a1420}
@@ -295,7 +298,7 @@ img{image-rendering:pixelated;image-rendering:crisp-edges;-webkit-user-drag:none
 }
 #modal.drawer-r,#modal.drawer-l{padding:0;background:rgba(5,6,18,.35)}
 #modal.drawer-r{justify-content:flex-end}#modal.drawer-l{justify-content:flex-start}
-#modal.drawer-r #mBox,#modal.drawer-l #mBox{height:100%;max-height:100%;width:min(520px,94vw);padding-top:var(--st);padding-bottom:var(--sb)}
+#modal.drawer-r #mBox,#modal.drawer-l #mBox{height:100%;max-height:100%;min-height:0;width:min(520px,94vw);padding-top:var(--st);padding-bottom:var(--sb)}
 #modal.drawer-r #mBox{animation:slideR .22s ease-out;padding-right:var(--sr)}#modal.drawer-l #mBox{animation:slideL .22s ease-out;padding-left:var(--sl)}
 #modal.drawer-r #mClose{right:auto;left:-10px;top:calc(4px + var(--st))}#modal.drawer-l #mClose{right:6px;top:calc(4px + var(--st))}
 @keyframes slideR{from{transform:translateX(60px);opacity:0}to{transform:none;opacity:1}}
@@ -323,7 +326,7 @@ img{image-rendering:pixelated;image-rendering:crisp-edges;-webkit-user-drag:none
 #leftMenu{position:absolute;left:calc(12px + var(--sl));top:calc(8px + var(--st));display:flex;flex-direction:column;gap:10px;z-index:3}
 .hbtn{width:42px;height:42px;display:grid;place-items:center;position:relative}
 .hbtn img{width:26px;height:26px}
-#log{position:absolute;left:calc(64px + var(--sl));top:calc(66px + var(--st));width:min(360px,42vw);max-height:40vh;overflow:auto;padding:9px 12px;font:500 12px/1.55 var(--ui);z-index:6;touch-action:pan-y;overscroll-behavior:contain}
+#log{position:absolute;left:calc(64px + var(--sl));top:calc(66px + var(--st));width:min(360px,42vw);max-height:40vh;overflow:auto;padding:9px 12px;font:500 12px/1.55 var(--ui);z-index:6;touch-action:manipulation;overscroll-behavior:contain}
 #log b{color:var(--gold)}
 #party{position:absolute;left:calc(10px + var(--sl));bottom:calc(10px + var(--sb));display:flex;gap:10px;z-index:3;max-width:calc(100% - 300px)}
 .hc{position:relative;width:132px;padding:6px 7px 7px 6px;display:flex;gap:7px;text-align:left}
@@ -390,7 +393,7 @@ img{image-rendering:pixelated;image-rendering:crisp-edges;-webkit-user-drag:none
 #mBox.narrow{width:min(440px,100%)}
 #mHead{flex:none;display:flex;align-items:center;justify-content:center;height:46px;font:700 21px var(--px);background:linear-gradient(#3d4690,#272c57);box-shadow:inset 0 -3px 0 var(--ink),inset 0 0 0 2px var(--hi)}
 #mClose{position:absolute;right:-10px;top:-10px;width:40px;height:40px;font:900 20px/40px var(--ui);color:#fff;z-index:2}
-#mBody{overflow:auto;overscroll-behavior:contain;padding:14px 16px 18px;-webkit-overflow-scrolling:touch;touch-action:pan-y;font-size:14px;line-height:1.45}
+#mBody{overflow-y:auto;overflow-x:hidden;flex:1 1 auto;min-height:0;overscroll-behavior:contain;padding:14px 16px 18px;-webkit-overflow-scrolling:touch;touch-action:manipulation;font-size:14px;line-height:1.45}
 #mBox.parch{background:linear-gradient(#f1d9a6,#d9b878);color:#2b2140;box-shadow:0 -4px 0 0 #3a2f4f,0 4px 0 0 #3a2f4f,-4px 0 0 0 #3a2f4f,4px 0 0 0 #3a2f4f,inset 0 0 0 3px #b8935a}
 #mBox.parch #mHead{background:none;box-shadow:none;color:#2b2f5a;font-size:30px;text-shadow:2px 2px 0 #fff3c8;height:54px}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:40px;padding:6px 16px;font:700 14px var(--px)}
@@ -539,6 +542,8 @@ img{image-rendering:pixelated;image-rendering:crisp-edges;-webkit-user-drag:none
 <div id="fade"></div>
 
 <script>
+// shown in Settings so players can confirm which build their device is running
+const APP_VER = '3.53';
 'use strict';
 /* ================= core utilities ================= */
 const $ = s => document.querySelector(s), $$ = s => Array.from(document.querySelectorAll(s));
@@ -2041,11 +2046,13 @@ function hurt(src, tgt, mult, o) {
   if (tgt.vuln > G.time) d *= 1.4;
   if (src.team === 'h' && hasAffix('starlit')) d *= 1.2;
   if (src.team === 'f' && src.bannerT > G.time) d *= 1.25;
+  if (tgt.aegisT > G.time && src.team === 'h' && src.ranged) { d *= 0.25; if (Math.random() < 0.2) num(tgt.x, tgt.y - topH(tgt) - 6, 'Blocked', 'skill'); }
   if (tgt.d && tgt.d.aegis && src.team === 'h' && src.ranged) { d *= 0.4; if (Math.random() < 0.25) num(tgt.x, tgt.y - topH(tgt) - 6, 'Blocked', 'skill'); }
   if (tgt.shield > 0) { const a = Math.min(tgt.shield, d); tgt.shield -= a; d -= a; }
   d = Math.round(d);
   if (tgt.team === 'h' && !o.guard) { const gd = G.heroes.find(a => a !== tgt && !a.dead && a.tal && a.tal.bodyguard && dist(a, tgt) < 70); if (gd && d > 2) { const part = Math.round(d * 0.3); d -= part; gd.hp -= part; gd.flash = 0.1; num(gd.x, gd.y - topH(gd), part, 'hurt'); if (gd.hp <= 0) { if (!survive(gd)) die(gd, src); } } }
   if (src.team === 'h' && src.setfx && src.setfx.life && !src.dead && d > 0) heal(src, d * src.setfx.life, true, src);
+  if (tgt.wb && G.wbOn) G.wbDmg = (G.wbDmg || 0) + Math.min(d, tgt.hp);
   tgt.hp -= d; tgt.flash = tgt.team === 'f' ? 0.07 : 0.12;
   if (!tgt.boss && !o.nokb && !(tgt.d && tgt.d.immobile) && !tgt.elite) { const a = Math.atan2(tgt.y - src.y, tgt.x - src.x), k = (o.kb || 1) * (tgt.d && tgt.d.heavy ? 0.5 : 1); tgt.kbx += Math.cos(a) * 55 * k; tgt.kby += Math.sin(a) * 55 * k; }
   if (d > 0) num(tgt.x, tgt.y - topH(tgt), d, crit ? 'crit' : (tgt.team === 'h' ? 'hurt' : 'dmg'));
@@ -2071,6 +2078,7 @@ function survive(h) {
 }
 function heal(t, a, quiet, src) { if (!t || t.dead) return; if (t.team === 'h' && hasAffix('starless')) a *= 0.7; if (src && src.setfx && src.setfx.heal) a *= 1 + src.setfx.heal; a = Math.round(a); if (a < 1) return; if (src && src.tal && src.tal.overflow) { const over = a - (t.hpMax - t.hp); if (over > 0) t.shield = Math.min(t.hpMax * 0.25, (t.shield || 0) + over); } if (t.hp >= t.hpMax) return; t.hp = Math.min(t.hpMax, t.hp + a); num(t.x, t.y - topH(t), '+' + a, 'heal'); if (!quiet) { for (let i = 0; i < 6; i++) gpart(t.x + rand(-9, 9), t.y - rand(4, 24), 0, -rand(18, 34), rand(0.6, 1), '#7dff9c', 1, 0, { plus: 1 }); flash(t.x, t.y - 14, 18, '#7dff9c', 0.3); } }
 function die(e, src) {
+  if (e.wb) setTimeout(() => wbEnd('kill'), 900);
   if (e.npc) { e.dead = true; e.hp = 0; flash(e.x, e.y - 14, 50, '#ff5b73', 0.5); dust(e.x, e.y, 16, '#5a4a3a'); expComplete(false, 'The caravan was destroyed.'); return; }
   e.dead = true; e.hp = 0; e.deadT = 0;
   if (e.team === 'f') foeSplit(e);
@@ -2404,6 +2412,7 @@ Object.assign(FOE_TOPH, { briar: 24, banner: 40, shard: 24, leech: 24, sentinel:
 // per-frame behaviour for foes with special abilities; runs before normal movement and attacks
 function foeSpecial(e, dt) {
   const d = e.d;
+  if (e.wb) wbMech(e, dt);
   if (d.healer) {
     e.healCd = (e.healCd == null ? 2 : e.healCd) - dt;
     if (e.healCd <= 0) {
@@ -4015,6 +4024,96 @@ function screenCraft(st) {
     }
   });
 }
+/* ================= weekly world boss ================= */
+// One giant foe a week. A 90-second damage race: your best attempt this week counts toward five milestones.
+const WBOSS = [
+  { key: 'ember', name: 'The Ember Titan', title: 'Its footsteps leave the ground burning', theme: 'ashen', set: 'ember', col: '#ff8a3a', tip: 'Slams set the ground ablaze under your wardens. It rages at half health.' },
+  { key: 'frost', name: 'The Frost Matron', title: 'Winter remembers every warden', theme: 'frost', set: 'storm', col: '#9ad0ff', tip: 'Chills the whole party and calls Shardlings to her side.' },
+  { key: 'void', name: 'The Void Maw', title: 'It is hungry, and it is patient', theme: 'ashen', set: 'night', col: '#d06bff', tip: 'Drags your wardens toward its mouth and spits out Void Leeches.' },
+  { key: 'gilded', name: 'The Gilded Tyrant', title: 'A king who never stopped giving orders', theme: 'crown', set: 'aegis', col: '#ffd36b', tip: 'Raises a shield that blocks most ranged damage, and calls Gilded Sentinels.' }
+];
+const WB_TIME = 90, WB_MS = [0.12, 0.3, 0.52, 0.76, 1];
+const wbNow = () => WBOSS[weekNo() % WBOSS.length];
+function wbState() { const w = weekNo(); if (!SV.wb || SV.wb.wk !== w) SV.wb = { wk: w, best: 0, got: 0, tries: 0 }; return SV.wb; }
+const wbLevel = () => Math.max(5, SV.lvl + 2);
+// damage a strong party deals in 90 seconds at this level; the last milestone sits right at it
+const wbTarget = () => Math.round(125000 * (1 + 0.1 * (wbLevel() - 1)) / 500) * 500;
+const wbMilestones = () => WB_MS.map(f => Math.round(wbTarget() * f / 50) * 50);
+function wbReward(i) {
+  const B = wbNow();
+  return [{ gems: 60 }, { ess: 15 }, { gems: 120, light: 1 }, { ess: 30, gems: 80 }, { gems: 250, item: 1 }][i];
+}
+function wbRewardTxt(r) { const B = wbNow(), p = []; if (r.gems) p.push(r.gems + ' gems'); if (r.ess) p.push(r.ess + ' ' + SETS[B.set].name + ' essence'); if (r.light) p.push(r.light + ' Starlight'); if (r.item) p.push('an Epic ' + SETS[B.set].name + ' piece'); return p.join(' + '); }
+function wbGrant(r) {
+  const B = wbNow();
+  if (r.gems) SV.gems += r.gems; if (r.ess) { const F = forgeOf(); F.ess[B.set] = (F.ess[B.set] || 0) + r.ess; } if (r.light) pityOf().light += r.light;
+  if (r.item) { const it = genItem(SV.lvl, 3, null, { set: B.set, exact: 1, cls: pick(SV.party.filter(id => SV.owned[id]).map(id => HEROES[id].cls)) }); SV.inv.push(it); }
+}
+
+// arena: a guardian ring with the party starting right beside it
+function wbMap() {
+  const B = wbNow(), m = genFloor(wbLevel(), { theme: B.theme, foes: ['slime', 'slime'], boss: true, seed: weekNo() * 17 + 3 });
+  const enc = m.enc[2]; enc.group = [{ type: 'boss', lvl: wbLevel() }]; enc.label = B.name; m.enc = [enc];
+  m.start = { x: enc.x - enc.r - 40, y: enc.y }; m.labels = [{ x: enc.x, y: enc.y, t: B.name }];
+  return m;
+}
+function wbSetup(e) {
+  const B = wbNow(); e.wb = B.key; e.name = B.name; e.scale = 1.5; e.r = 14; e.hpMax = Math.round(wbTarget() * 1.08); e.hp = e.hpMax; e.def *= 0.6; e.tint = B.col;
+  G.wbT = WB_TIME; G.wbDmg = 0; G.wbOn = true; e.wbT = { a: 4, b: 9 };
+  banner(B.name, B.title); sfx('boss'); shake(6); flash(e.x, e.y - 30, 120, B.col, 0.5);
+}
+// boss mechanics, called every frame for the world boss
+function wbMech(e, dt) {
+  const k = e.wb, hs = heroesAlive(); if (!hs.length) return;
+  e.wbT.a -= dt; e.wbT.b -= dt;
+  const add = (type, n) => { for (let i = 0; i < n; i++) { const a = rand(0, 6.28), f = makeFoe(type, wbLevel() - 2, e.x + Math.cos(a) * 40, e.y + Math.sin(a) * 24, e.enc); if (solidAt(G.map, f.x, f.y)) { f.x = e.x; f.y = e.y + 20; } f.spawnT = 0.4; G.foes.push(f); smoke(f.x, f.y); } };
+  if (k === 'ember') {
+    const rage = e.hp < e.hpMax * 0.5; if (rage && !e.raged) { e.raged = 1; e.rate *= 0.7; e.spd *= 1.25; banner('The Titan rages', 'The ground itself burns'); }
+    if (e.wbT.a <= 0) { e.wbT.a = rage ? 4.5 : 6; hs.slice(0, 3).forEach(h => { const x = h.x + rand(-6, 6), y = h.y + rand(-4, 4); tele(x, y, 26, 1, '#ff8a3a', () => { if (!G.on) return; shock(x, y, 28, '#ff8a3a', 4, 0.4); flash(x, y - 4, 30, '#ff6a2a', 0.3); heroesAlive().forEach(t => { if (Math.hypot(t.x - x, t.y - y) < 26) hurt(e, t, 1.3, { skill: 1 }); }); }); }); }
+  }
+  if (k === 'frost') {
+    if (e.wbT.a <= 0) { e.wbT.a = 8; hs.forEach(h => { h.slow = 2.5; star(h.x, h.y - 20, 9, '#bfe8ff', 0.3); hurt(e, h, 0.5, { skill: 1, nokb: 1 }); }); shock(e.x, e.y, 160, '#9ad0ff', 4, 0.8); sfx('freeze'); }
+    if (e.wbT.b <= 0) { e.wbT.b = 15; add('shard', 2); }
+  }
+  if (k === 'void') {
+    if (e.wbT.a <= 0) { e.wbT.a = 7; e.pullT = 1.1; vfx({ k: 'implode', x: e.x, y: e.y - 20, r: 150, col: '#d06bff', dur: 0.8 }); sfx('magic'); }
+    if (e.pullT > 0) { e.pullT -= dt; hs.forEach(h => { const d = dist(h, e); if (d > 20) { const nx = h.x + (e.x - h.x) / d * 70 * dt, ny = h.y + (e.y - h.y) / d * 70 * dt; if (!solidAt(G.map, nx, ny)) { h.x = nx; h.y = ny; } } }); }
+    if (e.wbT.b <= 0) { e.wbT.b = 14; add('leech', 1); }
+  }
+  if (k === 'gilded') {
+    if (e.wbT.a <= 0) { e.wbT.a = 18; e.aegisT = G.time + 6; banner('Shield raised', 'Ranged attacks glance off. Send your blades in.'); aura(e, '#ffd36b'); }
+    if (e.wbT.b <= 0) { e.wbT.b = 20; add('sentinel', 1); }
+  }
+}
+function wbTick(dt) {
+  if (!G.wbOn || G.paused) return;
+  G.wbT -= dt; if (G.wbT <= 0) { G.wbT = 0; wbEnd('time'); }
+}
+function wbEnd(why) {
+  if (!G.wbOn) return; G.wbOn = false; G.paused = true; hideBanner();
+  const S = wbState(), B = wbNow(), dmg = Math.round(G.wbDmg || 0), ms = wbMilestones(), best0 = S.best;
+  S.tries++; if (dmg > S.best) S.best = dmg;
+  const newly = []; for (let i = S.got; i < ms.length && S.best >= ms[i]; i++) { const r = wbReward(i); wbGrant(r); newly.push(wbRewardTxt(r)); S.got = i + 1; }
+  heroesAlive().forEach(h => { h.mor = Math.min(100, h.mor + 3); }); G.heroes.forEach(h => bondRunGain(h.id, 3));
+  saveMorale(); save(); sfx('level');
+  const el = $('#clear'), pct = Math.min(100, Math.round(dmg / ms[ms.length - 1] * 100));
+  el.innerHTML = '<b class="big ol" style="color:' + B.col + '">' + esc(B.name) + '</b><p>' + (why === 'kill' ? 'You brought it down! Every milestone is yours.' : why === 'wipe' ? 'Your party fell, but the damage counts.' : 'Time is up.') + '</p>'
+    + '<div class="wbres"><b class="ol">' + fmt(dmg) + '</b><small>damage' + (dmg > best0 ? ' · new best this week!' : ' · best this week ' + fmt(S.best)) + '</small><div class="prog"><i style="width:' + pct + '%;background:' + B.col + '"></i></div></div>'
+    + (newly.length ? '<p>Milestone' + (newly.length > 1 ? 's' : '') + ' reached: ' + newly.join(' · ') + '</p>' : '<p class="muted" style="font-size:12px">' + (S.got < ms.length ? 'Next milestone at ' + fmt(ms[S.got]) + ' damage.' : 'Every milestone claimed this week.') + '</p>')
+    + '<div class="row" style="justify-content:center"><button class="btn pf" id="btnHome2">Return to Veyra</button><button class="btn pf gold" id="btnNext">Try again</button></div>';
+  el.classList.remove('hidden');
+  $('#btnHome2').onclick = () => { sfx('ui'); leaveRun(); };
+  $('#btnNext').onclick = () => { sfx('ui'); fadeTo(() => { if (!startRun('wb', 1)) leaveRun(); }); };
+}
+
+/* ---- mode screen card ---- */
+function wbHTML() {
+  const B = wbNow(), S = wbState(), ms = wbMilestones(), on = SV.mode === 'wb', days = typeof evDaysLeft === 'function' ? evDaysLeft() : 7;
+  let h = '<div class="sect">World boss · ' + days + ' day' + (days > 1 ? 's' : '') + ' left</div><div class="li evcard' + (on ? ' sel' : '') + '" style="--ec:' + B.col + '"><div class="grow"><b style="color:' + B.col + '">' + B.name + '</b><small>' + B.tip + ' A 90-second fight: deal as much damage as you can. Your best attempt this week counts.</small>'
+    + '<div class="wbms">' + ms.map((m, i) => '<span class="' + (S.got > i ? 'got' : '') + '" title="' + wbRewardTxt(wbReward(i)) + '"><b>' + fmt(m) + '</b><small>' + wbRewardTxt(wbReward(i)) + '</small></span>').join('') + '</div>'
+    + '<small>Best this week: ' + fmt(S.best) + ' · attempts: ' + S.tries + ' · boss level ' + wbLevel() + '</small></div><button class="btn pf' + (on ? '' : ' gold') + '" data-act="wb">' + (on ? 'Selected' : 'Choose') + '</button></div>';
+  return h;
+}
 
 /* ================= hero stories: three chapters each ================= */
 // 'h' = the hero speaking, '' = narration. Chapter 1 never addresses you directly, because
@@ -4366,6 +4465,7 @@ function resizeGame() {
   G.Z = Math.max(2, Math.round(Math.min(w / 250, h / 270)));
 }
 function startRun(mode, floor) {
+  G.wbOn = false;
   G.affix = mode === 'spire' ? echoAffixes(floor) : mode === 'ev' ? (evNow().affix || []).slice() : [];
   const ids = SV.party.filter(id => SV.owned[id]);
   const grave = id => injOf(id) >= 3, tired = ids.filter(id => (SV.owned[id].mor || 0) < 15 || grave(id)), go = ids.filter(id => (SV.owned[id].mor || 0) >= 15 && !grave(id));
@@ -4375,6 +4475,7 @@ function startRun(mode, floor) {
   G.caravan = null;
   if (mode === 'spire') { G.floor = floor; G.map = genFloor(floor); }
   else if (mode === 'ev') { G.floor = floor; G.map = genFloor(evLevel(floor), evMapOpts(floor)); }
+  else if (mode === 'wb') { G.floor = 1; G.map = wbMap(); }
   else if (mode === 'forge') { const fs = forgeSel(); G.floor = floor; G.forge = { set: fs.set, tier: floor }; G.map = forgeMap(fs.set, floor); }
   else if (mode === 'exp') { ensureOffers(); G.map = genExpedition(SV.exp); if (SV.exp.type === 'escort') G.caravan = makeCaravan(G.map); G.clock = G.clock || 60; }
   else { G.map = G.woods || (G.woods = genWoods()); G.map.enc.forEach(e => { e.cleared = false; e.spawned = false; e.respawn = 0; }); G.clock = G.clock || 60; }
@@ -4399,10 +4500,11 @@ function startRun(mode, floor) {
 }
 function saveMorale() { applyInjuries(); G.heroes.forEach(h => { if (SV.owned[h.id]) SV.owned[h.id].mor = Math.round(clamp(h.mor, 0, 100)); }); }
 function leaveRun() { saveMorale(); G.on = false; save(); showScreen('lobby'); refreshLobby(); setTimeout(() => showBondUps(), 500); if (Object.keys(SV.owned).some(id => injOf(id))) tipQ('wound'); if (SV.gems >= 100) tipQ('forge'); }
-function partyDown() { if (!G.on || G.paused) return; G.paused = true; G.heroes.forEach(h => relyAdd(h.id, -5)); saveMorale(); save(); const dv = $('#downTips'); if (dv) dv.innerHTML = '<b>What to try</b>' + defeatAdvice().map(t => '<span>' + t + '</span>').join(''); $('#down').classList.remove('hidden'); sfx('die'); }
+function partyDown() { if (!G.on || G.paused) return; if (G.mode === 'wb' && G.wbOn) { wbEnd('wipe'); return; } G.paused = true; G.heroes.forEach(h => relyAdd(h.id, -5)); saveMorale(); save(); const dv = $('#downTips'); if (dv) dv.innerHTML = '<b>What to try</b>' + defeatAdvice().map(t => '<span>' + t + '</span>').join(''); $('#down').classList.remove('hidden'); sfx('die'); }
 function completeFloor() {
   if (G.mode === 'ev') return evComplete();
   if (G.mode === 'forge') return forgeComplete();
+  if (G.mode === 'wb') return;
   if (G.paused) return; G.paused = true; const n = G.floor, first = n > SV.spire.best;
   let gems = first ? 8 + Math.floor(n * 0.6) + (G.map.boss ? 40 : 0) : 0, gold = 20 + n * 8;
   SV.gems += gems; SV.gold += gold; G.run.gems += gems; G.run.gold += gold;
@@ -4429,6 +4531,7 @@ function completeFloor() {
 function update(dt) {
   G.rdt = dt; perfTick(dt);
   if (!G.on || G.paused) return;
+  if (G.mode === 'wb') wbTick(dt);
   dt *= G.speed; if (G.hitstop > 0) { G.hitstop -= dt; dt *= 0.12; } G.time += dt; G.clock += dt;
   G.potCd = Math.max(0, G.potCd - dt); G.shake = Math.max(0, G.shake - dt * 12);
   for (const h of G.heroes) {
@@ -4538,7 +4641,8 @@ function spawnEnc(enc) {
     let x = enc.x + Math.cos(a) * r, y = enc.y + Math.sin(a) * r * 0.7; if (solidAt(G.map, x, y)) { x = enc.x; y = enc.y; }
     const f = makeFoe(g.type, g.lvl, x, y, enc); if (g.elite) makeElite(f, g.name); G.foes.push(f); smoke(x, y);
   });
-  if (grp.some(g => g.type === 'boss')) { banner('Hollow Warden', 'The guardian awakens'); sfx('boss'); shake(4); }
+  if (G.mode === 'wb') G.foes.forEach(f => { if (f.boss && !f.wb) wbSetup(f); });
+  else if (grp.some(g => g.type === 'boss')) { banner('Hollow Warden', 'The guardian awakens'); sfx('boss'); shake(4); }
   grp.forEach(g => foeSighted(g.type)); setFxFightStart();
   if (grp.some(g => g.type === 'firstcmd')) { if (G.floor > 50) banner('Echo of the First Commander', 'A memory that will not stay down'); else banner('The First Commander', 'Ruler of the Spire'); sfx('boss'); shake(6); }
   const eg = grp.find(g => g.elite); if (eg) { banner(eg.name, 'Your quarry'); sfx('boss'); shake(3); }
@@ -4825,6 +4929,7 @@ function updateHUD(dt) {
   const afxHTML = G.affix && G.affix.length ? ' <span class="afx">' + G.affix.map(k => '<i style="--c:' + ECHO_AFFIX[k].col + '" title="' + ECHO_AFFIX[k].desc + '">' + ECHO_AFFIX[k].name + '</i>').join('') + '</span>' : '';
   if (G.mode === 'spire') { $('#zTitle').innerHTML = (G.floor > 50 ? 'Echo ' : 'Floor ') + G.floor + afxHTML; const c = M.enc.filter(e => e.cleared).length; $('#zObj').textContent = M.exit.active ? 'Exit open. Onward!' : (G.state === 'fight' ? 'Battle! ' : 'The Spire · ') + c + '/' + M.enc.length + ' cleared'; }
   else if (G.mode === 'ev') { const E = evNow(); $('#zTitle').innerHTML = esc(E.name) + ' · ' + G.floor + '/' + EV_STAGES + afxHTML; const c = M.enc.filter(e => e.cleared).length; $('#zObj').textContent = M.exit.active ? 'Exit open. Onward!' : (G.state === 'fight' ? 'Battle! ' : 'Event · ') + c + '/' + M.enc.length + ' cleared'; }
+  else if (G.mode === 'wb') { const B = wbNow(); $('#zTitle').innerHTML = '<span style="color:' + B.col + '">' + B.name + '</span>'; const t = Math.ceil(G.wbT || WB_TIME); $('#zObj').textContent = G.wbOn ? 'Damage ' + fmt(Math.round(G.wbDmg || 0)) + ' · ' + Math.floor(t / 60) + ':' + String(t % 60).padStart(2, '0') : G.wbDmg ? 'Fight over' : 'Approach the boss'; }
   else if (G.mode === 'forge') { $('#zTitle').innerHTML = '<span style="color:' + SETS[G.forge.set].col + '">' + esc(forgeName(G.forge.set, G.forge.tier)) + '</span>'; const c = M.enc.filter(e => e.cleared).length; $('#zObj').textContent = M.exit.active ? 'Exit open. Onward!' : (G.state === 'fight' ? 'Battle! ' : 'Forge · ') + c + '/' + M.enc.length + ' cleared'; }
   else if (G.mode === 'exp') { $('#zTitle').textContent = EXP_TYPES[M.exp.type].name + ' · ' + 'I'.repeat(M.exp.tier); $('#zObj').textContent = (G.state === 'fight' ? 'Battle! ' : '') + expObjText(); }
   else { $('#zTitle').textContent = 'Hollow Woods'; const c = M.enc.filter(e => e.cleared).length; $('#zObj').textContent = (G.state === 'fight' ? 'Battle! ' : 'Camps cleared · ') + c + '/' + M.enc.length; }
@@ -5523,7 +5628,7 @@ function refreshLobby() {
   const next = Math.max(1, Math.min(SV.spire.next || 1, SV.spire.best + 1));
   $('#mkSpire').textContent = next > 50 ? 'Echo ' + next + ' · ' + affixNames(echoAffixes(next)) : 'Floor ' + next + (next % 5 === 0 ? ' · Guardian' : ''); ensureOffers(); if (SV.mode === 'woods') SV.mode = 'exp'; $('#mkWoods').textContent = SV.exp ? SV.exp.title : 'Choose an objective';
   $$('.mk').forEach(b => b.classList.toggle('on', b.dataset.mode === SV.mode));
-  $('#startSub').textContent = (SV.mode === 'spire' ? 'Spire · Floor ' + next : SV.mode === 'forge' ? forgeName(forgeSel().set, forgeSel().tier) : SV.mode === 'ev' ? evNow().name + ' · Stage ' + Math.min(EV_STAGES, evState().stage + 1) : EXP_TYPES[SV.exp.type].name + ' expedition') + (SV.mealSel && SV.pantry && pantryCount(SV.mealSel) ? ' · ' + MEALS[SV.mealSel].name : '');
+  $('#startSub').textContent = (SV.mode === 'spire' ? 'Spire · Floor ' + next : SV.mode === 'wb' ? 'World boss · ' + wbNow().name : SV.mode === 'forge' ? forgeName(forgeSel().set, forgeSel().tier) : SV.mode === 'ev' ? evNow().name + ' · Stage ' + Math.min(EV_STAGES, evState().stage + 1) : EXP_TYPES[SV.exp.type].name + ' expedition') + (SV.mealSel && SV.pantry && pantryCount(SV.mealSel) ? ' · ' + MEALS[SV.mealSel].name : '');
   const tk = rumors().join('      ◆      '); if ($('#tickT').dataset.t !== tk) { $('#tickT').dataset.t = tk; $('#tickT').textContent = tk; $('#tickT').style.animationDuration = Math.max(30, tk.length / 7) + 's'; }
   if (LOBBY.map && LOBBY.walkers.length !== Math.min(8, Object.keys(SV.owned).length)) hubWalkers();
   save();
@@ -5534,7 +5639,7 @@ function setupLobby() {
     auInit(); musicStart(); sfx('ui');
     const floor = Math.max(1, Math.min(SV.spire.next || 1, SV.spire.best + 1));
     if (SV.mode === 'forge' && SV.lvl < FORGE_TIERS[forgeSel().tier - 1].req) { toast('Tier ' + ROMAN[forgeSel().tier - 1] + ' needs Commander level ' + FORGE_TIERS[forgeSel().tier - 1].req, ''); return; }
-    fadeTo(() => { if (!startRun(SV.mode, SV.mode === 'ev' ? Math.min(EV_STAGES, evState().stage + 1) : SV.mode === 'forge' ? forgeSel().tier : floor)) showScreen('lobby'); });
+    fadeTo(() => { if (!startRun(SV.mode, SV.mode === 'ev' ? Math.min(EV_STAGES, evState().stage + 1) : SV.mode === 'forge' ? forgeSel().tier : SV.mode === 'wb' ? 1 : floor)) showScreen('lobby'); });
   };
   $('#profile').onclick = () => openScreen('profile');
   $$('.mk').forEach(b => b.onclick = () => { sfx('ui'); if (SV.mode === b.dataset.mode) { openScreen('mode'); return; } SV.mode = b.dataset.mode; save(); refreshLobby(); });
@@ -5547,6 +5652,8 @@ function openModal(title, html, o) {
   o = o || {}; $('#mHead').textContent = title; $('#mBody').innerHTML = html; $('#mBody').scrollTop = 0;
   const box = $('#mBox'); box.className = 'pf' + (o.narrow ? ' narrow' : '') + (o.parch ? ' parch' : '');
   $('#modal').className = 'on' + (o.side ? ' drawer-' + o.side : ''); ACT = o.act || {}; CUR = o.name || null;
+  // reset the scroll only once the panel is visible: hidden elements ignore scroll changes and keep the old position
+  $('#mBody').scrollTop = 0;
   if (G.on) G.paused = true;
 }
 function closeModal() { const wasOpen = !!$('#modal').className; $('#modal').className = ''; ACT = {}; CUR = null; if (wasOpen && LOBBY.on && SV.bondQ && SV.bondQ.length && !STORYST.on) setTimeout(() => { if (!$('#modal').className && !STORYST.on) showBondUps(); }, 350); if (G.on && $('#down').classList.contains('hidden') && $('#clear').classList.contains('hidden')) G.paused = false; if (LOBBY.on) refreshLobby(); FORGE.anim = false; }
@@ -5798,6 +5905,7 @@ SCREENS.settings = function () {
   h += '<div class="sect">Sound and visuals</div><div class="lst">' + tg('sfx', 'Sound effects', 'Hits, spells and coins.') + tg('music', 'Music', 'A quiet ambient score.') + tg('fx', 'Visual effects', 'Fog, falling leaves and weapon glow. Turn off on slower phones.') + '</div>';
   h += '<div class="sect">Guide</div><div class="lst"><div class="li"><div class="grow"><b>Oona\'s tips</b><small>Short explanations the first time something new happens.</small></div><button class="btn pf' + (tipsOn() ? ' gold' : '') + '" data-act="tips">' + (tipsOn() ? 'On' : 'Off') + '</button></div><div class="li"><div class="grow"><b>Replay all tips</b><small>Oona explains everything again as it comes up.</small></div><button class="btn pf" data-act="tipsre">Replay</button></div></div>';
   h += '<div class="sect">Start over</div><button class="btn pf red" data-act="reset">Erase all progress</button>';
+  h += '<p class="muted" style="font-size:11px;text-align:center;margin:14px 0 0">Aetherfall version ' + APP_VER + '</p>';
   openModal('Settings', h, {
     narrow: 1, act: {
       tips: () => { SV.tipsOn = !tipsOn(); save(); SCREENS.settings(); },
@@ -5833,9 +5941,10 @@ SCREENS.mode = function () {
     const T = EXP_TYPES[x.type], rw = expRewards(x), sel = SV.mode === 'exp' && SV.exp && SV.exp.id === x.id;
     h += '<div class="li" style="' + (sel ? 'box-shadow:var(--frame),inset 0 0 0 2px var(--gold)' : '') + '"><img class="ic" src="' + ICON[T.icon] + '" alt=""><div class="grow"><b>' + esc(x.title) + '</b><small>' + T.desc + '</small><small>' + ['Small', 'Large', 'Huge'][x.tier - 1] + ' map · ' + THEMES[x.biome].name.replace(' Floors', '') + ' · enemies Lv ' + expLevel(x) + '</small><small>Reward: ' + price('gold', rw.gold) + ' ' + price('gem', rw.gems) + ' + ' + RARN[Math.min(3, x.tier)] + '+ gear</small></div><button class="btn pf' + (sel ? ' gold' : '') + '" data-act="x" data-v="' + x.id + '">' + (sel ? 'Selected' : 'Select') + '</button></div>';
   });
-  h += '</div>' + evHTML() + forgeHTML() + '<div class="row" style="justify-content:flex-end;margin-top:14px"><button class="btn pf" data-act="best">Bestiary · ' + BEST_ORDER.filter(bestSeen).length + '/' + BEST_ORDER.length + (bestAnyClaim() ? ' <span style="color:#ff6d8a">●</span>' : '') + '</button><button class="btn pf" data-act="chron">Chronicle · ' + STORY.filter(s => storySeen(s.id)).length + ' / ' + STORY.length + ' chapters</button></div>';
+  h += '</div>' + evHTML() + wbHTML() + forgeHTML() + '<div class="row" style="justify-content:flex-end;margin-top:14px"><button class="btn pf" data-act="best">Bestiary · ' + BEST_ORDER.filter(bestSeen).length + '/' + BEST_ORDER.length + (bestAnyClaim() ? ' <span style="color:#ff6d8a">●</span>' : '') + '</button><button class="btn pf" data-act="chron">Chronicle · ' + STORY.filter(s => storySeen(s.id)).length + ' / ' + STORY.length + ' chapters</button></div>';
   openModal('Choose a mode', h, { side: 'l', act: {
     chron: () => SCREENS.chronicle(), best: () => SCREENS.bestiary(), craft: () => SCREENS.craft(),
+    wb: () => { SV.mode = 'wb'; save(); refreshLobby(); SCREENS.mode(); },
     fset: v => { SV.mode = 'forge'; SV.forgeSel = { set: v, tier: forgeSel().tier }; save(); refreshLobby(); SCREENS.mode(); },
     ftier: v => { SV.mode = 'forge'; SV.forgeSel = Object.assign(forgeSel(), { tier: +v }); save(); refreshLobby(); SCREENS.mode(); },
     m: v => { SV.mode = v; save(); refreshLobby(); SCREENS.mode(); },
@@ -5925,8 +6034,9 @@ function boot() {
   // stop the page itself from rubber-banding on iPhone: only real scroll areas may move under a finger
   document.addEventListener('touchmove', e => {
     if (e.touches.length > 1) { e.preventDefault(); return; }
-    const sc = e.target.closest && e.target.closest('#mBody, #log');
-    if (!sc || sc.scrollHeight <= sc.clientHeight + 1) { if (!(e.target.closest && e.target.closest('.fullcv, #miniCv'))) e.preventDefault(); }
+    // never interfere inside menus, dialogue or the battle log: they scroll on their own
+    if (!e.target.closest || e.target.closest('#modal, #story, #log, #clear, #down')) return;
+    if (!e.target.closest('.fullcv, #miniCv')) e.preventDefault();
   }, { passive: false });
   if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) navigator.serviceWorker.register('sw.js').catch(() => { });
   requestAnimationFrame(frame);
