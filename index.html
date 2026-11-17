@@ -228,6 +228,8 @@ img{image-rendering:pixelated;image-rendering:crisp-edges;-webkit-user-drag:none
 .wbres{display:flex;flex-direction:column;align-items:center;gap:4px;margin:6px auto 10px;max-width:360px}.wbres b{font:700 34px var(--px)}.wbres small{color:var(--dim)}.wbres .prog{width:100%}
 .wbms{display:flex;gap:4px;margin:8px 0 6px;flex-wrap:wrap}.wbms span{flex:1 1 90px;display:flex;flex-direction:column;padding:4px 6px;background:rgba(8,10,28,.55);box-shadow:inset 0 0 0 1px rgba(113,123,189,.3);font-size:10px}
 .wbms span b{font:700 13px var(--px);color:var(--text)}.wbms span small{color:var(--dim);font-size:10px}.wbms span.got{box-shadow:inset 0 0 0 2px #7dff9c}.wbms span.got b::after{content:' ✓';color:#7dff9c}
+.tchk{flex:none;width:22px;height:22px;display:grid;place-items:center;box-shadow:inset 0 0 0 2px #3a4180;background:#141633;color:#7dff9c;font-weight:800}
+.li.tdone{opacity:.6}.li.tdone .tchk{box-shadow:inset 0 0 0 2px #7dff9c}
 .wbtns{display:flex;flex-direction:column;gap:6px;align-self:center}
 @media (max-width:600px){.li:has(>.wbtns){flex-wrap:wrap}.li:has(>.wbtns) .grow{flex:1 1 0;min-width:0}.li>.wbtns{flex-direction:row;flex-basis:100%;flex-wrap:wrap}.li>.wbtns .btn{flex:1}.li.job{flex-wrap:wrap}.li.job .grow{flex:1 1 0;min-width:0}.li.job .wbtns{flex-direction:row;flex-basis:100%;padding-left:44px}.li.job .wbtns .btn{flex:1}}
 .pf.red{background:linear-gradient(#ff6a7a,#d12a37);box-shadow:var(--frame),inset 0 0 0 2px #ffb0b8,inset 0 0 0 4px #7a1420}
@@ -490,6 +492,7 @@ body.mopen .glass{-webkit-backdrop-filter:none;backdrop-filter:none}
     <div id="cur">
       <div class="chip glass"><img data-ic="gold" alt=""><span id="cGold" class="ol">0</span></div>
       <div class="chip glass"><img data-ic="gem" alt=""><span id="cGems" class="ol">0</span><button class="plus" data-open="shop" aria-label="Get gems">+</button></div>
+      <button class="ib glass" data-open="today" aria-label="Today"><img data-ic="trials" alt=""><span class="dot hidden" id="todayDot"></span></button>
       <button class="ib glass" data-open="mail" aria-label="Mail"><img data-ic="mail" alt=""><span class="dot hidden" id="mailDot"></span></button>
       <button class="ib glass" data-open="settings" aria-label="Settings"><img data-ic="gear" alt=""><span class="dot hidden" id="setDot"></span></button>
     </div>
@@ -544,7 +547,7 @@ body.mopen .glass{-webkit-backdrop-filter:none;backdrop-filter:none}
 
 <script>
 // shown in Settings so players can confirm which build their device is running
-const APP_VER = '3.54';
+const APP_VER = '3.56';
 'use strict';
 /* ================= core utilities ================= */
 const $ = s => document.querySelector(s), $$ = s => Array.from(document.querySelectorAll(s));
@@ -3988,7 +3991,7 @@ function forgeHTML() {
     h += '<div class="row" style="gap:6px;margin-top:8px;flex-wrap:wrap">' + FORGE_TIERS.map((t, i) => { const ok = SV.lvl >= t.req; return '<button class="btn pf' + (sel.tier === i + 1 ? ' gold' : '') + '" data-act="ftier" data-v="' + (i + 1) + '"' + (ok ? '' : ' disabled') + ' title="' + (ok ? 'Foes level ' + t.lv : 'Needs Commander level ' + t.req) + '">Tier ' + ROMAN[i] + (ok ? '' : ' · Lv ' + t.req) + '</button>'; }).join('') + '</div>'
       + '<p class="muted" style="font-size:12px;margin:6px 0 0">' + forgeName(sel.set, sel.tier) + ': foes level ' + FORGE_TIERS[sel.tier - 1].lv + ', ' + FORGE_ESS[sel.tier - 1] + ' essence per clear (double for your first ' + FORGE_BONUS_RUNS + ' runs each day, ' + Math.max(0, FORGE_BONUS_RUNS - F.runs) + ' left). Bosses sometimes leave a ' + SETS[sel.set].name + ' piece behind.</p>';
   }
-  return h + '<div class="row" style="justify-content:flex-end;margin-top:8px"><button class="btn pf" data-act="craft">Smithy crafting</button></div>';
+  return h + '<div class="row" style="justify-content:flex-end;margin-top:8px;gap:8px">' + (on ? sweepBtn('swF', (F.best[sel.set] || 0) >= sel.tier, 'Clear this tier once to sweep it') : '') + '<button class="btn pf" data-act="craft">Smithy crafting</button></div>';
 }
 
 /* ---- Smithy crafting ---- */
@@ -4093,7 +4096,7 @@ function wbTick(dt) {
 function wbEnd(why) {
   if (!G.wbOn) return; G.wbOn = false; G.paused = true; hideBanner();
   const S = wbState(), B = wbNow(), dmg = Math.round(G.wbDmg || 0), ms = wbMilestones(), best0 = S.best;
-  S.tries++; if (dmg > S.best) S.best = dmg;
+  S.tries++; S.day = today(); if (dmg > S.best) S.best = dmg;
   const newly = []; for (let i = S.got; i < ms.length && S.best >= ms[i]; i++) { const r = wbReward(i); wbGrant(r); newly.push(wbRewardTxt(r)); S.got = i + 1; }
   heroesAlive().forEach(h => { h.mor = Math.min(100, h.mor + 3); }); G.heroes.forEach(h => bondRunGain(h.id, 3));
   saveMorale(); save(); sfx('level');
@@ -4114,6 +4117,61 @@ function wbHTML() {
     + '<div class="wbms">' + ms.map((m, i) => '<span class="' + (S.got > i ? 'got' : '') + '" title="' + wbRewardTxt(wbReward(i)) + '"><b>' + fmt(m) + '</b><small>' + wbRewardTxt(wbReward(i)) + '</small></span>').join('') + '</div>'
     + '<small>Best this week: ' + fmt(S.best) + ' · attempts: ' + S.tries + ' · boss level ' + wbLevel() + '</small></div><button class="btn pf' + (on ? '' : ' gold') + '" data-act="wb">' + (on ? 'Selected' : 'Choose') + '</button></div>';
   return h;
+}
+/* ================= Today checklist and Sweep ================= */
+// Sweep: instantly collect the rewards of a floor or forge tier you have already beaten. A few tickets each day.
+const SWEEP_DAY = 10;
+function sweepLeft() { if (!SV.sweep || SV.sweep.d !== today()) SV.sweep = { d: today(), n: 0 }; return SWEEP_DAY - SV.sweep.n; }
+function addXPQuiet(n) { SV.xp += n; let up = false; while (SV.xp >= xpNeed(SV.lvl) && SV.lvl < 60) { SV.xp -= xpNeed(SV.lvl); SV.lvl++; up = true; } return up; }
+function sweepSpire(n) {
+  if (sweepLeft() <= 0 || n > SV.spire.best || n < 1) return null; SV.sweep.n++;
+  const m = genFloor(n); let gold = 20 + n * 8, xp = 0;
+  m.enc.forEach(en => en.group.forEach(f => { const d = FOES[f.type]; if (!d) return; gold += (d.gold[0] + d.gold[1]) / 2 * (1 + 0.12 * (f.lvl - 1)); xp += d.xp * (1 + 0.15 * (f.lvl - 1)); }));
+  gold = Math.round(gold); xp = Math.round(xp); SV.gold += gold; const up = addXPQuiet(xp);
+  SV.stats.floors++; SV.daily.floors = (SV.daily.floors || 0) + 1;
+  const out = ['+' + fmt(gold) + ' gold', '+' + fmt(xp) + ' XP'];
+  if (n > 50) { echoOf().shards += 1; out.push('+1 Echo Shard'); }
+  if (Math.random() < (m.boss ? 0.6 : 0.25) && SV.inv.length < BAG_MAX) { const it = genItem(n, m.boss ? 2 : null, null, { cls: HEROES[pick(SV.party.filter(id => SV.owned[id]))].cls }); SV.inv.push(it); out.push('<span class="t' + it.rar + '">' + esc(it.name) + '</span>'); }
+  if (up) { out.push('Commander Lv ' + SV.lvl + '!'); refreshHeroStats(); }
+  save(); return out;
+}
+function sweepForge(set, tier) {
+  const F = forgeOf(); if (sweepLeft() <= 0 || (F.best[set] || 0) < tier || forgeOpen().indexOf(set) < 0) return null; SV.sweep.n++;
+  const bonus = F.runs < FORGE_BONUS_RUNS, ess = FORGE_ESS[tier - 1] * (bonus ? 2 : 1), gold = 20 + FORGE_TIERS[tier - 1].lv * 8;
+  F.runs++; F.ess[set] = (F.ess[set] || 0) + ess; SV.gold += gold;
+  const out = ['+' + ess + ' ' + SETS[set].name + ' essence' + (bonus ? ' (bonus)' : ''), '+' + gold + ' gold'];
+  if (Math.random() < FORGE_ITEM[tier - 1] && SV.inv.length < BAG_MAX) { const it = genItem(FORGE_TIERS[tier - 1].lv, FORGE_ITEM_R[tier - 1], null, { set, exact: 1, cls: HEROES[pick(SV.party.filter(id => SV.owned[id]))].cls }); SV.inv.push(it); out.push('<span class="t' + it.rar + '">' + esc(it.name) + '</span>'); }
+  save(); return out;
+}
+function sweepBtn(act, ok, why) { const n = sweepLeft(); return '<button class="btn pf' + (ok && n > 0 ? ' gold' : '') + '" data-act="' + act + '"' + (ok && n > 0 ? '' : ' disabled') + ' title="' + (ok ? 'Collect the rewards instantly' : why) + '">Sweep · ' + n + ' left</button>'; }
+
+/* ---- Today ---- */
+function todayItems() {
+  const T = TRIALS().filter(q => q.daily), ready = T.filter(q => q.prog >= q.need && !q.done).length, claimed = T.filter(q => q.done).length;
+  const F = forgeOf(), W = wbState(), hasWork = SV.work && Object.keys(SV.work.as).length > 0;
+  const stock = hasWork ? GJOBS.filter(k => jobReady(k) >= jobCap(k) * 0.5).length : 0, bench = Object.keys(SV.owned).some(id => SV.party.indexOf(id) < 0);
+  const L = [
+    { t: 'Free summon', d: 'One free call at the Starforge every day.', done: SV.freePull === today(), free: 1, go: () => SCREENS.forge() },
+    { t: 'Daily gift', d: '30 gems and 100 gold from the shop.', done: SV.daily.gift === today(), free: 1, go: () => openScreen('shop') },
+    { t: 'Daily trials', d: claimed + ' of ' + T.length + ' claimed' + (ready ? ' · ' + ready + ' ready to claim' : ''), done: claimed >= T.length, free: ready > 0, go: () => openScreen('trials') },
+    { t: 'Forge Trials', d: Math.max(0, FORGE_BONUS_RUNS - F.runs) + ' double-essence runs left. Open today: ' + forgeOpen().map(k => SETS[k].name).join(', ') + '.', done: F.runs >= FORGE_BONUS_RUNS, go: () => SCREENS.mode() },
+    { t: 'World boss · ' + wbNow().name, d: W.got >= WB_MS.length ? 'Every milestone claimed this week.' : W.got + ' of ' + WB_MS.length + ' milestones this week. Fight it at least once today.', done: W.got >= WB_MS.length || W.day === today(), go: () => SCREENS.mode() }
+  ];
+  if (bench) L.push({ t: 'Work Yard', d: !hasWork ? 'Nobody is working. Give your benched wardens a job.' : stock ? stock + ' storehouse' + (stock > 1 ? 's are' : ' is') + ' filling up. Collect them.' : 'Storehouses are still filling.', done: hasWork && !stock, free: stock > 0, go: () => SCREENS.work() });
+  if (SV.gold >= REFINE_GOLD || refinedToday() > 0) L.push({ t: 'Refine Starlight', d: (REFINE_DAY - refinedToday()) + ' of ' + REFINE_DAY + ' left today, ' + fmt(REFINE_GOLD) + ' gold each.', done: refinedToday() >= REFINE_DAY, go: () => SCREENS.spark() });
+  return L;
+}
+const todayDot = () => { const d = $('#todayDot'); if (d) d.classList.toggle('hidden', !todayItems().some(x => x.free && !x.done)); };
+function screenToday() {
+  const L = todayItems(), left = L.filter(x => !x.done).length, all = left === 0, got = SV.todayC === today();
+  let h = '<p class="muted" style="font-size:12px;margin:0 0 10px">Everything that resets each day, in one place. Finish the whole list for a bonus.</p>';
+  L.forEach((x, i) => { h += '<div class="li' + (x.done ? ' tdone' : '') + '"><span class="tchk">' + (x.done ? '✓' : '') + '</span><div class="grow"><b>' + x.t + '</b><small>' + x.d + '</small></div>' + (x.done ? '' : '<button class="btn pf' + (x.free ? ' gold' : '') + '" data-act="go" data-v="' + i + '">Go</button>') + '</div>'; });
+  h += '<div class="li' + (got ? ' tdone' : '') + '" style="margin-top:10px"><span class="sico">' + icoImg('gem') + '</span><div class="grow"><b>All done bonus</b><small>' + (got ? 'Claimed. See you tomorrow.' : all ? 'Everything is finished for today.' : left + ' thing' + (left > 1 ? 's' : '') + ' left.') + '</small></div>' + (got ? '' : '<button class="btn pf' + (all ? ' gold' : '') + '" data-act="bonus"' + (all ? '' : ' disabled') + '>Claim ' + price('gem', 50) + '</button>') + '</div>';
+  h += '<p class="muted" style="font-size:12px;margin:10px 0 0">Sweep tickets today: ' + sweepLeft() + ' of ' + SWEEP_DAY + '. Use them in the mode screen on floors and forge tiers you have already beaten.</p>';
+  openModal('Today', h, { act: {
+    go: i => { const x = L[+i]; if (x) x.go(); },
+    bonus: () => { if (!all || got) return; SV.todayC = today(); SV.gems += 50; save(); sfx('coin'); toast('+50 gems', 'gold'); refreshLobby(); screenToday(); }
+  } });
 }
 
 /* ================= hero stories: three chapters each ================= */
@@ -4347,19 +4405,22 @@ const TIPS = {
   homescreen: { lines: ['One more thing, Commander. On iPhone and iPad, Safari may forget your progress if you stay away for a week or so.', 'Tap the Share button, then “Add to Home Screen”. Played from there, Aetherfall keeps its memories safe.', 'You can also copy a backup code any time from Settings, the gear at the top.'] },
   work: { lines: ['Wardens who are not in your party do not sit idle. They can work in the village.', 'Tap Forestry, the mine, the herb garden or the kitchen to give them a job. They keep working while you are away.'] },
   meal: { lines: ['Your foresters found mushrooms and berries.', 'Put a warden in the kitchen and they will cook meals. Pack one before you deploy, and the whole party is stronger for that run.'] },
+  today: { at: '[data-open="today"]', lines: ['This button is your daily list: the free summon, gifts, forge runs, the world boss and more, all in one place.', 'Finish the list for a gem bonus. You also get 10 Sweep tickets a day, to collect rewards instantly from floors you have already beaten.'] },
+  ftrial: { at: '[data-mode="spire"]', lines: ['Every warden wears their own gear, and matching set pieces unlock bonuses.', 'Tap here and scroll to Forge Trials. Each short dungeon pays a set’s essence. The Smithy in the village turns essence, ore and gold into the exact piece you want.'] },
+  wboss: { at: '[data-mode="spire"]', lines: ['A world boss has come to Aetherfall. A new one arrives every week.', 'You have 90 seconds to deal as much damage as you can. Your best attempt of the week earns gems, essence and set gear. Find it in the mode screen.'] },
   exped: { at: '[data-mode="exp"]', lines: ['Expeditions are missions outside the Spire: hunts, escorts and relic searches.', 'They match your level and pay well. A good way to grow stronger when the Spire gets tough.'] },
   wish: { lines: ['One of your wardens wants something. Look for the marker over their head in the courtyard.', 'Open their page to see the wish. Granting it earns their trust faster than anything else.'] }
 };
 let TIPQ = [];
 function tipsOn() { return SV.tipsOn !== false; }
 // tips for systems added after an account started still show once, even if the beginner guide was switched off
-const FEATURE_TIPS = ['work', 'meal', 'homescreen'];
+const FEATURE_TIPS = ['work', 'meal', 'homescreen', 'today', 'ftrial', 'wboss'];
 function tipQ(id) { if ((!tipsOn() && FEATURE_TIPS.indexOf(id) < 0) || !TIPS[id] || (SV.tips && SV.tips[id]) || TIPQ.indexOf(id) >= 0) return; TIPQ.push(id); }
 function tipTick() {
   if (!TIPQ.length || STORYST.on || $('#fade').style.opacity === '1') return;
   const id = TIPQ[0], inGame = G.on && !LOBBY.on;
   if (SV.tips && SV.tips[id]) { TIPQ.shift(); return; }
-  const lobbyTip = ['welcome', 'forge', 'wound', 'bond', 'wish', 'gear', 'work', 'meal', 'exped', 'homescreen'].indexOf(id) >= 0;
+  const lobbyTip = ['welcome', 'forge', 'wound', 'bond', 'wish', 'gear', 'work', 'meal', 'exped', 'homescreen', 'today', 'ftrial', 'wboss'].indexOf(id) >= 0;
   if (lobbyTip && (!LOBBY.on || $('#modal').className)) return;
   if (!lobbyTip && !inGame) return;
   TIPQ.shift(); SV.tips = SV.tips || {}; SV.tips[id] = 1; save();
@@ -4377,6 +4438,8 @@ function onboardCheck() {
   if (typeof workOf === 'function' && Object.keys(SV.owned).some(id => SV.party.indexOf(id) < 0) && !Object.keys(workOf().as).length) tipQ('work');
   if (SV.res && (SV.res.shroom > 0 || SV.res.berry > 0)) tipQ('meal');
   if (SV.spire.best >= 3) tipQ('exped');
+  // one new introduction per visit to the village, so tips never pile up
+  const seen = SV.tips || {}; if (!TIPQ.length && !STORYST.on) { if (SV.spire.best >= 2 && !seen.today) tipQ('today'); else if (SV.spire.best >= 6 && !seen.ftrial) tipQ('ftrial'); else if (SV.spire.best >= 10 && !seen.wboss) tipQ('wboss'); }
   if (isIOSBrowser() && SV.spire.best >= 2) tipQ('homescreen');
   backupDot();
 }
@@ -5618,7 +5681,7 @@ function refreshLobby() {
   $('#pName').textContent = SV.name; $('#pLv').textContent = (SV.title || 'Commander') + ' · Lv ' + SV.lvl; $('#pXp').style.width = (SV.xp / xpNeed(SV.lvl) * 100) + '%';
   const av = $('#pAv').getContext('2d'); av.imageSmoothingEnabled = false; av.clearRect(0, 0, 32, 32); if (lead) av.drawImage(heroSheet('h_' + lead, heroLook(lead)).down[0], HEADCROP[0], HEADCROP[1], 22, 22, -1, 0, 32, 32);
   $('#cGold').textContent = fmt(SV.gold); $('#cGems').textContent = fmt(SV.gems);
-  $('#mailDot').classList.toggle('hidden', SV.mail.welcome);
+  $('#mailDot').classList.toggle('hidden', SV.mail.welcome); todayDot();
   $('#passDot').classList.toggle('hidden', !PASS.some((r, i) => SV.lvl >= r.lv && !SV.pass[i]));
   $('#trialDot').classList.toggle('hidden', !TRIALS().some(q => q.prog >= q.need && !q.done));
   let html = '';
@@ -5667,7 +5730,7 @@ function openScreen(n) { const f = SCREENS[n]; if (f) f(); }
 
 /* ================= screens ================= */
 const SCREENS = {};
-SCREENS.work = screenWork; SCREENS.craft = st => screenCraft(st && typeof st === 'object' ? st : null); SCREENS.bestiary = screenBestiary; SCREENS.echo = screenEcho; SCREENS.gift = screenGift; SCREENS.spark = screenSpark; SCREENS.chronicle = screenChronicle; SCREENS.outfits = screenOutfits;
+SCREENS.work = screenWork; SCREENS.today = screenToday; SCREENS.craft = st => screenCraft(st && typeof st === 'object' ? st : null); SCREENS.bestiary = screenBestiary; SCREENS.echo = screenEcho; SCREENS.gift = screenGift; SCREENS.spark = screenSpark; SCREENS.chronicle = screenChronicle; SCREENS.outfits = screenOutfits;
 SCREENS.wardens = function (sel) {
   const owned = Object.keys(HEROES).filter(id => SV.owned[id]);
   const all = Object.keys(HEROES).sort((a, b) => (HEROES[b].star - HEROES[a].star) || (!!SV.owned[b] - !!SV.owned[a]));
@@ -5935,7 +5998,7 @@ SCREENS.profile = function () {
 };
 SCREENS.mode = function () {
   const best = SV.spire.best, next = Math.max(1, Math.min(SV.spire.next || 1, best + 1));
-  let h = '<div class="lst"><div class="li"><img class="ic" src="' + ICON.tower + '" alt=""><div class="grow"><b>The Spire</b><small>An endless climb. Each floor has three fights, and every fifth floor has a guardian. First clears pay gems. Highest floor: ' + best + '.</small><div class="row" style="margin-top:8px;gap:8px"><button class="btn pf" data-act="f" data-v="-5">−5</button><button class="btn pf" data-act="f" data-v="-1">−1</button><b style="font:700 18px var(--px);min-width:80px;text-align:center">Floor ' + next + '</b><button class="btn pf" data-act="f" data-v="1">+1</button><button class="btn pf" data-act="f" data-v="5">+5</button></div></div><button class="btn pf' + (SV.mode === 'spire' ? ' gold' : '') + '" data-act="m" data-v="spire">' + (SV.mode === 'spire' ? 'Selected' : 'Select') + '</button></div>';
+  let h = '<div class="lst"><div class="li"><img class="ic" src="' + ICON.tower + '" alt=""><div class="grow"><b>The Spire</b><small>An endless climb. Each floor has three fights, and every fifth floor has a guardian. First clears pay gems. Highest floor: ' + best + '.</small><div class="row" style="margin-top:8px;gap:8px"><button class="btn pf" data-act="f" data-v="-5">−5</button><button class="btn pf" data-act="f" data-v="-1">−1</button><b style="font:700 18px var(--px);min-width:80px;text-align:center">Floor ' + next + '</b><button class="btn pf" data-act="f" data-v="1">+1</button><button class="btn pf" data-act="f" data-v="5">+5</button></div></div><div class="wbtns"><button class="btn pf' + (SV.mode === 'spire' ? ' gold' : '') + '" data-act="m" data-v="spire">' + (SV.mode === 'spire' ? 'Selected' : 'Select') + '</button>' + sweepBtn('swS', next <= best, 'Clear this floor once to sweep it') + '</div></div>';
   ensureOffers();
   h += '</div><div class="sect" style="display:flex;justify-content:space-between;align-items:center;margin-top:16px"><span>Expeditions · one objective each, big fogged maps</span><button class="btn pf" data-act="reroll" style="min-height:32px;font-size:12px"' + (SV.gold >= 50 ? '' : ' disabled') + '>New offers · ' + price('gold', 50) + '</button></div><div class="lst">';
   SV.expOffers.forEach(x => {
@@ -5945,6 +6008,8 @@ SCREENS.mode = function () {
   h += '</div>' + evHTML() + wbHTML() + forgeHTML() + '<div class="row" style="justify-content:flex-end;margin-top:14px"><button class="btn pf" data-act="best">Bestiary · ' + BEST_ORDER.filter(bestSeen).length + '/' + BEST_ORDER.length + (bestAnyClaim() ? ' <span style="color:#ff6d8a">●</span>' : '') + '</button><button class="btn pf" data-act="chron">Chronicle · ' + STORY.filter(s => storySeen(s.id)).length + ' / ' + STORY.length + ' chapters</button></div>';
   openModal('Choose a mode', h, { side: 'l', act: {
     chron: () => SCREENS.chronicle(), best: () => SCREENS.bestiary(), craft: () => SCREENS.craft(),
+    swS: () => { const r = sweepSpire(next); if (r) { sfx('coin'); toast('Floor ' + next + ' swept · ' + r.join(' · '), 'gold'); refreshLobby(); } SCREENS.mode(); },
+    swF: () => { const fs = forgeSel(), r = sweepForge(fs.set, fs.tier); if (r) { sfx('coin'); toast(forgeName(fs.set, fs.tier) + ' swept · ' + r.join(' · '), 'gold'); refreshLobby(); } SCREENS.mode(); },
     wb: () => { SV.mode = 'wb'; save(); refreshLobby(); SCREENS.mode(); },
     fset: v => { SV.mode = 'forge'; SV.forgeSel = { set: v, tier: forgeSel().tier }; save(); refreshLobby(); SCREENS.mode(); },
     ftier: v => { SV.mode = 'forge'; SV.forgeSel = Object.assign(forgeSel(), { tier: +v }); save(); refreshLobby(); SCREENS.mode(); },
@@ -6019,6 +6084,41 @@ SCREENS.forge = function (results) {
 
 /* ================= main loop & boot ================= */
 let lastT = performance.now();
+/* ---- touch scrolling fallback ----
+   Some iPhone Safari setups refuse to scroll panels natively. On every swipe we watch whether the panel moves under the finger;
+   if it does, Safari is scrolling and we stay out of the way. If it doesn't, we scroll it ourselves, with momentum on release.
+   All listeners are passive, so they never delay or block native scrolling. */
+function setupTouchScroll() {
+  let s = null, raf = 0;
+  const pos = (el, h) => h ? el.scrollLeft : el.scrollTop, setPos = (el, h, v) => { if (h) el.scrollLeft = v; else el.scrollTop = v; };
+  document.addEventListener('touchstart', e => {
+    cancelAnimationFrame(raf); s = null; if (e.touches.length !== 1 || !e.target.closest) return;
+    const t = e.touches[0]; s = { t: e.target, x: t.clientX, y: t.clientY, el: null, h: false, mode: null, v: 0, lastP: 0, lastT: performance.now() };
+  }, { passive: true });
+  document.addEventListener('touchmove', e => {
+    if (!s || e.touches.length !== 1) return; const t = e.touches[0], dx = t.clientX - s.x, dy = t.clientY - s.y;
+    if (!s.el) {
+      if (Math.hypot(dx, dy) < 6) return;
+      s.h = Math.abs(dx) > Math.abs(dy); s.el = s.t.closest(s.h ? '.hpick' : '#mBody, #log, #mBox .scrolly');
+      if (!s.el) { s = null; return; } s.st = pos(s.el, s.h); s.lastP = s.h ? t.clientX : t.clientY;
+    }
+    const p = s.h ? t.clientX : t.clientY, now = performance.now(), dt = Math.max(1, now - s.lastT);
+    s.v = 0.75 * s.v + 0.25 * ((p - s.lastP) / dt); s.lastP = p; s.lastT = now;
+    if (!s.mode) { const d = s.h ? dx : dy; if (Math.abs(d) < 18) return; s.mode = Math.abs(pos(s.el, s.h) - s.st) > 2 ? 'native' : 'manual'; s.st = pos(s.el, s.h); s.base = p; s.set = s.st; }
+    if (s.mode === 'manual') {
+      // if the panel moved on its own since our last nudge, native scrolling is alive: hand the gesture back to Safari
+      if (Math.abs(pos(s.el, s.h) - s.set) > 3) { s.mode = 'native'; return; }
+      setPos(s.el, s.h, s.st - (p - s.base)); s.set = pos(s.el, s.h);
+    }
+  }, { passive: true });
+  const end = () => {
+    if (!s || s.mode !== 'manual') { s = null; return; }
+    const el = s.el, h = s.h; let v = -s.v * 16, last = performance.now(); s = null;
+    const step = now => { const k = Math.min(3, (now - last) / 16.7); last = now; if (Math.abs(v) < 0.25) return; setPos(el, h, pos(el, h) + v * k); v *= Math.pow(0.95, k); raf = requestAnimationFrame(step); };
+    raf = requestAnimationFrame(step);
+  };
+  document.addEventListener('touchend', end, { passive: true }); document.addEventListener('touchcancel', end, { passive: true });
+}
 let MODAL_EL = null, slowN = 0;
 function frame(now) {
   // while a menu is open, the scene behind it redraws at a quarter rate so scrolling stays smooth on phones
@@ -6035,7 +6135,7 @@ function boot() {
   Object.keys(SV.owned).forEach(id => checkAwaken(id)); setTimeout(() => { if (LOBBY.on && !$('#modal').className) showBondUps(); }, 900);
   addEventListener('resize', () => { if (G.on) resizeGame(); });
   document.addEventListener('visibilitychange', () => { if (document.hidden) { if (G.on) saveMorale(); save(); } });
-  document.addEventListener('gesturestart', e => e.preventDefault()); askPersist();
+  document.addEventListener('gesturestart', e => e.preventDefault()); askPersist(); setupTouchScroll();
   // no page-wide touchmove handler: on iPhone a blocking one makes every menu scroll wait on the game and feel stiff.
   // The page cannot scroll or bounce anyway (overflow hidden, overscroll-behavior none), and gesturestart stops pinch-zoom.
   if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) navigator.serviceWorker.register('sw.js').catch(() => { });
