@@ -230,6 +230,9 @@ img{image-rendering:pixelated;image-rendering:crisp-edges;-webkit-user-drag:none
 .wbms span b{font:700 13px var(--px);color:var(--text)}.wbms span small{color:var(--dim);font-size:10px}.wbms span.got{box-shadow:inset 0 0 0 2px #7dff9c}.wbms span.got b::after{content:' ✓';color:#7dff9c}
 .tchk{flex:none;width:22px;height:22px;display:grid;place-items:center;box-shadow:inset 0 0 0 2px #3a4180;background:#141633;color:#7dff9c;font-weight:800}
 .li.tdone{opacity:.6}.li.tdone .tchk{box-shadow:inset 0 0 0 2px #7dff9c}
+.grade{position:absolute;left:3px;top:3px;min-width:16px;padding:0 3px;font:800 10px/14px system-ui,sans-serif;text-align:center;color:#0d0b1c;background:var(--gc);box-shadow:0 0 0 1px rgba(0,0,0,.6)}
+.sect .grade,.stat .grade,.li .grade,.rcard .grade{position:static;display:inline-block;margin-left:4px;vertical-align:1px}
+.istats{display:flex;flex-direction:column;gap:5px;margin:4px 0 8px}.istats>div{display:grid;grid-template-columns:70px 1fr 24px;align-items:center;gap:8px;font-size:12px}.istats span{color:var(--dim)}.istats b{text-align:right}
 .wbtns{display:flex;flex-direction:column;gap:6px;align-self:center}
 @media (max-width:600px){.li:has(>.wbtns){flex-wrap:wrap}.li:has(>.wbtns) .grow{flex:1 1 0;min-width:0}.li>.wbtns{flex-direction:row;flex-basis:100%;flex-wrap:wrap}.li>.wbtns .btn{flex:1}.li.job{flex-wrap:wrap}.li.job .grow{flex:1 1 0;min-width:0}.li.job .wbtns{flex-direction:row;flex-basis:100%;padding-left:44px}.li.job .wbtns .btn{flex:1}}
 .pf.red{background:linear-gradient(#ff6a7a,#d12a37);box-shadow:var(--frame),inset 0 0 0 2px #ffb0b8,inset 0 0 0 4px #7a1420}
@@ -547,7 +550,7 @@ body.mopen .glass{-webkit-backdrop-filter:none;backdrop-filter:none}
 
 <script>
 // shown in Settings so players can confirm which build their device is running
-const APP_VER = '3.56';
+const APP_VER = '3.58';
 'use strict';
 /* ================= core utilities ================= */
 const $ = s => document.querySelector(s), $$ = s => Array.from(document.querySelectorAll(s));
@@ -867,6 +870,7 @@ const HEROES = {
   sable: { trait: 'greedy', name: 'Sable', cls: 'ranger', star: 4, title: 'Bounty Queen', look: { skin: '#e9b48f', hair: '#1a1a22', top: '#3a2a3a', top2: '#c9a24a', pants: '#2a1f2a', hatCol: '#2a1a2a', cape: '#5a1a2a', glow: '#ffd36b' } },
   morrow: { trait: 'lazy', name: 'Morrow', cls: 'oracle', star: 4, title: 'Dream Seer', look: { hair: '#c8b8f0', top: '#4a4a8a', top2: '#c8c0f0', pants: '#3a3a6a', boots: '#2a2a4a', hatCol: '#e8e0ff', glow: '#b8a8ff' } },
   grimm: { trait: 'aloof', name: 'Grimm', cls: 'bulwark', star: 4, title: 'The Quiet Wall', look: { skin: '#b88a6a', hair: '#3a3a3a', top: '#4a4f5a', top2: '#2a2d36', pants: '#22252e', hatCol: '#6a707e', cape: '#2a2d36', glow: '#8ab0c8' } },
+  lark: { trait: 'stalwart', name: 'Lark', cls: 'bulwark', star: 5, title: 'The Unbroken', gift: 1, look: { skin: '#e9b48f', hair: '#24242e', top: '#d8d0c0', top2: '#2f8a80', pants: '#2a2f3a', hatCol: '#2a5a5a', cape: '#1f4a4a', glow: '#7af0d8' } },
   elowen: { trait: 'loyal', name: 'Elowen', cls: 'ranger', star: 5, title: 'Last of the Greenwood', look: { skin: '#f1c8a8', hair: '#d8e8b0', top: '#2f6a3a', top2: '#e8d070', hat: 'band', hatCol: '#e8d070', cape: '#24503a', glow: '#9affb0' } }
 };
 const BASELOOK = {
@@ -878,8 +882,8 @@ const BASELOOK = {
 };
 function heroLook(id) { const h = HEROES[id]; return Object.assign({ cls: h.cls, star: h.star }, BASELOOK[h.cls], HAIRSTYLE[id] ? { hairStyle: HAIRSTYLE[id] } : {}, EYES[id] ? { eye: EYES[id] } : {}, h.look, typeof outfitOver === 'function' ? outfitOver(id) : {}, typeof gearOver === 'function' ? gearOver(id) : {}); }
 // more variety than the class defaults
-const EYES = { kael: '#4a8ad8', pip: '#7a4ac8', ilka: '#3aa85a', brann: '#7a5a3a', doran: '#3a6ab8', juno: '#e8642a', wren: '#4a9a4a', lumi: '#4a7ad8', varro: '#c8323f', senna: '#6a6ae0', kestrel: '#2a9a9a', rook: '#d8642a', maelis: '#3a9ae8', thane: '#a87a2a', vesper: '#e0902a', aurelle: '#c89a2a', moss: '#6a9a3a', tamsin: '#3a5ab8', odda: '#6a8ab8', sable: '#e0b030', morrow: '#8a7ad8', grimm: '#6a8a9a', elowen: '#4ac87a' };
-const HAIRSTYLE = { varro: 'swept', rook: 'messy', vesper: 'pony', juno: 'twin', nyx: 'bob', ilka: 'pony', kestrel: 'pony', wren: 'bob', brann: 'messy', doran: 'short', senna: 'long', pip: 'messy', moss: 'messy', tamsin: 'bob', odda: 'pony', sable: 'swept', morrow: 'long', grimm: 'short', elowen: 'long' };
+const EYES = { kael: '#4a8ad8', pip: '#7a4ac8', ilka: '#3aa85a', brann: '#7a5a3a', doran: '#3a6ab8', juno: '#e8642a', wren: '#4a9a4a', lumi: '#4a7ad8', varro: '#c8323f', senna: '#6a6ae0', kestrel: '#2a9a9a', rook: '#d8642a', maelis: '#3a9ae8', thane: '#a87a2a', vesper: '#e0902a', aurelle: '#c89a2a', moss: '#6a9a3a', tamsin: '#3a5ab8', odda: '#6a8ab8', sable: '#e0b030', morrow: '#8a7ad8', grimm: '#6a8a9a', elowen: '#4ac87a', lark: '#2fbfa8' };
+const HAIRSTYLE = { varro: 'swept', rook: 'messy', vesper: 'pony', juno: 'twin', nyx: 'bob', ilka: 'pony', kestrel: 'pony', wren: 'bob', brann: 'messy', doran: 'short', senna: 'long', pip: 'messy', moss: 'messy', tamsin: 'bob', odda: 'pony', sable: 'swept', morrow: 'long', grimm: 'short', elowen: 'long', lark: 'pony' };
 const NPCLOOK = {
   sylvi: { skin: '#f3d2b5', hair: '#cfe8a8', hairStyle: 'long', top: '#3f7a5a', top2: '#24503a', pants: '#2a3a2f', boots: '#3a2a1f', hat: 'hood', hatCol: '#2f6a4a', cape: '#24503a', glow: '#7dffb0' },
   bram: { skin: '#c98d6a', hair: '#3a2418', hairStyle: 'short', top: '#7a4a2a', top2: '#4a2a14', pants: '#3a2f2a', boots: '#2a1f18', hat: 'band', hatCol: '#5a3a22', cape: null, glow: '#ff9a4d' },
@@ -1338,7 +1342,7 @@ function enemyArt(type, tint) {
     const c = cv(22, 34), p = painter(c); p.r(10, 16, 3, 16, '#6b3f22'); p.r(5, 31, 12, 3, '#5a3826'); p.e(11, 16, 6, 8, '#d9b45a'); p.e(10, 14, 3, 4, '#ecd08a'); p.r(5, 13, 12, 1, '#8a5a2a'); p.r(5, 20, 12, 1, '#8a5a2a'); p.r(1, 13, 20, 3, '#c9a24a'); p.e(11, 6, 5, 5, '#e8c87a'); p.p(9, 5, '#5a3826'); p.p(13, 5, '#5a3826'); p.e(11, 17, 3, 3, '#e23b46'); p.e(11, 17, 1, 1, '#fff');
     fr.push(outline(c));
   }
-  foeArt2(type, fr);
+  foeArt2(type, fr); foeArt3(type, fr);
   if (type === 'knight') { const s = heroSheet('knight', NPCLOOK.knight); EN[key] = s; return s; }
   EN[key] = { frames: fr, white: fr.map(f => silhouette(f, '#ffffff')), w: fr[0].width, h: fr[0].height };
   return EN[key];
@@ -1650,7 +1654,7 @@ function genFloor(n, ev) {
   const size = Math.min(6, 2 + Math.floor(n / 3));
   [1, 2, 3].forEach((ni, k) => {
     const nd = nodes[ni], group = [];
-    if (boss && ni === 3) { group.push({ type: (n === 50 || (n > 50 && n % 10 === 0)) && !ev ? 'firstcmd' : 'boss', lvl: lvl + 1 }); group.push({ type: foes[0], lvl }); group.push({ type: foes[1 % foes.length], lvl }); }
+    if (boss && ni === 3) { group.push({ type: ev && ev.bossType ? ev.bossType : (n === 50 || (n > 50 && n % 10 === 0)) && !ev ? 'firstcmd' : 'boss', lvl: lvl + 1 }); if (!(ev && ev.bossSolo)) { group.push({ type: foes[0], lvl }); group.push({ type: foes[1 % foes.length], lvl }); } }
     else for (let j = 0; j < size + (k === 2 ? 1 : 0); j++) group.push({ type: foes[Math.floor(R() * Math.min(foes.length, 2 + Math.floor(n / 4)))], lvl: lvl + (R() < 0.25 ? 1 : 0) });
     m.enc.push({ x: nd.x * TS + 8, y: nd.y * TS + 8, r: nd.r * TS, group, cleared: false, label: ni === 3 ? (boss ? 'Guardian' : 'Last stand') : 'Clearing ' + (k + 1) });
   });
@@ -1949,8 +1953,8 @@ const LINES = {
 function gearTotals(id) { const g = { atk: 0, hp: 0, def: 0, crit: 0 }, e = eqOf(id); ['weapon', 'armor', 'charm'].forEach(s => { const it = e[s]; if (it) { g.atk += it.atk || 0; g.hp += it.hp || 0; g.def += it.def || 0; g.crit += it.crit || 0; } }); return g; }
 function heroStats(id) {
   const H = HEROES[id], c = CLASSES[H.cls], o = SV.owned[id] || { lb: 0 }, L = SV.lvl, m = STARM[H.star] * (1 + 0.08 * (o.lb || 0)) * (1 + (bondLv(id) >= 2 ? 0.02 * bondLv(id) : 0)) * (o.resolve ? 1.08 : 1), g = gearTotals(id);
-  const t = talMods(id), sm = setMods(id);
-  return { hpMax: Math.round((c.hp * (1 + 0.11 * (L - 1)) * m + g.hp) * (1 + t.hpP + sm.hpP)), mpMax: Math.round(c.mp + 3 * (L - 1) + t.mp), atk: (c.atk * (1 + 0.1 * (L - 1)) * m + g.atk) * (1 + t.atkP + sm.atkP), def: c.def * (1 + 0.05 * (L - 1)) + g.def + t.def, crit: 0.06 + g.crit + t.crit + sm.crit + (H.trait === 'aloof' ? 0.06 : 0), spd: c.spd * (1 + t.spdP + sm.spdP), range: c.range * (1 + t.rangeP), cdr: t.cdr + sm.cdr, mpMul: Math.max(0.3, 1 - t.mpCost - sm.mpCost), healMul: 1 + t.healP, tal: t.fx, setfx: sm.fx };
+  const t = talMods(id), sm = setMods(id), iv = indivMods(id);
+  return { hpMax: Math.round((c.hp * (1 + 0.11 * (L - 1)) * m * iv.hp + g.hp) * (1 + t.hpP + sm.hpP)), mpMax: Math.round((c.mp + 3 * (L - 1)) * iv.mp + t.mp), atk: (c.atk * (1 + 0.1 * (L - 1)) * m * iv.atk + g.atk) * (1 + t.atkP + sm.atkP), def: c.def * (1 + 0.05 * (L - 1)) * iv.def + g.def + t.def, crit: Math.max(0, 0.06 + iv.crit + g.crit + t.crit + sm.crit + (H.trait === 'aloof' ? 0.06 : 0)), spd: c.spd * iv.spd * (1 + t.spdP + sm.spdP), range: c.range * (1 + t.rangeP), cdr: Math.max(-0.15, t.cdr + sm.cdr + iv.cdr), mpMul: Math.max(0.3, 1 - t.mpCost - sm.mpCost), healMul: 1 + t.healP, tal: t.fx, setfx: sm.fx };
 }
 function heroPower(id) { const s = heroStats(id); return Math.round(s.hpMax * 0.3 + s.atk * 5 + s.def * 4); }
 function obeyChance(h, type) {
@@ -1995,7 +1999,7 @@ function makeFoe(type, lvl, x, y, enc) {
   const tint = type === 'slime' ? th.slime : type === 'wisp' ? th.wisp : null;
   const e = actor({ team: 'f', type, name: d.name, lvl, x, y, hx: x, hy: y, enc, r: d.r, spd: d.spd, range: d.range, rate: d.rate, d, art: enemyArt(d.art, tint), boss: !!d.boss, t: rand(0, 2), spawnT: 0.7, wind: 0 });
   // the Spire ramps up: gentle early, steep toward the top. The first Guardian is softened for new parties.
-  const L1 = lvl - 1, climb = (G.mode === 'spire' || G.mode === 'ev' || G.mode === 'forge') && !d.final, qh = climb ? 0.0035 * L1 * L1 : 0, qa = climb ? 0.0025 * L1 * L1 : 0, first = climb && d.boss && lvl <= 5;
+  const L1 = lvl - 1, climb = (G.mode === 'spire' || G.mode === 'ev' || G.mode === 'forge' || G.mode === 'deep') && !d.final && !d.noClimb, qh = climb ? 0.0035 * L1 * L1 : 0, qa = climb ? 0.0025 * L1 * L1 : 0, first = climb && d.boss && lvl <= 5;
   e.hpMax = Math.round(d.hp * (k + qh) * (d.boss ? 1 + 0.06 * L1 : 1) * (first ? 0.8 : 1)); e.hp = e.hpMax; e.atk = d.atk * (1 + 0.17 * L1 + qa) * (first ? 0.85 : 1); e.def = d.def * (1 + 0.1 * L1);
   if (type === 'knight') e.wpn = weaponSprite('sword', '#ff4d6d');
   if (G.mode === 'ev') { const E = evNow(); e.atk *= E.atk; e.hpMax = Math.round(e.hpMax * E.hp); e.hp = e.hpMax; }
@@ -2058,6 +2062,8 @@ function hurt(src, tgt, mult, o) {
   if (src.team === 'h' && src.setfx && src.setfx.life && !src.dead && d > 0) heal(src, d * src.setfx.life, true, src);
   if (tgt.wb && G.wbOn) G.wbDmg = (G.wbDmg || 0) + Math.min(d, tgt.hp);
   tgt.hp -= d; tgt.flash = tgt.team === 'f' ? 0.07 : 0.12;
+  if (tgt.unbroken > G.time && tgt.hp < 1) tgt.hp = 1;
+  if (src.d && src.d.manaburn && tgt.team === 'h' && tgt.mp > 0) { tgt.mp = Math.max(0, tgt.mp - 8); if (Math.random() < 0.3) num(tgt.x, tgt.y - 30, 'MP −8', 'skill'); }
   if (!tgt.boss && !o.nokb && !(tgt.d && tgt.d.immobile) && !tgt.elite) { const a = Math.atan2(tgt.y - src.y, tgt.x - src.x), k = (o.kb || 1) * (tgt.d && tgt.d.heavy ? 0.5 : 1); tgt.kbx += Math.cos(a) * 55 * k; tgt.kby += Math.sin(a) * 55 * k; }
   if (d > 0) num(tgt.x, tgt.y - topH(tgt), d, crit ? 'crit' : (tgt.team === 'h' ? 'hurt' : 'dmg'));
   burst(tgt.x, tgt.y - midH(tgt), crit ? 8 : 4, tgt.team === 'h' ? '#ff5b73' : (src.look ? src.look.glow : '#ffffff'));
@@ -2082,6 +2088,7 @@ function survive(h) {
 }
 function heal(t, a, quiet, src) { if (!t || t.dead) return; if (t.team === 'h' && hasAffix('starless')) a *= 0.7; if (src && src.setfx && src.setfx.heal) a *= 1 + src.setfx.heal; a = Math.round(a); if (a < 1) return; if (src && src.tal && src.tal.overflow) { const over = a - (t.hpMax - t.hp); if (over > 0) t.shield = Math.min(t.hpMax * 0.25, (t.shield || 0) + over); } if (t.hp >= t.hpMax) return; t.hp = Math.min(t.hpMax, t.hp + a); num(t.x, t.y - topH(t), '+' + a, 'heal'); if (!quiet) { for (let i = 0; i < 6; i++) gpart(t.x + rand(-9, 9), t.y - rand(4, 24), 0, -rand(18, 34), rand(0.6, 1), '#7dff9c', 1, 0, { plus: 1 }); flash(t.x, t.y - 14, 18, '#7dff9c', 0.3); } }
 function die(e, src) {
+  deepFallen(e);
   if (e.wb) setTimeout(() => wbEnd('kill'), 900);
   if (e.npc) { e.dead = true; e.hp = 0; flash(e.x, e.y - 14, 50, '#ff5b73', 0.5); dust(e.x, e.y, 16, '#5a4a3a'); expComplete(false, 'The caravan was destroyed.'); return; }
   e.dead = true; e.hp = 0; e.deadT = 0;
@@ -2091,7 +2098,7 @@ function die(e, src) {
   if (e.team === 'f') {
     if (e.d.spore) { sfx('spore'); const ex = e.x, ey = e.y; for (let i = 0; i < 10; i++) gpart(ex, ey - 10, rand(-40, 40), rand(-50, 0), 0.6, i % 2 ? '#d8f08a' : '#a8c85a', 2, 20); tele(ex, ey, 24, 0.75, '#b8e06a', () => { if (!G.on) return; shock(ex, ey, 28, '#c8f07a', 3, 0.35); for (let i = 0; i < 14; i++) gpart(ex, ey - 6, rand(-70, 70), rand(-60, 10), 0.6, i % 2 ? '#d8f08a' : '#86b04a', 2, 30); heroesAlive().forEach(h => { if (Math.hypot(h.x - ex, h.y - ey) < 30) hurt(e, h, 0.9, { kb: 0.5 }); }); }); }
     G.run.kills++; SV.stats.kills++; SV.daily.kills++; SV.stats.killsBy[e.type] = (SV.stats.killsBy[e.type] || 0) + 1;
-    if (e.boss) { SV.stats.boss++; sfx('boss'); shake(5); banner(e.d.final ? (G.floor > 50 ? 'The echo fades' : 'The First Commander falls') : 'Guardian slain!', e.d.final ? (G.floor > 50 ? 'For now' : 'The Spire trembles') : e.name); heroesAlive().forEach(h => { h.mor = Math.min(100, h.mor + 8); }); }
+    if (e.boss) { SV.stats.boss++; sfx('boss'); shake(5); banner(e.d.heart ? 'The Hollow Heart breaks' : e.d.final ? (G.floor > 50 ? 'The echo fades' : 'The First Commander falls') : 'Guardian slain!', e.d.final ? (G.floor > 50 ? 'For now' : 'The Spire trembles') : e.name); heroesAlive().forEach(h => { h.mor = Math.min(100, h.mor + 8); }); }
     gainXP(Math.round(FOES[e.type].xp * (1 + 0.15 * (e.lvl - 1))));
     dropLoot(e, src); burst(e.x, e.y - midH(e), 16, '#c88bff', 100); flash(e.x, e.y - midH(e), e.boss ? 70 : 22, '#c88bff', 0.35); if (e.boss) shock(e.x, e.y, 90, '#d06bff', 6, 0.7); sfx('die');
     if (src && src.team === 'h') { wishAdd(src.id, 'kills', 1); if (e.boss) wishAdd(src.id, 'boss', 1); src.mor = Math.min(100, src.mor + 1); if (Math.random() < 0.12) say(src, pick(['Got one!', 'Next!', 'Too easy.', 'Down you go!'])); }
@@ -2272,7 +2279,8 @@ function heroAI(h, dt) {
   h.will -= dt; const free = h.will > 0, mode = free ? h.willMode : G.order;
   if (h.trait === 'lazy') { h.lazyT -= dt; if (h.lazyT <= 0) { h.lazyT = rand(18, 32); if (!near(h, 70).length) { h.rest = 2.5; say(h, pick(['*yawn*', 'Break time.', 'Zzz...']), true); } } }
   if (h.rest > 0) { h.rest -= dt; stop(h); return; }
-  const fs = foesAlive();
+  // don't waste blows on foes that can't be hurt right now (a shielded Heart, a burrowed Rootling)
+  const fa = foesAlive(), fv = fa.filter(e => !(e.inv > 0)), fs = fv.length ? fv : fa;
   if (mode === 'fallback') {
     const c = partyCenter(), g = G.flag || { x: c.x - 40, y: c.y };
     autoSkills(h, null);
@@ -2327,6 +2335,7 @@ function foeAI(e, dt) {
   if (e.spawnT > 0) { e.spawnT -= dt; stop(e); return; }
   if (e.dash) return;
   if (e.stun > 0) { e.stun -= dt; stop(e); return; }
+  if (deepSpecial(e, dt)) return;
   foeSpecial(e, dt);
   if (e.boss) return bossAI(e, dt);
   if (e.d.immobile) { stop(e); e.spawnCd = (e.spawnCd == null ? 3 : e.spawnCd) - dt; if (e.spawnCd <= 0) { e.spawnCd = 7; const kids = G.foes.filter(f => f.parent === e && !f.dead).length; if (kids < 3 && heroesAlive().some(h => dist(h, e) < 170)) { const a = rand(0, 6.28), f = makeFoe('wisp', e.lvl, e.x + Math.cos(a) * 26, e.y + Math.sin(a) * 18, e.enc); f.parent = e; G.foes.push(f); smoke(f.x, f.y); flash(e.x, e.y - 20, 30, '#c86bff', 0.4); } } return; }
@@ -2350,7 +2359,7 @@ function foeAI(e, dt) {
     if (d_.blink && d < 34 && (e.blinkCd || 0) <= 0) { e.blinkCd = 4; const a = ang(t, e) + rand(-0.8, 0.8); flash(e.x, e.y - 12, 22, '#ff8a3a', 0.3); for (let i = 0; i < 8; i++) gpart(e.x, e.y - 12, rand(-60, 60), rand(-60, 20), 0.35, '#ffb04d', 1, 0); const nx = e.x + Math.cos(a) * 70, ny = e.y + Math.sin(a) * 50; if (!solidAt(G.map, nx, ny)) { e.x = nx; e.y = ny; } flash(e.x, e.y - 12, 22, '#ff8a3a', 0.3); sfx('dash'); }
     e.blinkCd = (e.blinkCd || 0) - dt;
     if (d < 60) moveAway(e, t); else if (d > e.range) setWant(e, t.x, t.y); else stop(e);
-    if (e.atkCd <= 0 && d <= e.range + 12) { e.atkCd = e.rate; if (d_.fire) sfx('fire'); shoot(e, t, d_.fire ? { spd: 95, mult: 1.1, col: '#ff8a3a', size: 5, light: '#ff8a3a', life: 2.4 } : { spd: 110, mult: 1, col: '#c88bff', size: 4, light: '#c88bff', life: 2.4 }); }
+    if (e.atkCd <= 0 && d <= e.range + 12) { e.atkCd = e.rate; if (d_.fire) sfx('fire'); shoot(e, t, d_.fire ? { spd: 95, mult: 1.1, col: '#ff8a3a', size: 5, light: '#ff8a3a', life: 2.4 } : { spd: 110, mult: 1, col: d_.pcol || '#c88bff', size: 4, light: d_.pcol || '#c88bff', life: 2.4 }); }
   } else if (d_.charger && d > (d_.swoop ? 30 : 40) && d < (d_.swoop ? 140 : 115) && e.atkCd <= 0) { e.wind = d_.swoop ? 0.4 : 0.55; e.chargeA = ang(e, t); e.atkCd = e.rate * 2; fx({ k: 'line', x: e.x, y: e.y, a: e.chargeA, t: 0, dur: 0.55 }); }
   else if (d > e.range + t.r) setWant(e, t.x, t.y);
   else { stop(e); e.face = ang(e, t); if (e.atkCd <= 0) { e.atkCd = e.rate; e.wind = d_.heavy ? 0.45 : 0.3; } }
@@ -3021,10 +3030,11 @@ function pullStar(min) {
   if (st === 5) { p.p5 = 0; p.p4 = 0; } else if (st === 4) p.p4 = 0;
   return st;
 }
-function pullHero(min) { const st = pullStar(min), pool = Object.keys(HEROES).filter(id => HEROES[id].star === st); return pick(pool); }
+// a Legend (named hero) is the rarer outcome; otherwise the Starforge calls a brand-new warden
+function pullHero(min) { const st = pullStar(min), pool = Object.keys(HEROES).filter(id => HEROES[id].star === st && !HEROES[id].gift && !HEROES[id].gen); if (pool.length && Math.random() < (st <= 2 ? 0.35 : 0.2)) return pick(pool); return makeRecruit(st); }
 function grantHero(id) {
   const o = SV.owned[id]; let tag;
-  if (!o) { SV.owned[id] = { lb: 0, mor: 70, bx: 0 }; tag = 'New!'; if (SV.party.length < 4) SV.party.push(id); if (HEROES[id].star >= 4) { SV.bondQ = SV.bondQ || []; SV.bondQ.push([id, 'meet']); } }
+  if (!o) { SV.owned[id] = { lb: 0, mor: 70, bx: 0 }; rollIndividual(id, false); tag = 'New! Grade ' + gradeOf(id)[1]; if (SV.party.length < 4) SV.party.push(id); if (HEROES[id].star >= 4) { SV.bondQ = SV.bondQ || []; SV.bondQ.push([id, 'meet']); } }
   else if (o.lb < 5) { o.lb++; tag = 'Limit break +' + o.lb; addBond(id, 5); }
   else { SV.gold += 500; tag = '+500 gold'; }
   return tag;
@@ -3032,7 +3042,7 @@ function grantHero(id) {
 function screenSpark() {
   const p = pityOf();
   let h = '<p class="muted" style="font-size:12px;margin:0 0 10px">Every summon gives 1 Starlight. Trade it for the hero you want. A hero you already own gets a limit break instead.</p><div class="row" style="margin-bottom:12px"><b class="ol" style="font:700 18px var(--px);color:#ffe9a8">✦ ' + p.light + ' Starlight</b></div><div class="lst">';
-  Object.keys(HEROES).filter(id => HEROES[id].star >= 4).sort((a, b) => HEROES[b].star - HEROES[a].star).forEach(id => {
+  Object.keys(HEROES).filter(id => HEROES[id].star >= 4 && !HEROES[id].gen && (!HEROES[id].gift || SV.owned[id])).sort((a, b) => HEROES[b].star - HEROES[a].star).forEach(id => {
     const H = HEROES[id], o = SV.owned[id], cost = SPARK[H.star], can = p.light >= cost && !(o && o.lb >= 5);
     h += '<div class="li"><img class="ic" src="' + heroHeadURL(id) + '" alt=""><div class="grow"><b style="color:' + STARC[H.star] + '">' + esc(H.name) + ' <small style="display:inline;font-size:11px">' + stars(H.star) + '</small></b><small>' + esc(H.title) + ' · ' + CLASSES[H.cls].name + (o ? ' · owned' + (o.lb ? ' +' + o.lb : '') : '') + '</small></div><button class="btn pf' + (can ? ' gold' : '') + '" data-act="buy" data-v="' + id + '"' + (can ? '' : ' disabled') + '>✦ ' + cost + '</button></div>';
   });
@@ -3205,6 +3215,8 @@ const DUO = {
   'odda|thane': [['thane', 'You hold a line like a mountain, shepherd.', 'odda', 'Mountains do not have to chase sheep.'], ['odda', 'Nine hundred got out, they said. You counted every one?', 'thane', 'Every one. You would have too.']],
   'morrow|senna': [['morrow', 'The stars talk in my dreams, Senna.', 'senna', 'What do they say?'], ['senna', 'Do you think someone up there is watching over us?', 'morrow', 'I dreamed they are. They tap a lot.']],
   'doran|grimm': [['doran', 'My king climbed alone. Yours ran.', 'grimm', '...Kings.'], ['grimm', '...Good shield.', 'doran', 'Coming from you, I will take that to my grave.']],
+  'lark|sable': [['sable', 'You still hum when you are scared, Lark.', 'lark', 'You still count your coins when you are scared. We are a pair.'], ['lark', 'You never stopped looking for me.', 'sable', 'I never stopped paying for you. Same thing. ...I love you, idiot.']],
+  'grimm|lark': [['lark', 'You held a door too. Three days, they said.', 'grimm', '...You held one for six years. You win.'], ['grimm', '...Good shield.', 'lark', 'It was a cart door. Thank you.']],
   'kestrel|moss': [['kestrel', 'You sleep in trees too?', 'moss', 'Best view. Nobody bothers you.']]
 };
 function pickBanter(a, b) {
@@ -3313,6 +3325,7 @@ const JOBS = {
   wood: { name: 'Forestry', res: 'Timber', ic: 'wood', verb: 'Chopping', tool: 'axe', col: '#c08a4a', use: 'Timber upgrades the posts. Foresters also bring back mushrooms and berries.' },
   ore: { name: 'Old mine', res: 'Ore', ic: 'ore', verb: 'Mining', tool: 'pick', col: '#8fc3ff', use: 'Ore reinforces gear at the Smithy.' },
   herb: { name: 'Herb garden', res: 'Herbs', ic: 'herb', verb: 'Tending', tool: 'hoe', col: '#7ff09a', use: 'Herbs brew potions and season meals.' },
+  smith: { name: 'Smithy', res: 'Craft', ic: 'ore', verb: 'Forging', tool: 'axe', col: '#ff9a4d', use: 'A smith at the anvil makes crafting and reinforcing cheaper.', kitchen: 1 },
   cook: { name: 'Kitchen', res: 'Meals', ic: 'meal', verb: 'Cooking', tool: 'ladle', col: '#ffb35b', use: 'A cook turns forage and herbs into meals.', kitchen: 1 }
 };
 const GJOBS = ['wood', 'ore', 'herb'];
@@ -3323,6 +3336,7 @@ const WORK_LINES = {
   wood: { loyal: ['For the village!', 'One more log.'], proud: ['Watch this swing.', 'Too easy.'], reckless: ['TIMBER!', 'Hyah!'], gentle: ['Sorry, little tree.', 'Ooh, berries!'], greedy: ['Is wood worth much?', 'Paid by the log?'], lazy: ['Break time soon?', 'Zzz...'], stalwart: ['Solid work.', 'Steady blows.'], aloof: ['Quiet out here. Good.', '...'] },
   ore: { loyal: ['Digging deep!', 'Found a vein!'], proud: ['Only the finest ore.', 'Gleaming.'], reckless: ['Deeper! Deeper!', 'Ha! Sparks!'], gentle: ['It is dark in here...', 'Careful now.'], greedy: ['Ooh, shiny!', 'Mine. All mine.'], lazy: ['So heavy...', 'Zzz...'], stalwart: ['Hold the beams.', 'Strong rock.'], aloof: ['Echoes. Nice.', '...'] },
   herb: { loyal: ['Growing well!', 'For the potions.'], proud: ['My garden is perfect.', 'Hmph. Weeds.'], reckless: ['Grow faster!', 'Boring...'], gentle: ['There you go, little one.', 'They smell lovely.'], greedy: ['Rare herbs sell high.', 'Mint! Profit!'], lazy: ['Nap in the shade...', 'Zzz...'], stalwart: ['Rows are straight.', 'Good soil.'], aloof: ['Plants do not talk. Good.', '...'] },
+  smith: { loyal: ['For the party!', 'Strong steel.'], proud: ['A masterwork. Obviously.', 'Only my best.'], reckless: ['HIT IT HARDER!', 'Sparks!'], gentle: ['Easy now...', 'There we go.'], greedy: ['Charging extra.', 'Fine steel, fine price.'], lazy: ['Hot... so hot...', 'Zzz...'], stalwart: ['Clang. Clang.', 'Fold it again.'], aloof: ['Do not watch me work.', '...'] },
   cook: { loyal: ['Eat well, everyone!', 'A warm meal for the team.'], proud: ['A masterpiece, naturally.', 'Only I can cook this.'], reckless: ['More fire!', 'Is it supposed to smoke?'], gentle: ['Just a pinch more...', 'Smells like home.'], greedy: ['I charge extra for seconds.', 'Premium stew.'], lazy: ['Taste test... and another.', 'Mm. Needs more tasting.'], stalwart: ['Stir. Stir. Stir.', 'Hearty and filling.'], aloof: ['Do not touch my pot.', '...'] }
 };
 // meals: eaten at the start of a run, the buff lasts the whole run. q is the cook's quality.
@@ -3341,7 +3355,7 @@ function workOf() {
   if (!SV.pantry) SV.pantry = [];
   return W;
 }
-const jobSlots = k => k === 'cook' ? 1 : Math.min(4, 1 + workOf().lv[k]);
+const jobSlots = k => k === 'cook' || k === 'smith' ? 1 : Math.min(4, 1 + workOf().lv[k]);
 const jobCap = k => 60 + 40 * (workOf().lv[k] - 1);
 const forageCap = () => Math.round(jobCap('wood') * 0.3);
 const jobUpCost = k => { const lv = workOf().lv[k]; return { wood: 20 * lv + (k === 'wood' ? 0 : 10), gold: 120 * lv }; };
@@ -3350,12 +3364,12 @@ function canWork(id) { return !!SV.owned[id] && SV.party.indexOf(id) < 0 && !inj
 function heroRate(id, k) {
   const H = HEROES[id], o = SV.owned[id] || {}; let r = WORK_BASE * (1 + 0.12 * (H.star - 1));
   if (JOB_LOVE[H.trait] === k) r *= 1.4; if (H.trait === 'lazy') r *= 0.75; if ((o.mor == null ? 70 : o.mor) < 25) r *= 0.5;
-  return r * (1 + 0.2 * (workOf().lv[k] - 1));
+  return r * (1 + 0.2 * (workOf().lv[k] - 1)) * profMul(id, k);
 }
 const jobRate = k => JOBS[k].kitchen ? 0 : workers(k).filter(canWork).reduce((s, id) => s + heroRate(id, k), 0);
 // the cook's quality: stars, loving the job and the kitchen's level all make stronger meals
 function cookOf() { return workers('cook').find(canWork) || null; }
-function cookQ() { const id = cookOf(); if (!id) return 0; const H = HEROES[id]; return Math.round((1 + 0.06 * (H.star - 1) + (JOB_LOVE[H.trait] === 'cook' ? 0.2 : 0) + 0.08 * (workOf().lv.cook - 1)) * 100) / 100; }
+function cookQ() { const id = cookOf(); if (!id) return 0; const H = HEROES[id]; return Math.round((1 + 0.06 * (H.star - 1) + (JOB_LOVE[H.trait] === 'cook' ? 0.2 : 0) + 0.08 * (workOf().lv.cook - 1) + (profOf(id) && profOf(id).k === 'cook' ? 0.12 * profOf(id).lv : 0)) * 100) / 100; }
 function workTick() {
   if (!SV) return; const W = workOf(), now = Date.now();
   Object.keys(W.as).forEach(id => { if (!SV.owned[id] || SV.party.indexOf(id) >= 0 || !JOBS[W.as[id]]) delete W.as[id]; });
@@ -3383,7 +3397,8 @@ function autoAssign() {
   // loved jobs first, then the kitchen if nobody cooks, then the emptiest post
   idle.forEach(id => {
     const love = JOB_LOVE[HEROES[id].trait];
-    const order = Object.keys(JOBS).sort((a, b) => (b === love) - (a === love) || (b === 'cook' && !workers('cook').length) - (a === 'cook' && !workers('cook').length) || workers(a).length - workers(b).length);
+    const pj = profOf(id) ? PROFS[profOf(id).k].job : null;
+    const order = Object.keys(JOBS).sort((a, b) => (b === pj) - (a === pj) || (b === love) - (a === love) || (b === 'cook' && !workers('cook').length) - (a === 'cook' && !workers('cook').length) || workers(a).length - workers(b).length);
     const k = order.find(j => workers(j).length < jobSlots(j)); if (k) { W.as[id] = k; n++; if (typeof hubAssignChanged === 'function') hubAssignChanged(id); }
   });
   save(); return n;
@@ -3414,7 +3429,7 @@ function mealMods(h) {
   if (M.atk) h.atk *= 1 + M.atk * m.q; if (M.cdr) h.cdr = Math.min(0.6, (h.cdr || 0) + M.cdr * m.q);
 }
 // ore reinforcement: +10% stats per level, up to +5
-const reinCost = it => { const u = it.up || 0; return { ore: Math.round(6 * (u + 1) * (1 + it.rar * 0.5)), gold: Math.round(50 * (u + 1) * (1 + it.rar * 0.3) / 10) * 10 }; };
+const reinCost = it => { const u = it.up || 0, k = 1 - smithDisc(); return { ore: Math.round(6 * (u + 1) * (1 + it.rar * 0.5) * k), gold: Math.round(50 * (u + 1) * (1 + it.rar * 0.3) * k / 10) * 10 }; };
 function reinforce(it) {
   const u = it.up || 0, c = reinCost(it); if (u >= 5 || SV.res.ore < c.ore || SV.gold < c.gold) return false;
   SV.res.ore -= c.ore; SV.gold -= c.gold; it.bn = it.bn || it.name; it.up = u + 1;
@@ -3431,15 +3446,16 @@ function screenWork(pickFor) {
   let h = '<div class="wres">' + ['wood', 'ore', 'herb', 'shroom', 'berry'].map(r => chip(r, SV.res[r], RES_NAME[r])).join('') + chip('potion', SV.potions, 'Potions') + chip('meal', SV.pantry.length, 'Meals') + '</div>';
   if (pickFor) {
     const J = JOBS[pickFor], W = workOf(), love = id => JOB_LOVE[HEROES[id].trait] === pickFor;
-    const list = Object.keys(SV.owned).filter(id => SV.party.indexOf(id) < 0).sort((a, b) => love(b) - love(a) || HEROES[b].star - HEROES[a].star);
+    const pm = id => profOf(id) && PROFS[profOf(id).k].job === pickFor ? profOf(id).lv : 0;
+    const list = Object.keys(SV.owned).filter(id => SV.party.indexOf(id) < 0).sort((a, b) => pm(b) - pm(a) || love(b) - love(a) || HEROES[b].star - HEROES[a].star);
     h += '<div class="sect">' + (J.kitchen ? 'Choose a cook' : 'Choose a warden for the ' + J.name.toLowerCase()) + '</div>';
     if (!list.length) h += '<p class="muted">Every warden you own is in your party. Summon more at the Starforge, and those who stay home can work here.</p>';
     list.forEach(id => {
       const H = HEROES[id], cur = W.as[id], hurt = !!injOf(id), here = cur === pickFor;
-      const stat = J.kitchen ? 'meal quality ×' + (Math.round((1 + 0.06 * (H.star - 1) + (love(id) ? 0.2 : 0) + 0.08 * (W.lv.cook - 1)) * 100) / 100) : Math.round(heroRate(id, pickFor) * 10) / 10 + '/hr';
+      const pf = profOf(id), stat = pickFor === 'smith' ? (pf && pf.k === 'smith' ? Math.round(pf.lv * 10) + '% cheaper, ' + pf.lv * 8 + '% rarity-up' : '5% cheaper') : J.kitchen ? 'meal quality ×' + (Math.round((1 + 0.06 * (H.star - 1) + (love(id) ? 0.2 : 0) + 0.08 * (W.lv.cook - 1) + (pf && pf.k === 'cook' ? 0.12 * pf.lv : 0)) * 100) / 100) : Math.round(heroRate(id, pickFor) * 10) / 10 + '/hr';
       h += '<div class="li"><img class="ic" src="' + heroHeadURL(id) + '" alt="" style="width:36px;height:36px"><div class="grow"><b style="color:' + STARC[H.star] + '">' + esc(H.name) + ' ' + stars(H.star) + '</b><small>' + TRAITS[H.trait].name
         + (love(id) ? ' · <span style="color:#7ff09a">♥ loves this work</span>' : H.trait === 'lazy' && !J.kitchen ? ' · <span style="color:#ffb35b">dawdles</span>' : '')
-        + ' · ' + stat + (cur && !here ? ' · now at the ' + JOBS[cur].name.toLowerCase() : '') + (hurt ? ' · <span style="color:#ff6d8a">injured, resting</span>' : '') + '</small></div>'
+        + ' · ' + stat + ' · ' + (profOf(id) ? '<span style="color:' + (PROFS[profOf(id).k].job === pickFor ? '#ffc65a' : 'var(--dim)') + '">' + profTag(id) + '</span>' : '') + (cur && !here ? ' · now at the ' + JOBS[cur].name.toLowerCase() : '') + (hurt ? ' · <span style="color:#ff6d8a">injured, resting</span>' : '') + '</small></div>'
         + (here ? '<button class="btn pf" data-act="unas" data-v="' + id + '">Send home</button>' : '<button class="btn pf gold" data-act="as" data-v="' + id + '"' + (hurt ? ' disabled' : '') + '>' + (cur ? 'Move here' : 'Assign') + '</button>') + '</div>';
     });
     h += '<div class="row" style="justify-content:flex-end;margin-top:12px"><button class="btn pf" data-act="back">Back</button></div>';
@@ -3455,6 +3471,9 @@ function screenWork(pickFor) {
         + '<div class="prog" style="margin:6px 0"><i style="width:' + Math.round(st / cap * 100) + '%;background:' + J.col + '"></i></div><small>' + Math.floor(st) + ' / ' + cap + forage + (st >= cap ? ' · <span style="color:#ffb35b">storehouse full</span>' : '') + '</small>'
         + slotsHtml(k) + '</div><div class="wbtns"><button class="btn pf' + (ready ? ' gold' : '') + '" data-act="col" data-v="' + k + '"' + (ready ? '' : ' disabled') + '>Collect ' + (ready ? ready : '') + '</button>' + upBtn(k) + '</div></div>';
     });
+    // smithy
+    const sid = workers('smith').find(canWork);
+    h += '<div class="sect">Smithy</div><div class="li job"><span class="sico">' + icoImg('a_axe') + '</span><div class="grow"><b>Smithy anvil</b><small>' + (sid ? esc(HEROES[sid].name) + ' is at the anvil · crafting and reinforcing ' + Math.round(smithDisc() * 100) + '% cheaper' + (smithUp() ? ' · ' + Math.round(smithUp() * 100) + '% chance to craft one rarity higher' : '') : 'Put a Blacksmith here for cheaper crafting and reinforcing. Anyone else helps a little.') + '</small>' + slotsHtml('smith') + '</div></div>';
     // kitchen
     const cid = cookOf(), q = cookQ();
     h += '<div class="sect">Kitchen</div><div class="li job"><span class="sico">' + icoImg('meal') + '</span><div class="grow"><b>Kitchen <span class="muted" style="font-size:12px">Lv ' + workOf().lv.cook + '</span></b><small>' + (cid ? esc(HEROES[cid].name) + ' is cooking · meal quality ×' + q : 'Assign a cook to make meals. Loyal and lazy wardens love cooking.') + '</small>' + slotsHtml('cook') + '</div><div class="wbtns">' + upBtn('cook') + '</div></div>';
@@ -3567,6 +3586,81 @@ function bldKitchen() {
   p.r(39, 29, 6, 2, '#d9a86a'); p.p(40, 28, '#e8e3d0'); p.p(41, 28, '#c08a4a'); p.p(43, 28, '#e86aa0'); p.p(44, 28, '#a0306a');
   p.r(6, 33, 8, 9, '#c8b090'); p.r(6, 33, 8, 2, '#e0cca8'); p.r(8, 31, 4, 2, '#a89070'); p.p(9, 37, '#8a7458');
   return outline(c);
+}
+/* ================= individual heroes: rolled stats, professions, and endless generated recruits ================= */
+// Every warden you own is an individual: four stats rolled when they join, a grade from F to SS, and a profession.
+// Most summons now call a brand-new generated warden; the named heroes are rarer Legends.
+const ISTAT = [['pow', 'Power', 'Attack'], ['vit', 'Vitality', 'HP and defence'], ['foc', 'Focus', 'Mana and skill speed'], ['agi', 'Agility', 'Move speed and crits']];
+const GRADES = [[66, 'SS', '#ff6dd8'], [58, 'S', '#ffc65a'], [50, 'A', '#d8a8ff'], [42, 'B', '#8fc3ff'], [34, 'C', '#7ff09a'], [26, 'D', '#c8c8d8'], [18, 'E', '#a8a8b8'], [0, 'F', '#8a8a9a']];
+const PROFS = {
+  lumber: { name: 'Lumberjack', job: 'wood', ic: 'wood', desc: 'Chops much faster at Forestry.' },
+  miner: { name: 'Miner', job: 'ore', ic: 'ore', desc: 'Digs much faster at the Old mine.' },
+  herbal: { name: 'Herbalist', job: 'herb', ic: 'herb', desc: 'Tends the Herb garden much faster.' },
+  cook: { name: 'Cook', job: 'cook', ic: 'meal', desc: 'Cooks stronger meals in the Kitchen.' },
+  smith: { name: 'Blacksmith', job: 'smith', ic: 'ore', desc: 'At the Smithy: cheaper crafting and reinforcing, and a chance to forge a higher rarity.' }
+};
+const statsOf = id => { const o = SV.owned[id]; return (o && o.st) || { pow: 10, vit: 10, foc: 10, agi: 10 }; };
+const statTotal = st => st.pow + st.vit + st.foc + st.agi;
+function gradeOf(id) { const t = statTotal(statsOf(id)); return GRADES.find(g => t >= g[0]); }
+const gradeTag = id => { const g = gradeOf(id); return '<span class="grade" style="--gc:' + g[2] + '">' + g[1] + '</span>'; };
+const profOf = id => { const o = SV.owned[id]; return o && o.prof ? o.prof : null; };
+const profTag = id => { const p = profOf(id); return p ? PROFS[p.k].name + ' ' + '★'.repeat(p.lv) : 'No profession'; };
+// stats: the sum of three dice, so most wardens are average and great or terrible rolls are rare
+function rollStat() { return Math.max(1, Math.min(20, randi(1, 7) + randi(1, 7) + randi(1, 7) - 1)); }
+function rollIndividual(id, protect) {
+  const o = SV.owned[id]; if (!o) return; const st = {};
+  ISTAT.forEach(([k]) => { st[k] = rollStat(); if (protect) st[k] = Math.max(10, st[k]); });
+  o.st = st; const r = Math.random();
+  o.prof = { k: pick(Object.keys(PROFS)), lv: r < 0.6 ? 1 : r < 0.9 ? 2 : 3 };
+}
+// stat 10 is the old baseline; 1 is about 27% weaker, 20 about 30% stronger
+const sMul = v => 0.7 + v * 0.03;
+function indivMods(id) {
+  const s = statsOf(id);
+  return { atk: sMul(s.pow), hp: sMul(s.vit), def: 0.85 + s.vit * 0.015, mp: 0.8 + s.foc * 0.02, cdr: (s.foc - 10) * 0.012, spd: 0.9 + s.agi * 0.01, crit: (s.agi - 10) * 0.004 };
+}
+// professions at work: their own post is where they shine
+function profMul(id, k) { const p = profOf(id); return p && PROFS[p.k].job === k ? 1 + 0.5 * p.lv : 1; }
+function smithDisc() { const id = workers('smith').find(canWork); if (!id) return 0; const p = profOf(id); return p && p.k === 'smith' ? 0.1 * p.lv : 0.05; }
+function smithUp() { const id = workers('smith').find(canWork); if (!id) return 0; const p = profOf(id); return p && p.k === 'smith' ? 0.08 * p.lv : 0; }
+
+// existing wardens get stats once, never below their old strength
+function indivMigrate() { Object.keys(SV.owned).forEach(id => { if (!SV.owned[id].st) rollIndividual(id, true); }); }
+
+/* ---- generated recruits ---- */
+const RN1 = ['Ar', 'Bel', 'Cai', 'Da', 'El', 'Fen', 'Gar', 'Hal', 'Is', 'Jor', 'Ka', 'Li', 'Ma', 'Ne', 'Or', 'Pa', 'Ro', 'Sa', 'Ta', 'Ul', 'Va', 'Wy', 'Ya', 'Ze', 'Mi', 'Lu', 'Ri', 'So', 'Ti', 'Bri', 'Cor', 'Dre', 'Ela', 'Ivo', 'Mar', 'Nil', 'Quin', 'Sef', 'Tor'];
+const RN2 = ['', '', 'ra', 'li', 'n', 'sa', 've', 'do', 'mi', 'ro', 'th', 'la', 'ne', 'ri', 'ka'];
+const RN3 = ['n', 'a', 'el', 'o', 'is', 'ra', 'an', 'ie', 'or', 'yn', 'us', 'e', 'ix', 'en', 'ia', 'ok'];
+const RADJ = { loyal: ['Faithful', 'Steadfast', 'True'], proud: ['Gilded', 'Proud', 'Haughty'], reckless: ['Wild', 'Reckless', 'Daring'], gentle: ['Gentle', 'Kind', 'Soft-Spoken'], greedy: ['Coin-Hungry', 'Gilt-Eyed', 'Thrifty'], lazy: ['Drowsy', 'Easygoing', 'Sleepy'], stalwart: ['Iron', 'Unbending', 'Stout'], aloof: ['Quiet', 'Distant', 'Lone'] };
+const RNOUN = { blade: ['Blade', 'Duelist', 'Sellsword'], ranger: ['Archer', 'Hunter', 'Scout'], arcanist: ['Mage', 'Spellwright', 'Hexer'], oracle: ['Healer', 'Seer', 'Mender'], bulwark: ['Shield', 'Guard', 'Bulwark'] };
+const RSKIN = ['#f3d2b5', '#f1c09a', '#e9b48f', '#d9a47c', '#c98d6a', '#a8704e', '#8a5a3e', '#6e4632'];
+const RHAIR = ['#1a1a22', '#3b2a4a', '#5a3a22', '#8a4a22', '#c86a2a', '#e8c070', '#f2d06b', '#d8d8e8', '#7a3a8a', '#2a6a8a', '#c83a5a', '#4a8a5a'];
+const RCLOTH = [['#c8323f', '#7a1c2c'], ['#3f8a3c', '#245a2a'], ['#5b3fb0', '#33206e'], ['#2d5ab8', '#1a3a7a'], ['#d9a02a', '#8a5a14'], ['#3a3a52', '#22223a'], ['#b8507a', '#6a2a48'], ['#2a8a8a', '#1a5050'], ['#e8e3d0', '#9a9278'], ['#8a5a3a', '#4a2e1e']];
+const RGLOW = ['#ff6d8a', '#7dff9c', '#b47bff', '#5ab0ff', '#fff1a8', '#ffb35b', '#7af0d8', '#ff8ac0'];
+const RSTYLE = ['bob', 'long', 'messy', 'pony', 'short', 'spiky', 'swept', 'twin'];
+function recruitName() { const used = new Set(Object.keys(HEROES).map(id => HEROES[id].name)); for (let i = 0; i < 40; i++) { const n = pick(RN1) + pick(RN2) + pick(RN3); if (!used.has(n) && n.length >= 3 && n.length <= 9) return n; } return pick(RN1) + pick(RN3) + randi(2, 9); }
+function makeRecruit(star) {
+  const cls = pick(Object.keys(CLASSES)), trait = pick(Object.keys(TRAITS)), cl = pick(RCLOTH), id = 'r' + Date.now().toString(36) + '_' + (SV.rseq = (SV.rseq || 0) + 1);
+  const look = { skin: pick(RSKIN), hair: pick(RHAIR), hairStyle: pick(RSTYLE), top: cl[0], top2: cl[1], glow: pick(RGLOW), eye: pick(['#4a8ad8', '#3aa85a', '#7a5a3a', '#7a4ac8', '#c8323f', '#2a9a9a', '#e8642a', '#3a3a52']) };
+  if (Math.random() < 0.4) look.hat = 'none';
+  const def = { gen: 1, trait, name: recruitName(), cls, star, title: pick(RADJ[trait]) + ' ' + pick(RNOUN[cls]), look };
+  SV.recruits = SV.recruits || {}; SV.recruits[id] = def; HEROES[id] = def;
+  return id;
+}
+function recruitsInject() { Object.keys(SV.recruits || {}).forEach(id => { HEROES[id] = SV.recruits[id]; }); }
+const isGen = id => !!(HEROES[id] && HEROES[id].gen);
+const legendIds = () => Object.keys(HEROES).filter(id => !HEROES[id].gen);
+// releasing a generated warden: they leave Veyra with your thanks, and leave some Starlight behind
+const RELEASE_LIGHT = [0, 1, 2, 4, 10, 25];
+function releaseHero(id) {
+  if (!isGen(id) || !SV.owned[id]) return false; const H = HEROES[id], e = SV.owned[id].eq || {};
+  GSLOTS.forEach(s => { if (e[s]) SV.inv.push(e[s]); });
+  SV.party = SV.party.filter(x => x !== id); if (!SV.party.length) SV.party = Object.keys(SV.owned).filter(x => x !== id).slice(0, 1);
+  if (SV.work && SV.work.as) delete SV.work.as[id];
+  if (SV.pairs) Object.keys(SV.pairs).forEach(k => { if (k.split('|').indexOf(id) >= 0) delete SV.pairs[k]; });
+  delete SV.owned[id]; delete SV.recruits[id]; delete HEROES[id];
+  pityOf().light += RELEASE_LIGHT[H.star]; SV.gold += 100 * H.star; save();
+  if (LOBBY.map) hubWalkers(); refreshLobby(); return true;
 }
 
 /* ================= story: the Chronicle of the Spire ================= */
@@ -3690,8 +3784,8 @@ function npcHeadURL(key) {
 function storySeen(id) { return !!(SV.story && SV.story[id]); }
 // the next unseen chapter for this moment; chapters you skipped past play on the next floor you start
 function storyFor(n, phase) {
-  if (phase === 'clear') return STORY.filter(s => s.phase === 'clear' && s.at === n && !storySeen(s.id));
-  return STORY.filter(s => !storySeen(s.id) && (s.phase === 'start' ? s.at <= n : s.at < n)).slice(0, 3);
+  if (phase === 'clear') return STORY.filter(s => !s.deep && s.phase === 'clear' && s.at === n && !storySeen(s.id));
+  return STORY.filter(s => !s.deep && !storySeen(s.id) && (s.phase === 'start' ? s.at <= n : s.at < n)).slice(0, 3);
 }
 function playStories(list, done) {
   if (!list || !list.length) { if (done) done(); return; }
@@ -3708,7 +3802,7 @@ function storyLine(L, cast) {
   const who = L[0], txt = L[1]; let id = null, name, col, img, side = 'l';
   if (who.indexOf('h:') === 0) { id = who.slice(2); const H = HEROES[id]; name = H.name; col = STARC[H.star]; img = heroHeadURL(id); }
   else if (who === 'lead' || who === 'second' || who === 'third') { id = cast[who]; const H = HEROES[id]; name = H.name; col = STARC[H.star]; img = heroHeadURL(id); }
-  else if (STORY_SPK[who]) { const S = STORY_SPK[who]; name = S.name; col = S.col; img = npcHeadURL(S.npc); side = who === 'oona' ? 'l' : 'r'; }
+  else if (STORY_SPK[who]) { const S = STORY_SPK[who]; name = S.name; col = S.col; img = S.img ? S.img() : npcHeadURL(S.npc); side = who === 'oona' ? 'l' : 'r'; }
   else if (who === 'cmd') { name = SV.name + ' (you)'; col = '#ffe9a8'; img = null; side = 'r'; }
   const res = o => typeof o === 'string' ? o : (id && o[HEROES[id].trait]) || o._;
   let t = null; if (typeof txt === 'object' && txt.u && id && !isAware(id)) t = res(txt.u);
@@ -3718,6 +3812,8 @@ function storyLine(L, cast) {
 const STORYST = { on: false };
 function playStory(chap, done) {
   if (!chap) { if (done) done(); return; }
+  // lines can carry a condition (e.g. only if you own that hero)
+  if (chap.lines.some(L => typeof L[2] === 'function')) chap = Object.assign({}, chap, { lines: chap.lines.filter(L => typeof L[2] !== 'function' || L[2]()) });
   let el = $('#story');
   if (!el) { el = document.createElement('div'); el.id = 'story'; document.body.appendChild(el); }
   const cast = storyCast(), wasPaused = G.paused;
@@ -3754,7 +3850,7 @@ function playStory(chap, done) {
 function screenChronicle() {
   const seen = STORY.filter(s => storySeen(s.id)), nxt = STORY.find(s => !storySeen(s.id));
   let h = '<p class="muted" style="font-size:12px;margin:0 0 10px">The story of your climb. Chapters unlock as you reach new floors of the Spire. Replays use your current party, so different heroes say different things.</p><div class="lst">';
-  seen.forEach(s => { h += '<div class="li"><img class="ic" src="' + ICON.tower + '" alt=""><div class="grow"><b>' + esc(s.ch) + ' · ' + esc(s.title) + '</b><small>Floor ' + s.at + (s.phase === 'clear' ? ', after the Guardian' : '') + '</small></div><button class="btn pf" data-act="play" data-v="' + s.id + '">Replay</button></div>'; });
+  seen.forEach(s => { h += '<div class="li"><img class="ic" src="' + ICON.tower + '" alt=""><div class="grow"><b>' + esc(s.ch) + ' · ' + esc(s.title) + '</b><small>' + (s.deep ? 'Depth ' : 'Floor ') + s.at + (s.phase === 'clear' ? ', after the Guardian' : s.phase === 'mid' ? ', during the battle' : '') + '</small></div><button class="btn pf" data-act="play" data-v="' + s.id + '">Replay</button></div>'; });
   if (nxt) h += '<div class="li" style="opacity:.6"><img class="ic" src="' + ICON.tower + '" alt="" style="filter:brightness(.4)"><div class="grow"><b>' + esc(nxt.ch) + ' · ???</b><small>Reach floor ' + nxt.at + (nxt.phase === 'clear' ? ' and defeat its Guardian' : '') + '</small></div></div>';
   if (!seen.length && !nxt) h += '<p class="muted">Nothing yet.</p>';
   h += '</div>';
@@ -3829,7 +3925,7 @@ function screenEcho(pickStar) {
   let h = '<div class="echohd"><span class="eshard"></span><b class="ol">' + fmt(E.shards) + '</b><small>Echo Shards</small><span class="grow"></span><small>Deepest echo: ' + (SV.spire.best > 50 ? 'floor ' + SV.spire.best : 'not yet') + '</small></div>';
   if (pickStar) {
     h += '<div class="sect">Choose a ' + pickStar + '★ warden</div>';
-    Object.keys(HEROES).filter(id => HEROES[id].star === pickStar).forEach(id => {
+    Object.keys(HEROES).filter(id => HEROES[id].star === pickStar && !HEROES[id].gen && (!HEROES[id].gift || SV.owned[id])).forEach(id => {
       const H = HEROES[id], o = SV.owned[id];
       h += '<div class="li"><img class="ic" src="' + heroHeadURL(id) + '" alt="" style="width:40px;height:40px"><div class="grow"><b style="color:' + STARC[H.star] + '">' + esc(H.name) + '</b><small>' + esc(H.title) + ' · ' + CLASSES[H.cls].name + (SIG[id] ? ' · ' + SKILLS[SIG[id]].name : '') + (o ? ' · <span style="color:#7ff09a">owned, limit break +' + o.lb + '</span>' : '') + '</small></div><button class="btn pf gold" data-act="take" data-v="' + id + '"' + (o && o.lb >= 5 ? ' disabled' : '') + '>' + (o ? 'Limit break' : 'Call') + '</button></div>';
     });
@@ -3901,7 +3997,9 @@ function foePortraitURL(k) {
 function foeSighted(type) {
   if (!BESTIARY[type]) return; SV.seenF = SV.seenF || {}; if (SV.seenF[type]) return; SV.seenF[type] = 1;
   if (killsOf(type) > 0) return;
-  setTimeout(() => toast('<b>New foe: ' + esc(FOES[type].name) + '</b> · ' + BESTIARY[type].tip, ''), 900);
+  // several new foes in one fight: show their notes one after another
+  const now = Date.now(), at = Math.max(now + 900, (G.sightAt || 0) + 2600); G.sightAt = at;
+  setTimeout(() => toast('<b>New foe: ' + esc(FOES[type].name) + '</b> · ' + BESTIARY[type].tip, ''), at - now);
 }
 function screenBestiary(sel) {
   const seen = BEST_ORDER.filter(bestSeen).length;
@@ -4003,8 +4101,9 @@ function screenCraft(st) {
   const hid = st.hid && SV.owned[st.hid] ? st.hid : SV.party.find(id => SV.owned[id]);
   if (!st.cls) st.cls = hid ? HEROES[hid].cls : 'blade';
   const S = SETS[st.set], maxR = craftMaxR(st.set); if (st.rar > Math.max(1, maxR)) st.rar = Math.max(1, maxR);
-  const c = CRAFT[st.rar], ok = maxR >= st.rar && essOf(st.set) >= c.ess && SV.res.ore >= c.ore && SV.gold >= c.gold;
-  let h = '<p class="muted" style="font-size:12px;margin:0 0 8px">Forge the exact set piece you want from essence (earned in Forge Trials), ore from the mine and gold. Crafted gear matches your Commander level.</p>';
+  const cb = CRAFT[st.rar], dk = 1 - smithDisc(), c = { ess: cb.ess, ore: Math.round(cb.ore * dk), gold: Math.round(cb.gold * dk / 10) * 10 }, ok = maxR >= st.rar && essOf(st.set) >= c.ess && SV.res.ore >= c.ore && SV.gold >= c.gold;
+  const smid = workers('smith').find(canWork);
+  let h = (smid ? '<div class="li" style="margin-bottom:8px;box-shadow:inset 3px 0 0 0 #ff9a4d"><div class="grow"><b>' + esc(HEROES[smid].name) + ' is at the anvil</b><small>Costs ' + Math.round(smithDisc() * 100) + '% lower' + (smithUp() ? ' · ' + Math.round(smithUp() * 100) + '% chance to forge one rarity higher' : '') + '</small></div></div>' : '') + '<p class="muted" style="font-size:12px;margin:0 0 8px">Forge the exact set piece you want from essence (earned in Forge Trials), ore from the mine and gold. Crafted gear matches your Commander level.</p>';
   h += '<div class="sect">Set</div><div class="forges">' + Object.keys(SETS).map(k => '<button class="forge' + (st.set === k ? ' sel' : '') + '" style="--sc:' + SETS[k].col + '" data-act="set" data-v="' + k + '"><b>' + SETS[k].name + '</b><small>' + essOf(k) + ' essence</small></button>').join('') + '</div>';
   h += '<p style="font-size:12px;margin:6px 0 0;color:' + S.col + '">2 pieces: ' + S.b2 + ' · 3 pieces: ' + S.b3 + '</p>';
   h += '<div class="sect">Piece</div><div class="tabs">' + GSLOTS.map(s => '<button class="tab' + (st.slot === s ? ' on' : '') + '" data-act="slot" data-v="' + s + '">' + (s === 'weapon' ? 'Weapon' : s === 'armor' ? 'Armour' : 'Charm') + '</button>').join('') + '</div>';
@@ -4021,7 +4120,8 @@ function screenCraft(st) {
       make: () => {
         if (!ok) return; if (SV.inv.length >= BAG_MAX) { toast('Your bag is full', ''); return; }
         forgeOf().ess[st.set] -= c.ess; SV.res.ore -= c.ore; SV.gold -= c.gold;
-        const it = genItem(SV.lvl, st.rar, st.slot, { set: st.set, cls: st.slot === 'weapon' ? st.cls : null, exact: 1 }); SV.inv.push(it); save(); sfx('level'); refreshLobby();
+        const lucky = st.rar < 4 && Math.random() < smithUp(), it = genItem(SV.lvl, st.rar + (lucky ? 1 : 0), st.slot, { set: st.set, cls: st.slot === 'weapon' ? st.cls : null, exact: 1 }); SV.inv.push(it); save(); sfx('level'); refreshLobby();
+        if (lucky) { const sm = workers('smith').find(canWork); toast((sm ? esc(HEROES[sm].name) : 'Your smith') + ' outdid themselves: ' + RARN[it.rar] + '!', 'gold'); }
         toast('<span class="t' + it.rar + '">' + esc(it.name) + '</span> forged', 'gold'); screenCraft(Object.assign(st, { made: it.uid }));
       },
       open: v => { const it = SV.inv.find(x => x.uid === v); const who = it && (SV.party.find(id => SV.owned[id] && canWear(id, it)) || hid); SCREENS.loadout(who, 'all', v); }
@@ -4173,6 +4273,290 @@ function screenToday() {
     bonus: () => { if (!all || got) return; SV.todayC = today(); SV.gems += 50; save(); sfx('coin'); toast('+50 gems', 'gold'); refreshLobby(); screenToday(); }
   } });
 }
+/* ================= Part Two: The Rootdeep ================= */
+// The Spire was a nail driven through Aetherfall, pinning down a fallen star: the Hollow Heart.
+// With the First Commander gone the nail is loosening. Twenty depths lead down to it.
+const DEEP_MAX = 20, DEEP_LV0 = 48;
+THEMES.deep = { name: 'The Rootdeep', grass: ['#1f3a3e', '#183034', '#2a4e50'], dirt: ['#4a3446', '#3a2838', '#5e4458'], stone: ['#5a5a7a', '#46466a', '#77779a'], water: ['#0f4a5a', '#1a7a8a', '#7af0d8'], trees: ['rootglow', 'violet', 'rootglow', 'teal'], bush: 'teal', flowers: ['#7af0d8', '#c88bff', '#e8fff8'], leaves: ['#7af0d8', '#b8fff0'], dark: 0.46, fog: 0.14, crystal: '#7af0d8', foes: ['rootling', 'moth', 'shepherd', 'rootling', 'leech'], slime: '#3a8a7a', wisp: '#7af0d8' };
+PALS.rootglow = ['#0f3a3e', '#1f8a80', '#7af0d8'];
+TRACKS.deep = { bpm: 76, root: 50, sc: 'dorian', prog: [0, 6, 3, 4], lead: 'sine', bell: 1, sparse: 1, seed: 91, hats: 0.15, dark: 1 };
+
+Object.assign(FOES, {
+  rootling: { name: 'Rootling', art: 'rootling', hp: 70, atk: 11, def: 2, spd: 34, r: 6, range: 14, rate: 1.3, xp: 14, gold: [4, 8], burrow: true },
+  moth: { name: 'Lantern Moth', art: 'moth', hp: 60, atk: 8, def: 1, spd: 40, r: 6, range: 95, rate: 1.9, xp: 14, gold: [4, 8], ranged: true, float: true, manaburn: true, pcol: '#7af0d8' },
+  shepherd: { name: 'Hollow Shepherd', art: 'shepherd', hp: 130, atk: 9, def: 3, spd: 26, r: 7, range: 16, rate: 1.8, xp: 20, gold: [6, 12], raiser: true },
+  heart: { name: 'The Hollow Heart', art: 'heart', hp: 1800, atk: 14, def: 6, spd: 0, r: 16, range: 220, rate: 99, xp: 600, gold: [300, 400], boss: true, heart: true, noClimb: true },
+  rootnode: { name: 'Heartroot', art: 'rootnode', hp: 90, atk: 0, def: 2, spd: 0, r: 7, range: 0, rate: 99, xp: 6, gold: [2, 4], inert: true, noClimb: true }
+});
+Object.assign(FOE_TOPH, { rootling: 22, moth: 26, shepherd: 42, heart: 78, rootnode: 28 });
+Object.assign(BESTIARY, {
+  rootling: { lore: 'A seedling of the Heart. It travels under the stone the way fish travel under water.', tip: 'Burrows where you cannot hit it, then bursts up under your wardens. Spread out.' },
+  moth: { lore: 'It carries a little stolen starlight in its belly, and wants more.', tip: 'Its dust drains mana. Kill it before your casters run dry.' },
+  shepherd: { lore: 'It still tends its flock. The flock just happens to be dead.', tip: 'Raises fallen foes again. Take it down first.' },
+  heart: { lore: 'A star that fell, was nailed down, and has been dreaming of the sky ever since.', tip: 'It hides behind Heartroots twice. Break the roots, then strike. Trusted wardens resist its whispers.' }
+});
+BEST_ORDER.splice(BEST_ORDER.indexOf('firstcmd'), 0, 'rootling', 'moth', 'shepherd');
+BEST_ORDER.push('heart');
+
+STORY_SPK.heart = { name: 'The Hollow Heart', col: '#7af0d8', img: () => foePortraitURL('heart') };
+const owns = id => () => !!SV.owned[id];
+STORY.push(
+  { id: 'c18', deep: 1, at: 1, phase: 'start', ch: 'Part Two', title: 'Below the Spire', lines: [
+    ['oona', 'Commander. The ground under Veyra is cracking. There is light coming up through it. Pale, blue light.'],
+    ['', 'Beneath the broken Spire, the stone has split open. Roots as thick as towers glow in the dark below, and they are moving.'],
+    ['oona', 'The Spire was never just a tower. It was a nail. Something was pinned down here, and now the nail is loose.'],
+    ['lead', { u: { _: 'Then we go down and see what it was holding.' }, _: 'You heard her, Commander. Same as before: you guide, we walk.', lazy: 'Down is easier than up, at least.', proud: 'A second war. Fine. I was getting bored.' }],
+    ['heart', '...Oh. Someone is coming. And someone is watching them.']
+  ] },
+  { id: 'c19', deep: 1, at: 5, phase: 'clear', ch: 'Part Two', title: 'The Volunteers', lines: [
+    ['', 'The guardian’s cavern is covered in scratched names. Hundreds of them, in every hand, some written over and over.'],
+    ['second', { _: 'These are the volunteers. The ones the First Commander sent up the Spire. They did not die at the top.', aloof: '...They fell. All the way through.' }],
+    ['h:tamsin', 'I am writing every one of these down. Every single one.', owns('tamsin')],
+    ['h:sable', '...This one. An L, with a little bird beside it. My sister drew that on everything.', owns('sable')],
+    ['h:sable', 'The marks go deeper. They are fresh. She is alive down here, Commander.', owns('sable')],
+    ['third', { _: 'Then somebody survived. Somebody is still down there, holding on.', gentle: 'Somebody kept writing so they would not be forgotten.' }]
+  ] },
+  { id: 'c20', deep: 1, at: 10, phase: 'start', ch: 'Part Two', title: 'The Voice Below', lines: [
+    ['heart', 'You. Not them. You, behind the glass.'],
+    ['heart', 'I can see you the way they never can. Your little window. Your thumb, choosing who bleeds next.'],
+    ['heart', 'You could close it, you know. Put the glass away. Then they would stop hurting.'],
+    ['lead', { u: { _: 'Who is it talking to? There is nobody there.' }, _: 'Do not listen to it. Closing the window does not save us. It just leaves us alone.', reckless: 'Hey! Talk to ME, rootball!', aloof: '...Stay. Please.' }],
+    ['second', { u: { _: 'It is trying to get inside our heads. Keep moving.' }, _: 'It is lonely. That is what it is. Something that lonely will say anything.', greedy: 'Nice try. Our guide does not take bribes. We tried.' }]
+  ] },
+  { id: 'c21', deep: 1, at: 15, phase: 'clear', ch: 'Part Two', title: 'The Unbroken', lines: [
+    ['', 'Behind the guardian, a narrow gate of woven root. In front of it stands a girl with a shield made from a cart door, braced like she has been standing there for years.'],
+    ['h:lark', 'Took you long enough. Do not come closer. If I step away, the roots come through.'],
+    ['h:lark', 'Thirty-one of us fell down here. Twenty-nine are asleep in the cave behind me. I have held this gate since the day we landed.'],
+    ['h:sable', 'Lark. Lark, it is me.', owns('sable')],
+    ['h:lark', '...Sable? You came all the way down here? You idiot. You beautiful idiot.', owns('sable')],
+    ['h:grimm', '...I know this. Holding a door nobody comes back for. We came back. Hold five more minutes.', owns('grimm')],
+    ['h:lark', 'I can feel someone else watching. The one the Heart keeps talking about. Behind the glass.'],
+    ['h:lark', 'Break the Heart, whoever you are, and I can finally put this shield down.']
+  ] },
+  { id: 'c22', deep: 1, at: 20, phase: 'start', ch: 'Part Two', title: 'The Hollow Heart', lines: [
+    ['', 'At the bottom of the world, the roots meet. In the middle, wrapped tight and pulsing slow, is something that was once a star.'],
+    ['heart', 'They drove the Spire through me so I could not rise. A hundred years. Do you know what I learned, pinned in the dark?'],
+    ['heart', 'That you, out there, are the only ones who can see us. And you look away whenever it gets hard.'],
+    ['lead', { _: 'Not this one. Our guide has looked at every hard thing with us.', u: { _: 'I do not know who you are talking to. But we did not come here alone.' } }],
+    ['heart', 'Then let us see if they look away now.']
+  ] },
+  { id: 'c23', deep: 1, at: 20, phase: 'mid', ch: 'Part Two', title: 'Seen', lines: [
+    ['heart', 'Stop. Stop it. Why do they keep coming? You could have closed the window a hundred times.'],
+    ['cmd', '...I see you.'],
+    ['heart', '...'],
+    ['heart', 'Nobody has said that to me since I fell.'],
+    ['second', { _: 'Then hear the rest. You can be seen without hurting anyone. Let go of the roots.', aloof: '...Let go. It gets easier. I would know.' }],
+    ['heart', 'I do not know how. The roots are all I have. Break them, then. Break them and I will be... small again.']
+  ] },
+  { id: 'c24', deep: 1, at: 20, phase: 'clear', ch: 'Part Two · Epilogue', title: 'Starfall, Reversed', lines: [
+    ['', 'The last root snaps. The Heart unfolds, and inside it there is only light, small and warm, like a candle somebody forgot to blow out.'],
+    ['heart', 'It is so quiet. I had forgotten the sky was up.'],
+    ['', 'It rises. Through the cavern, through the hole where the Spire stood, up past Veyra’s rooftops, and back into the night where it belongs.'],
+    ['h:lark', 'The gate is open. The sleepers are waking up. All twenty-nine of them.'],
+    ['h:lark', 'I held that gate for six years. I think I can hold something better now. If you will have me, Commander.'],
+    ['oona', 'There is a new star over Veyra tonight. The children have already named it. They call it The One Who Was Seen.']
+  ] }
+);
+function deepStory(d, phase) { return STORY.filter(s => s.deep && s.at === d && s.phase === phase && !storySeen(s.id)); }
+
+/* ---- the mode ---- */
+const deepNext = () => { const D = deepOf(); return Math.max(1, Math.min(D.next || 1, D.best + 1, DEEP_MAX)); };
+function deepOf() { return SV.deep || (SV.deep = { best: 0, next: 1, done: 0 }); }
+const deepUnlocked = () => !!SV.ended;
+function deepMap(d) {
+  const boss = d % 5 === 0, lvl = DEEP_LV0 + d;
+  const m = genFloor(lvl, { theme: 'deep', foes: THEMES.deep.foes, boss, seed: d * 31 + 5, bossType: d === DEEP_MAX ? 'heart' : null, bossSolo: d === DEEP_MAX });
+  m.name = 'Depth ' + d; return m;
+}
+function deepStartFx() {
+  const d = G.floor, ban = () => banner('Depth ' + d, d === DEEP_MAX ? 'The heart of the Rootdeep' : (G.map.boss ? 'Guardian depth · ' : '') + 'The Rootdeep'), sc = deepStory(d, 'start');
+  if (sc.length) { G.paused = true; setTimeout(() => playStories(sc, () => { G.paused = false; ban(); }), 350); } else ban();
+}
+function deepComplete() {
+  if (G.paused) return; G.paused = true; hideBanner();
+  const D = deepOf(), d = G.floor, first = d > D.best, boss = G.map.boss;
+  const gems = first ? 20 + d * 3 + (boss ? 60 : 0) : 0, gold = 20 + (DEEP_LV0 + d) * 8, shards = first ? 2 + (boss ? 6 : 0) : 1;
+  SV.gems += gems; SV.gold += gold; G.run.gems += gems; G.run.gold += gold; echoOf().shards += shards;
+  if (first) D.best = d; D.next = Math.min(DEEP_MAX, d + 1); SV.stats.floors++; SV.daily.floors = (SV.daily.floors || 0) + 1;
+  heroesAlive().forEach(h => { h.mor = Math.min(100, h.mor + 5); }); G.heroes.forEach(h => bondRunGain(h.id, (h.dead ? 3 : 6) + (boss ? 6 : 0)));
+  saveMorale(); save(); sfx('level');
+  const finale = d === DEEP_MAX && first && !D.done;
+  const el = $('#clear');
+  el.innerHTML = '<b class="big ol" style="color:#7af0d8">Depth ' + d + ' cleared</b><p>' + (d === DEEP_MAX ? 'The Hollow Heart is free.' : boss ? 'The guardian of this depth falls.' : 'The roots pull back, for now.') + '</p>'
+    + '<div class="rew">' + (gems ? '<span>' + icoImg('gem') + '+' + gems + '</span>' : '') + '<span><span class="eshard"></span>+' + shards + ' shards</span><span>' + icoImg('gold') + '+' + fmt(G.run.gold) + '</span><span>' + icoImg('skull') + G.run.kills + '</span></div>'
+    + '<div class="row" style="justify-content:center"><button class="btn pf" id="btnHome2">Return to Veyra</button>' + (d < DEEP_MAX ? '<button class="btn pf gold" id="btnNext">Depth ' + (d + 1) + '</button>' : '') + '</div>';
+  const show = () => {
+    el.classList.remove('hidden');
+    $('#btnHome2').onclick = () => { sfx('ui'); leaveRun(); };
+    if ($('#btnNext')) $('#btnNext').onclick = () => { sfx('ui'); fadeTo(() => { if (!startRun('deep', d + 1)) leaveRun(); }); };
+  };
+  const sc = first ? deepStory(d, 'clear') : [];
+  if (sc.length || finale) setTimeout(() => playStories(sc, () => { if (finale) deepFinale(show); else show(); }), 500); else show();
+}
+function deepFinale(after) {
+  const D = deepOf(); D.done = 1; SV.gems += 500; SV.titles = SV.titles || []; if (SV.titles.indexOf('Starfreer') < 0) SV.titles.push('Starfreer');
+  const tag = grantHero('lark'); save();
+  playSummon([{ id: 'lark', tag }], () => {
+    let el = $('#credits'); if (!el) { el = document.createElement('div'); el.id = 'credits'; document.body.appendChild(el); }
+    el.innerHTML = '<div class="croll"><h1 class="ol" style="color:#7af0d8">THE ROOTDEEP</h1><p class="ctag">The star went home. The roots let go.</p>'
+      + '<div class="csec"><small>Freed from the dark</small><b>Lark, the Unbroken</b><b>Twenty-nine sleeping volunteers</b><b>The One Who Was Seen</b></div>'
+      + '<div class="csec"><small>Part Two complete</small><b class="gold">+500 gems · Lark joins you · Title: Starfreer</b><i>The Rootdeep stays open. Return any time, and the Echoes still climb above.</i></div></div><button class="btn pf ccl">Close</button>';
+    el.className = 'on'; sfx('reveal5');
+    el.querySelector('.ccl').onclick = () => { el.className = ''; el.innerHTML = ''; after(); };
+  });
+}
+function deepHTML() {
+  if (!deepUnlocked()) return '';
+  const D = deepOf(), on = SV.mode === 'deep', next = deepNext();
+  return '<div class="sect">Part Two · The Rootdeep</div><div class="li evcard' + (on ? ' sel' : '') + '" style="--ec:#7af0d8"><div class="grow"><b style="color:#7af0d8">The Rootdeep</b><small>Twenty depths beneath the broken Spire. A guardian waits every fifth depth, and at the bottom, the Hollow Heart. Foes level ' + (DEEP_LV0 + 1) + ' to ' + (DEEP_LV0 + DEEP_MAX) + '.</small>'
+    + '<div class="row" style="margin-top:8px;gap:8px"><button class="btn pf" data-act="df" data-v="-1">−1</button><b style="font:700 18px var(--px);min-width:96px;text-align:center">Depth ' + next + '</b><button class="btn pf" data-act="df" data-v="1">+1</button></div>'
+    + '<small>Deepest: ' + (D.best ? 'Depth ' + D.best : 'not yet') + (D.done ? ' · the Heart is free' : '') + '</small></div><div class="wbtns"><button class="btn pf' + (on ? '' : ' gold') + '" data-act="deep">' + (on ? 'Selected' : 'Choose') + '</button>' + sweepBtn('swD', next <= D.best, 'Clear this depth once to sweep it') + '</div></div>';
+}
+function sweepDeep(d) {
+  const D = deepOf(); if (sweepLeft() <= 0 || d > D.best) return null; SV.sweep.n++;
+  const lvl = DEEP_LV0 + d, gold = Math.round(20 + lvl * 8 + 14 * 6 * (1 + 0.12 * (lvl - 1))), xp = Math.round(14 * 13 * (1 + 0.15 * (lvl - 1)));
+  SV.gold += gold; const up = addXPQuiet(xp); echoOf().shards += 1; SV.stats.floors++; SV.daily.floors = (SV.daily.floors || 0) + 1;
+  const out = ['+' + fmt(gold) + ' gold', '+' + fmt(xp) + ' XP', '+1 Echo Shard']; if (up) { out.push('Commander Lv ' + SV.lvl + '!'); refreshHeroStats(); }
+  save(); return out;
+}
+
+/* ---- new foe behaviour ---- */
+function deepSpecial(e, dt) {
+  const d = e.d;
+  if (d.inert) { stop(e); return true; }
+  if (d.heart) { heartAI(e, dt); return true; }
+  if (d.burrow) {
+    if (e.under == null) { e.under = 1; e.inv = 99; e.burT = 0; e.baseSpd = e.spd; e.spd = e.baseSpd * 1.7; }
+    e.burT += dt;
+    if (e.under) {
+      e.atkCd = Math.max(e.atkCd, 0.5); const t = nearestOf(e, heroesAlive());
+      if (Math.random() < dt * 8) G.parts && dust(e.x, e.y, 2, '#4a3446');
+      if (t && (dist(t, e) < 18 || e.burT > 4)) {
+        e.under = 0; e.inv = 0; e.burT = 0; e.spd = e.baseSpd;
+        shock(e.x, e.y, 26, '#7af0d8', 4, 0.35); dust(e.x, e.y, 12, '#4a3446'); sfx('hit');
+        heroesAlive().forEach(h => { if (dist(h, e) < 26) hurt(e, h, 1.1, { kb: 1.4 }); });
+      }
+    } else if (e.burT > 5) { e.under = 1; e.inv = 99; e.burT = 0; e.spd = e.baseSpd * 1.7; dust(e.x, e.y, 10, '#4a3446'); }
+  }
+  if (d.raiser) {
+    e.raiseT = (e.raiseT == null ? 4 : e.raiseT) - dt;
+    if (e.raiseT <= 0) {
+      e.raiseT = 1; const list = (G.fallen || []).filter(f => G.time - f.t < 25 && Math.hypot(f.x - e.x, f.y - e.y) < 120);
+      if (list.length) {
+        e.raiseT = 8; const f = list[0]; G.fallen.splice(G.fallen.indexOf(f), 1);
+        tele(f.x, f.y, 14, 0.8, '#7af0d8', () => {
+          if (!G.on || e.dead) return; const n = makeFoe(f.type, f.lvl, f.x, f.y, f.enc); n.hpMax = Math.round(n.hpMax * 0.5); n.hp = n.hpMax; n.risen = 1; n.d = Object.assign({}, n.d, { xp: Math.round(n.d.xp * 0.3), gold: [1, 2] });
+          G.foes.push(n); vfx({ k: 'beam', x: f.x, y: f.y, col: '#7af0d8', dur: 0.5, w: 8, h: 80 }); smoke(f.x, f.y);
+        });
+        say(e, pick(['Rise.', 'Up, little one.', 'Not yet. Not yet.']), true);
+      }
+    }
+  }
+  return false;
+}
+function deepFallen(e) { if (e.team !== 'f' || e.boss || e.d.inert || e.risen || e.small) return; (G.fallen = G.fallen || []).push({ type: e.type, lvl: e.lvl, x: e.x, y: e.y, enc: e.enc, t: G.time }); if (G.fallen.length > 30) G.fallen.shift(); }
+const heartResists = h => { const o = SV.owned[h.id] || {}; return bondLv(h.id) >= 3 || o.resolve || (h.aware && (h.rely == null ? 50 : h.rely) >= 55); };
+function heartAI(e, dt) {
+  const hs = heroesAlive(); if (!hs.length) return;
+  if (!e.hi) { e.hi = 1; e.rT = 3; e.sT = 9; e.wT = 11; e.pT = 1.5; e.tT = 6; e.ward = 0; e.stage = 1; }
+  // Heartroots: twice the Heart hides behind roots that must be broken
+  if (e.ward) {
+    e.inv = 99; if (!G.foes.some(f => f.type === 'rootnode' && !f.dead)) { e.ward = 0; e.inv = 0; banner('The Heart is exposed!', 'Strike now'); shake(6); flash(e.x, e.y - 30, 110, '#7af0d8', 0.5); sfx('boom'); }
+  } else if ((e.stage === 1 && e.hp < e.hpMax * 0.66) || (e.stage === 2 && e.hp < e.hpMax * 0.33)) {
+    e.stage++; e.ward = 1; e.inv = 99;
+    const n = e.stage === 2 ? 3 : 4; for (let i = 0; i < n; i++) { const a = i / n * 6.283 + 0.4, x = e.x + Math.cos(a) * 62, y = e.y + Math.sin(a) * 40, f = makeFoe('rootnode', e.lvl - 2, solidAt(G.map, x, y) ? e.x : x, solidAt(G.map, x, y) ? e.y + 30 : y, e.enc); f.spawnT = 0.5; G.foes.push(f); smoke(f.x, f.y); }
+    shock(e.x, e.y, 120, '#7af0d8', 8, 0.7); shake(8);
+    banner(e.stage === 2 ? 'The Heart hides in its roots' : 'The Heart clings on', 'Break the Heartroots');
+    if (e.stage === 2) { const mid = deepStory(DEEP_MAX, 'mid'); if (mid.length) setTimeout(() => playStories(mid, () => { }), 400); }
+  }
+  const fast = e.stage === 3 ? 0.7 : 1, t = nearestOf(e, hs);
+  e.rT -= dt; e.sT -= dt; e.wT -= dt; e.pT -= dt; e.tT -= dt;
+  if (e.rT <= 0) { e.rT = 4.2 * fast; hs.slice().sort(() => Math.random() - 0.5).slice(0, e.stage + 1).forEach(h => { const x = h.x, y = h.y; tele(x, y, 24, 0.9, '#7af0d8', () => { if (!G.on) return; shock(x, y, 26, '#7af0d8', 4, 0.4); dust(x, y, 10, '#4a3446'); sparks(x, y - 8, 6, '#7af0d8', 50); heroesAlive().forEach(o => { if (Math.hypot(o.x - x, o.y - y) < 24) hurt(e, o, 1.1, { skill: 1 }); }); }); G.teles[G.teles.length - 1].enemy = 1; }); }
+  if (e.sT <= 0) { e.sT = 11 * fast; if (G.foes.filter(f => f.type === 'rootling' && !f.dead).length < 4) for (let k = 0; k < 2; k++) { const a = rand(0, 6.28), f = makeFoe('rootling', e.lvl - 2, e.x + Math.cos(a) * 50, e.y + Math.sin(a) * 30, e.enc); if (solidAt(G.map, f.x, f.y)) { f.x = e.x; f.y = e.y + 30; } f.spawnT = 0.4; G.foes.push(f); } }
+  if (e.wT <= 0 && t) {
+    e.wT = 13 * fast; const h = pick(hs); say(e, pick(['You are so tired. Rest.', 'Why fight for someone who only watches?', 'Put it down. Put it all down.']), true); flash(h.x, h.y - 14, 34, '#7af0d8', 0.4);
+    if (heartResists(h)) { say(h, pick(['Our guide is not just watching!', 'I chose this. I choose it again.', 'Not tired enough to quit.']), true); shock(h.x, h.y - 6, 40, '#7dff9c', 5, 0.4); h.buffs.rally = Math.max(h.buffs.rally || 0, 5); }
+    else { h.stun = 2.5; aura(h, '#7af0d8'); say(h, pick(['...Maybe it is right.', 'Why do I keep fighting?', 'I am so tired...']), true); }
+  }
+  if (e.pT <= 0 && t) { e.pT = 1.7 * fast; const a0 = ang(e, t); for (let k = -1; k <= 1; k++) shootAng(e, a0 + k * 0.2, { spd: 115, mult: 0.75, col: '#7af0d8', size: 5, light: '#7af0d8', life: 3 }); }
+  if (e.tT <= 0) { e.tT = 9; say(e, pick(['Do you see me, out there?', 'They bleed because you tell them to.', 'I only wanted the sky back.', 'Look at me. Please.']), true); }
+}
+function drawMound(g, e) {
+  const x = snp(e.x), y = snp(e.y), t = G.time * 9 + e.x;
+  g.fillStyle = 'rgba(0,0,0,.35)'; g.beginPath(); g.ellipse(x, y, 9, 3.5, 0, 0, 6.283); g.fill();
+  g.fillStyle = '#4a3446'; g.beginPath(); g.ellipse(x, y - 2, 8, 4, 0, 0, 6.283); g.fill();
+  g.fillStyle = '#5e4458'; g.beginPath(); g.ellipse(x - 1, y - 3, 5, 2.5, 0, 0, 6.283); g.fill();
+  g.fillStyle = '#7af0d8'; for (let i = 0; i < 3; i++) g.fillRect(x - 4 + i * 4, y - 5 - Math.round(Math.abs(Math.sin(t + i * 1.7)) * 3), 1, 2);
+}
+
+/* ---- art ---- */
+function foeArt3(type, fr) {
+  const glow = '#7af0d8';
+  if (type === 'rootling') for (let f = 0; f < 3; f++) {
+    const c = cv(24, 24), p = painter(c), b = [0, 1, -1][f];
+    p.r(7 - b, 19, 2, 4, '#3a2418'); p.r(15 + b, 19, 2, 4, '#3a2418'); p.p(6 - b, 22, '#5a3826'); p.p(17 + b, 22, '#5a3826');
+    litBlob(p, 12, 14, 6, 6, ['#2a1a14', '#3a2418', '#5a3826', '#7a4e32', '#9a6a42']);
+    [[8, 10], [15, 9], [11, 18]].forEach(([x, y]) => p.p(x, y, '#2a1a14'));
+    p.r(9, 13, 2, 2, glow); p.r(14, 13, 2, 2, glow); p.p(9, 13, '#ffffff'); p.p(14, 13, '#ffffff');
+    p.r(11, 2 + b, 2, 7, '#3a6a3a'); p.e(9, 4 + b, 3, 2, '#2f8a6a'); p.e(15, 3 + b, 3, 2, '#2f8a6a'); p.p(9, 3 + b, glow); p.p(15, 2 + b, glow);
+    fr.push(outline(c));
+  }
+  if (type === 'moth') for (let f = 0; f < 3; f++) {
+    const c = cv(30, 24), p = painter(c), w = [0, -3, 3][f];
+    p.e(8, 10 + w * 0.5, 7, 5 - w * 0.3, '#3a3a6a'); p.e(22, 10 + w * 0.5, 7, 5 - w * 0.3, '#3a3a6a'); p.e(8, 9 + w * 0.5, 5, 3, '#5a5a9a'); p.e(22, 9 + w * 0.5, 5, 3, '#5a5a9a');
+    p.e(7, 9 + w * 0.5, 2, 1.5, '#c8a8ff'); p.e(23, 9 + w * 0.5, 2, 1.5, '#c8a8ff');
+    p.e(15, 10, 3, 4, '#4a3a5a'); p.e(15, 17, 4, 5, glow); p.e(15, 17, 2.5, 3, '#e8fff8'); p.p(14, 16, '#ffffff');
+    p.r(13, 6, 1, 3, '#2a2a3a'); p.r(17, 6, 1, 3, '#2a2a3a'); p.p(12, 5, glow); p.p(18, 5, glow); p.p(14, 9, '#ffd36b'); p.p(16, 9, '#ffd36b');
+    fr.push(outline(c));
+  }
+  if (type === 'shepherd') for (let f = 0; f < 3; f++) {
+    const c = cv(32, 46), p = painter(c), st = [0, 1, -1][f];
+    for (let y = 18; y < 44; y++) { const w = 5 + Math.floor((y - 18) * 0.28); p.r(15 - w, y, w * 2, 1, y % 6 === 0 ? '#2a2a3e' : '#3a3a52'); }
+    p.r(9, 42, 13, 2, '#22223a');
+    p.e(15, 14, 7, 7, '#2a2a3e'); p.e(15, 15, 5, 5, '#0d0b18'); p.r(12, 14, 2, 1, glow); p.r(17, 14, 2, 1, glow);
+    p.r(26 + st, 6, 2, 38, '#7a5a3a'); p.r(26 + st, 6, 1, 38, '#9a7a52');
+    for (let i = 0; i < 6; i++) p.p(24 + st + Math.round(Math.cos(i * 0.6) * 3), 4 + Math.round(Math.sin(i * 0.6 + 3) * 3), '#9a7a52');
+    p.e(24 + st, 4, 2, 2, glow); p.p(24 + st, 3, '#ffffff');
+    p.r(21, 26, 5, 3, '#3a3a52');
+    fr.push(outline(c));
+  }
+  if (type === 'rootnode') for (let f = 0; f < 3; f++) {
+    const c = cv(24, 30), p = painter(c), pu = [0, 1, 0][f];
+    for (let i = 0; i < 4; i++) { const x = 5 + i * 5; p.r(x, 20, 2, 9, '#3a2418'); p.p(x - 1, 28, '#5a3826'); }
+    litBlob(p, 12, 14 - pu, 7 + pu, 8 + pu, ['#0f3a3e', '#1f5a5a', '#2f8a80', '#5ac8b8', '#b8fff0']);
+    p.e(12, 14 - pu, 3, 4, '#e8fff8'); p.p(12, 13 - pu, '#ffffff');
+    fr.push(outline(c));
+  }
+  if (type === 'heart') for (let f = 0; f < 3; f++) {
+    const W = 84, H = 84, c = cv(W, H), p = painter(c), pu = [0, 2, 1][f], cx = 42, cy = 44;
+    // roots spreading into the ground
+    for (let i = 0; i < 9; i++) { const a = Math.PI * (0.05 + i * 0.11); for (let s = 0; s < 22; s++) { const r = 18 + s, x = cx + Math.cos(a) * r * 1.25, y = cy + 14 + Math.sin(a) * r * 0.55; p.r(x, y, s < 12 ? 3 : 2, 2, s % 5 === 0 ? '#5a3826' : '#3a2418'); } }
+    // the heart: a lumpy root-wrapped mass
+    litBlob(p, cx, cy - pu, 24 + pu, 26 + pu, ['#1a1028', '#2a1a3e', '#3e2a5a', '#5a3e7a', '#7a5a9a']);
+    litBlob(p, cx - 11, cy - 14 - pu, 12, 11, ['#1a1028', '#2a1a3e', '#3e2a5a', '#5a3e7a', '#7a5a9a']);
+    litBlob(p, cx + 11, cy - 14 - pu, 12, 11, ['#1a1028', '#2a1a3e', '#3e2a5a', '#5a3e7a', '#7a5a9a']);
+    // roots wrapped around it
+    for (let k = 0; k < 4; k++) for (let i = 0; i < 40; i++) { const a = i / 40 * Math.PI + k * 0.8, x = cx + Math.cos(a + k) * (20 - k * 2), y = cy - 6 + Math.sin(a * 2 + k) * 12 + k * 4; p.r(x, y, 2, 2, i % 6 === 0 ? '#7a4e32' : '#4a2a1a'); }
+    // glowing cracks and the star inside
+    const cr = [[cx - 8, cy - 2, 6], [cx + 6, cy + 4, 5], [cx - 2, cy + 12, 4], [cx + 10, cy - 8, 4]];
+    cr.forEach(([x, y, l]) => { for (let i = 0; i < l; i++) p.p(x + i, y + (i % 2), glow); });
+    p.e(cx, cy - 4 - pu, 7 + pu, 7 + pu, '#2f8a80'); p.e(cx, cy - 4 - pu, 5 + pu, 5 + pu, glow); p.e(cx, cy - 4 - pu, 3, 3, '#e8fff8'); p.r(cx - 1, cy - 12 - pu, 2, 16 + pu * 2, '#e8fff8'); p.r(cx - 8 - pu, cy - 5 - pu, 16 + pu * 2, 2, '#e8fff8');
+    fr.push(outline(c));
+  }
+}
+
+/* ---- Lark's signature: Unbroken Line ---- */
+SIG.lark = 'unbroken'; SIG_COL.unbroken = '#7af0d8';
+SKILLS.unbroken = {
+  name: 'Unbroken Line', sig: 1, cd: 26, mp: 24, desc: 'Shields every ally for 20% of her max HP, draws all nearby foes, and she cannot fall for 5s.',
+  cond: h => heroesAlive().some(a => a.hp < a.hpMax * 0.5) || near(h, 120).length >= 4 || bossNear(h),
+  use(h) {
+    heroesAlive().forEach(a => { a.shield = Math.max(a.shield || 0, Math.round(h.hpMax * 0.2)); aura(a, '#7af0d8'); });
+    h.unbroken = G.time + 5; foesAlive().filter(e => dist(e, h) < 150).forEach(e => { e.aggro = h; e.target = h; });
+    shock(h.x, h.y, 110, '#7af0d8', 7, 0.6); flash(h.x, h.y - 10, 90, '#7af0d8', 0.35); dust(h.x, h.y, 16); shake(5);
+    say(h, pick(['Behind me. All of you.', 'I have held worse.', 'Not one step further.']), true); sfx('boom');
+  }
+};
 
 /* ================= hero stories: three chapters each ================= */
 // 'h' = the hero speaking, '' = narration. Chapter 1 never addresses you directly, because
@@ -4272,6 +4656,10 @@ const HSTORY = {
     [['', 'Grimm stands at the Spire gate every night. He does not speak. He just watches the dark.'], ['h', '...You. The one behind the glass.'], ['h', 'I do not need orders. I need someone to stand in front of. You will do.']],
     [['h', 'I was a warden once. The First Commander’s shield.'], ['h', 'He told me to hold a door while he ran. I held it for three days. When I came out, he was gone, and so was my voice. Ten years of silence.'], ['h', 'Words are expensive. I only spend them on things that matter.']],
     [['h', '...This matters.'], ['h', 'You never left anyone holding a door alone. I noticed.'], ['h', 'When we reach him, I will say one thing to his face. Until then, I stand in front of you.']]] },
+  lark: { resolve: 'The Shield Put Down', c: [
+    [['', 'Lark sits with her back against the wall, cart-door shield across her knees. She has not let go of it once.'], ['h', 'Six years with no sky. You get used to it. You never get used to it.'], ['h', 'I know about you, by the way. The Heart talked about you for years. The one behind the glass who decides.']],
+    [['h', 'Sable thinks I volunteered for her. I did not. The Crown came for her, and I said I was her.'], ['h', 'I was nine. I thought the top of the Spire would be beautiful.'], ['h', 'Then the floor opened and I fell, and fell, and kept falling. Thirty-one of us. I decided nobody else would fall alone.']],
+    [['h', 'I put the shield down last night. For a whole hour. My arms did not know what to do.'], ['h', 'You know what the Heart never understood? Being watched is not the same as being seen.'], ['h', 'You saw us, Commander. So I will stand in front of the others, but not because I have to anymore. Because I want to.']]] },
   elowen: { resolve: 'The Greenwood Reborn', c: [
     [['', 'Elowen’s arrows are fletched with leaves that never wilt.'], ['h', 'I know what you are, Commander. A visitor. For you, this world fits in your hand.'], ['h', 'For me, it is everything I have left. So I will not ask you to care. I will ask you to aim true.']],
     [['h', 'The Greenwood was the first place the Spire swallowed. A thousand years of trees, gone in a night.'], ['h', 'I was the youngest of the forest guard. The others told me to run and carry the seeds.'], ['h', 'I still have them. One hundred seeds, in a pouch over my heart. I have not found ground safe enough to plant them.']],
@@ -4405,6 +4793,7 @@ const TIPS = {
   homescreen: { lines: ['One more thing, Commander. On iPhone and iPad, Safari may forget your progress if you stay away for a week or so.', 'Tap the Share button, then “Add to Home Screen”. Played from there, Aetherfall keeps its memories safe.', 'You can also copy a backup code any time from Settings, the gear at the top.'] },
   work: { lines: ['Wardens who are not in your party do not sit idle. They can work in the village.', 'Tap Forestry, the mine, the herb garden or the kitchen to give them a job. They keep working while you are away.'] },
   meal: { lines: ['Your foresters found mushrooms and berries.', 'Put a warden in the kitchen and they will cook meals. Pack one before you deploy, and the whole party is stronger for that run.'] },
+  rootdeep: { at: '[data-mode="spire"]', lines: ['Commander! The ground under Veyra is cracking, and there is light coming up from below.', 'A new path has opened: the Rootdeep. Tap here, choose it from the mode screen, and take your strongest party down.'] },
   today: { at: '[data-open="today"]', lines: ['This button is your daily list: the free summon, gifts, forge runs, the world boss and more, all in one place.', 'Finish the list for a gem bonus. You also get 10 Sweep tickets a day, to collect rewards instantly from floors you have already beaten.'] },
   ftrial: { at: '[data-mode="spire"]', lines: ['Every warden wears their own gear, and matching set pieces unlock bonuses.', 'Tap here and scroll to Forge Trials. Each short dungeon pays a set’s essence. The Smithy in the village turns essence, ore and gold into the exact piece you want.'] },
   wboss: { at: '[data-mode="spire"]', lines: ['A world boss has come to Aetherfall. A new one arrives every week.', 'You have 90 seconds to deal as much damage as you can. Your best attempt of the week earns gems, essence and set gear. Find it in the mode screen.'] },
@@ -4414,13 +4803,13 @@ const TIPS = {
 let TIPQ = [];
 function tipsOn() { return SV.tipsOn !== false; }
 // tips for systems added after an account started still show once, even if the beginner guide was switched off
-const FEATURE_TIPS = ['work', 'meal', 'homescreen', 'today', 'ftrial', 'wboss'];
+const FEATURE_TIPS = ['work', 'meal', 'homescreen', 'today', 'ftrial', 'wboss', 'rootdeep'];
 function tipQ(id) { if ((!tipsOn() && FEATURE_TIPS.indexOf(id) < 0) || !TIPS[id] || (SV.tips && SV.tips[id]) || TIPQ.indexOf(id) >= 0) return; TIPQ.push(id); }
 function tipTick() {
   if (!TIPQ.length || STORYST.on || $('#fade').style.opacity === '1') return;
   const id = TIPQ[0], inGame = G.on && !LOBBY.on;
   if (SV.tips && SV.tips[id]) { TIPQ.shift(); return; }
-  const lobbyTip = ['welcome', 'forge', 'wound', 'bond', 'wish', 'gear', 'work', 'meal', 'exped', 'homescreen', 'today', 'ftrial', 'wboss'].indexOf(id) >= 0;
+  const lobbyTip = ['welcome', 'forge', 'wound', 'bond', 'wish', 'gear', 'work', 'meal', 'exped', 'homescreen', 'today', 'ftrial', 'wboss', 'rootdeep'].indexOf(id) >= 0;
   if (lobbyTip && (!LOBBY.on || $('#modal').className)) return;
   if (!lobbyTip && !inGame) return;
   TIPQ.shift(); SV.tips = SV.tips || {}; SV.tips[id] = 1; save();
@@ -4438,6 +4827,7 @@ function onboardCheck() {
   if (typeof workOf === 'function' && Object.keys(SV.owned).some(id => SV.party.indexOf(id) < 0) && !Object.keys(workOf().as).length) tipQ('work');
   if (SV.res && (SV.res.shroom > 0 || SV.res.berry > 0)) tipQ('meal');
   if (SV.spire.best >= 3) tipQ('exped');
+  if (SV.ended) tipQ('rootdeep');
   // one new introduction per visit to the village, so tips never pile up
   const seen = SV.tips || {}; if (!TIPQ.length && !STORYST.on) { if (SV.spire.best >= 2 && !seen.today) tipQ('today'); else if (SV.spire.best >= 6 && !seen.ftrial) tipQ('ftrial'); else if (SV.spire.best >= 10 && !seen.wboss) tipQ('wboss'); }
   if (isIOSBrowser() && SV.spire.best >= 2) tipQ('homescreen');
@@ -4529,7 +4919,7 @@ function resizeGame() {
   G.Z = Math.max(2, Math.round(Math.min(w / 250, h / 270)));
 }
 function startRun(mode, floor) {
-  G.wbOn = false;
+  G.wbOn = false; G.fallen = [];
   G.affix = mode === 'spire' ? echoAffixes(floor) : mode === 'ev' ? (evNow().affix || []).slice() : [];
   const ids = SV.party.filter(id => SV.owned[id]);
   const grave = id => injOf(id) >= 3, tired = ids.filter(id => (SV.owned[id].mor || 0) < 15 || grave(id)), go = ids.filter(id => (SV.owned[id].mor || 0) >= 15 && !grave(id));
@@ -4540,6 +4930,7 @@ function startRun(mode, floor) {
   if (mode === 'spire') { G.floor = floor; G.map = genFloor(floor); }
   else if (mode === 'ev') { G.floor = floor; G.map = genFloor(evLevel(floor), evMapOpts(floor)); }
   else if (mode === 'wb') { G.floor = 1; G.map = wbMap(); }
+  else if (mode === 'deep') { G.floor = floor; G.map = deepMap(floor); }
   else if (mode === 'forge') { const fs = forgeSel(); G.floor = floor; G.forge = { set: fs.set, tier: floor }; G.map = forgeMap(fs.set, floor); }
   else if (mode === 'exp') { ensureOffers(); G.map = genExpedition(SV.exp); if (SV.exp.type === 'escort') G.caravan = makeCaravan(G.map); G.clock = G.clock || 60; }
   else { G.map = G.woods || (G.woods = genWoods()); G.map.enc.forEach(e => { e.cleared = false; e.spawned = false; e.respawn = 0; }); G.clock = G.clock || 60; }
@@ -4557,6 +4948,10 @@ function startRun(mode, floor) {
   showScreen('game'); G.on = true; resizeGame();
   if (mode === 'spire') { const ban = () => banner((floor > 50 ? 'Echo ' : 'Floor ') + floor, floor > 50 ? (G.map.boss ? 'Guardian echo · ' : '') + affixNames(G.affix) : (G.map.boss ? 'Guardian floor · ' : '') + THEMES[G.map.theme].name), sc = storyFor(floor, 'start'); if (sc.length) { G.paused = true; setTimeout(() => playStories(sc, () => { G.paused = false; ban(); }), 350); } else ban(); }
   else if (mode === 'exp') { banner(SV.exp.title, EXP_TYPES[SV.exp.type].desc); revealFog(G.map); }
+  else if (mode === 'deep') deepStartFx();
+  else if (mode === 'forge') banner(forgeName(G.forge.set, G.forge.tier), 'Clear the forge for essence');
+  else if (mode === 'ev') banner(evNow().name, 'Stage ' + G.floor + ' of ' + EV_STAGES);
+  else if (mode === 'wb') banner(wbNow().name, 'Ninety seconds. Make them count.');
   else banner('Hollow Woods', 'Camps return after a while. Farm freely.');
   log('The party enters <b>' + G.map.name + '</b>.');
   sfx('portal');
@@ -4569,6 +4964,7 @@ function completeFloor() {
   if (G.mode === 'ev') return evComplete();
   if (G.mode === 'forge') return forgeComplete();
   if (G.mode === 'wb') return;
+  if (G.mode === 'deep') return deepComplete();
   if (G.paused) return; G.paused = true; const n = G.floor, first = n > SV.spire.best;
   let gems = first ? 8 + Math.floor(n * 0.6) + (G.map.boss ? 40 : 0) : 0, gold = 20 + n * 8;
   SV.gems += gems; SV.gold += gold; G.run.gems += gems; G.run.gold += gold;
@@ -4904,7 +5300,7 @@ function drawHero(g, h) {
 function drawFoe(g, e) {
   if (G.map.fog && !seenAt(G.map, e.x, e.y)) return;
   if (e.elite) { g.imageSmoothingEnabled = true; g.globalCompositeOperation = 'lighter'; glowAt(g, e.x, e.y - 18, 34, '#ffb03a', 0.25 + 0.1 * Math.sin(G.time * 4)); g.globalCompositeOperation = 'source-over'; g.imageSmoothingEnabled = false; g.save(); g.translate(e.x, e.y); g.scale(1.5, 1.5); g.translate(-e.x, -e.y); drawFoe0(g, e); g.restore(); return; }
-  drawFoe0(g, e); drawFoeExtra(g, e);
+  if (e.under && !e.dead) drawMound(g, e); else drawFoe0(g, e); drawFoeExtra(g, e);
   // Sable's bounty mark: a spinning gold coin over the marked foe
   if (e.vuln > G.time && !e.dead) { const w = Math.max(1, Math.round(3 * Math.abs(Math.cos(G.time * 5)))), y = snp(e.y - topH(e) - 14); g.fillStyle = '#7a5410'; g.fillRect(snp(e.x) - w - 1, y - 1, w * 2 + 2, 8); g.fillStyle = '#f5c451'; g.fillRect(snp(e.x) - w, y, w * 2, 6); g.fillStyle = '#fff3c4'; g.fillRect(snp(e.x) - w, y, 1, 2); }
 }
@@ -4993,6 +5389,7 @@ function updateHUD(dt) {
   const afxHTML = G.affix && G.affix.length ? ' <span class="afx">' + G.affix.map(k => '<i style="--c:' + ECHO_AFFIX[k].col + '" title="' + ECHO_AFFIX[k].desc + '">' + ECHO_AFFIX[k].name + '</i>').join('') + '</span>' : '';
   if (G.mode === 'spire') { $('#zTitle').innerHTML = (G.floor > 50 ? 'Echo ' : 'Floor ') + G.floor + afxHTML; const c = M.enc.filter(e => e.cleared).length; $('#zObj').textContent = M.exit.active ? 'Exit open. Onward!' : (G.state === 'fight' ? 'Battle! ' : 'The Spire · ') + c + '/' + M.enc.length + ' cleared'; }
   else if (G.mode === 'ev') { const E = evNow(); $('#zTitle').innerHTML = esc(E.name) + ' · ' + G.floor + '/' + EV_STAGES + afxHTML; const c = M.enc.filter(e => e.cleared).length; $('#zObj').textContent = M.exit.active ? 'Exit open. Onward!' : (G.state === 'fight' ? 'Battle! ' : 'Event · ') + c + '/' + M.enc.length + ' cleared'; }
+  else if (G.mode === 'deep') { $('#zTitle').innerHTML = '<span style="color:#7af0d8">Depth ' + G.floor + '</span>'; const c = M.enc.filter(e => e.cleared).length; $('#zObj').textContent = M.exit.active ? 'Exit open. Onward!' : (G.state === 'fight' ? 'Battle! ' : 'The Rootdeep · ') + c + '/' + M.enc.length + ' cleared'; }
   else if (G.mode === 'wb') { const B = wbNow(); $('#zTitle').innerHTML = '<span style="color:' + B.col + '">' + B.name + '</span>'; const t = Math.ceil(G.wbT || WB_TIME); $('#zObj').textContent = G.wbOn ? 'Damage ' + fmt(Math.round(G.wbDmg || 0)) + ' · ' + Math.floor(t / 60) + ':' + String(t % 60).padStart(2, '0') : G.wbDmg ? 'Fight over' : 'Approach the boss'; }
   else if (G.mode === 'forge') { $('#zTitle').innerHTML = '<span style="color:' + SETS[G.forge.set].col + '">' + esc(forgeName(G.forge.set, G.forge.tier)) + '</span>'; const c = M.enc.filter(e => e.cleared).length; $('#zObj').textContent = M.exit.active ? 'Exit open. Onward!' : (G.state === 'fight' ? 'Battle! ' : 'Forge · ') + c + '/' + M.enc.length + ' cleared'; }
   else if (G.mode === 'exp') { $('#zTitle').textContent = EXP_TYPES[M.exp.type].name + ' · ' + 'I'.repeat(M.exp.tier); $('#zObj').textContent = (G.state === 'fight' ? 'Battle! ' : '') + expObjText(); }
@@ -5182,7 +5579,8 @@ const ATMO = {
   autumn: { p: 'leaves', n: 60, tint: '#ffb060', ta: 0.16, clouds: 0.16, rays: 0.06 },
   frost: { p: 'snowUp', n: 80, tint: '#a8ccff', ta: 0.14, clouds: 0.08, rays: 0 },
   crown: { p: 'pollen', n: 50, tint: '#ffd890', ta: 0.12, clouds: 0, rays: 0.07 },
-  ashen: { p: 'embers', n: 52, tint: '#ff7040', ta: 0.12, clouds: 0, rays: 0 }
+  ashen: { p: 'embers', n: 52, tint: '#ff7040', ta: 0.12, clouds: 0, rays: 0 },
+  deep: { p: 'snowUp', n: 46, tint: '#7af0d8', ta: 0.12, clouds: 0, rays: 0 }
 };
 const LEAFC = ['#e8742a', '#c8462a', '#f2a03a', '#a83a2a', '#ffd06a'], ASHC = ['#8a8098', '#6e6680', '#a8a0b4'];
 let CLOUDSPR = null;
@@ -5502,21 +5900,21 @@ function genHub() {
 }
 const IDLE = { loyal: ['Ready when you are, Commander.', 'I trained all morning.'], proud: ['Hmph. Another dull day.', 'Send me somewhere worthy.'], reckless: ["When do we fight?", "I'm bored!"], gentle: ['What a lovely day.', 'The fountain is so calm.'], greedy: ['Any coin lying around?', 'The Smithy owes me.'], lazy: ['*yawn*', 'Nap time...'], stalwart: ['All quiet on watch.', 'The gate holds.'], aloof: ['...', 'Hm.'] };
 // where each worker stands at their post, relative to the post's base
-const WORK_SPOT = { wood: [[38, 2], [-28, 6], [14, 12], [-8, 12]], ore: [[-20, 8], [20, 10], [-34, 4], [2, 14]], herb: [[-14, 10], [14, 10], [-30, 8], [30, 8]], cook: [[0, 8]] };
+const WORK_SPOT = { wood: [[38, 2], [-28, 6], [14, 12], [-8, 12]], ore: [[-20, 8], [20, 10], [-34, 4], [2, 14]], herb: [[-14, 10], [14, 10], [-30, 8], [30, 8]], cook: [[0, 8]], smith: [[22, 6]] };
 function hubAssignChanged(id) {
   if (!LOBBY.map) return; const w = LOBBY.walkers.find(x => x.id === id);
   if (!w) { hubWalkers(); return; }
   w.job = null; w.goal = null; w.atJob = false; if (w.baseWpn) { w.wpn = w.baseWpn; w.ranged = w.baseRanged; }
 }
 function workerUpdate(w, k, dt, m) {
-  const post = m.hot.find(h => h.k === 'work_' + k); if (!post) return;
+  const post = m.hot.find(h => h.k === (k === 'smith' ? 'smithy' : 'work_' + k)); if (!post) return;
   if (w.job !== k) { w.job = k; w.goal = null; w.atJob = false; if (!w.baseWpn) { w.baseWpn = w.wpn; w.baseRanged = w.ranged; } w.workT = rand(0.3, 1.2); }
   const i = Math.max(0, workers(k).indexOf(w.id)) % 4, off = WORK_SPOT[k][i], tx = post.x + off[0], ty = post.y + off[1];
   w.swing = Math.max(0, (w.swing || 0) - dt);
   if (w.hitT > 0) { w.hitT -= dt; if (w.hitT <= 0) {
-    const hx = w.x + Math.cos(w.face) * 12, hy = w.y - 6 + Math.sin(w.face) * 4, cols = k === 'wood' ? ['#d9a86a', '#9a6a42', '#e8c088'] : k === 'ore' ? ['#ffffff', '#ffd36b', '#8fc3ff'] : ['#5fc95a', '#7a5232', '#a8f0a0'];
+    const hx = w.x + Math.cos(w.face) * 12, hy = w.y - 6 + Math.sin(w.face) * 4, cols = k === 'wood' ? ['#d9a86a', '#9a6a42', '#e8c088'] : k === 'smith' ? ['#ffd36b', '#ff8a3a', '#ffffff'] : k === 'ore' ? ['#ffffff', '#ffd36b', '#8fc3ff'] : ['#5fc95a', '#7a5232', '#a8f0a0'];
     for (let j = 0; j < 5; j++) LOBBY.parts.push({ x: hx, y: hy, vx: rand(-18, 18), vy: -rand(6, 22), life: 0.5, max: 0.5, s: k === 'ore' ? 1 : 2, col: pick(cols), glow: k === 'ore' ? 1 : 0 });
-    if (k !== 'cook' && !$('#modal').className) workSfx(k, Math.max(0, 1 - Math.hypot(w.x - LOBBY.cam.x, w.y - LOBBY.cam.y) / 420) * 0.9);
+    if (k !== 'cook' && !$('#modal').className) workSfx(k === 'smith' ? 'ore' : k, Math.max(0, 1 - Math.hypot(w.x - LOBBY.cam.x, w.y - LOBBY.cam.y) / 420) * 0.9);
   } }
   const d = Math.hypot(tx - w.x, ty - w.y);
   if (d > 3) {
@@ -5668,7 +6066,7 @@ function rumors() {
   if (SV.spire.best > 0) r.push('The party reached floor ' + SV.spire.best + '. The townsfolk talk of little else.');
   r.push('Elder Oona says a hero who trusts you will listen.');
   r.push('Bram swears his steel can turn a 1★ into a legend.');
-  if (owned.length < Object.keys(HEROES).length) r.push('Strange lights flicker in the Starforge. New wardens may answer its call.');
+  if (owned.length < legendIds().length) r.push('Strange lights flicker in the Starforge. New wardens may answer its call.');
   (G.logs || []).slice(0, 2).forEach(l => { const d = document.createElement('div'); d.innerHTML = l; const s = d.textContent.trim(); if (s) r.push('Last expedition: ' + s); });
   return r;
 }
@@ -5692,7 +6090,7 @@ function refreshLobby() {
   const next = Math.max(1, Math.min(SV.spire.next || 1, SV.spire.best + 1));
   $('#mkSpire').textContent = next > 50 ? 'Echo ' + next + ' · ' + affixNames(echoAffixes(next)) : 'Floor ' + next + (next % 5 === 0 ? ' · Guardian' : ''); ensureOffers(); if (SV.mode === 'woods') SV.mode = 'exp'; $('#mkWoods').textContent = SV.exp ? SV.exp.title : 'Choose an objective';
   $$('.mk').forEach(b => b.classList.toggle('on', b.dataset.mode === SV.mode));
-  $('#startSub').textContent = (SV.mode === 'spire' ? 'Spire · Floor ' + next : SV.mode === 'wb' ? 'World boss · ' + wbNow().name : SV.mode === 'forge' ? forgeName(forgeSel().set, forgeSel().tier) : SV.mode === 'ev' ? evNow().name + ' · Stage ' + Math.min(EV_STAGES, evState().stage + 1) : EXP_TYPES[SV.exp.type].name + ' expedition') + (SV.mealSel && SV.pantry && pantryCount(SV.mealSel) ? ' · ' + MEALS[SV.mealSel].name : '');
+  $('#startSub').textContent = (SV.mode === 'spire' ? 'Spire · Floor ' + next : SV.mode === 'deep' ? 'Rootdeep · Depth ' + deepNext() : SV.mode === 'wb' ? 'World boss · ' + wbNow().name : SV.mode === 'forge' ? forgeName(forgeSel().set, forgeSel().tier) : SV.mode === 'ev' ? evNow().name + ' · Stage ' + Math.min(EV_STAGES, evState().stage + 1) : EXP_TYPES[SV.exp.type].name + ' expedition') + (SV.mealSel && SV.pantry && pantryCount(SV.mealSel) ? ' · ' + MEALS[SV.mealSel].name : '');
   const tk = rumors().join('      ◆      '); if ($('#tickT').dataset.t !== tk) { $('#tickT').dataset.t = tk; $('#tickT').textContent = tk; $('#tickT').style.animationDuration = Math.max(30, tk.length / 7) + 's'; }
   if (LOBBY.map && LOBBY.walkers.length !== Math.min(8, Object.keys(SV.owned).length)) hubWalkers();
   save();
@@ -5703,7 +6101,7 @@ function setupLobby() {
     auInit(); musicStart(); sfx('ui');
     const floor = Math.max(1, Math.min(SV.spire.next || 1, SV.spire.best + 1));
     if (SV.mode === 'forge' && SV.lvl < FORGE_TIERS[forgeSel().tier - 1].req) { toast('Tier ' + ROMAN[forgeSel().tier - 1] + ' needs Commander level ' + FORGE_TIERS[forgeSel().tier - 1].req, ''); return; }
-    fadeTo(() => { if (!startRun(SV.mode, SV.mode === 'ev' ? Math.min(EV_STAGES, evState().stage + 1) : SV.mode === 'forge' ? forgeSel().tier : SV.mode === 'wb' ? 1 : floor)) showScreen('lobby'); });
+    fadeTo(() => { if (!startRun(SV.mode, SV.mode === 'ev' ? Math.min(EV_STAGES, evState().stage + 1) : SV.mode === 'forge' ? forgeSel().tier : SV.mode === 'wb' ? 1 : SV.mode === 'deep' ? deepNext() : floor)) showScreen('lobby'); });
   };
   $('#profile').onclick = () => openScreen('profile');
   $$('.mk').forEach(b => b.onclick = () => { sfx('ui'); if (SV.mode === b.dataset.mode) { openScreen('mode'); return; } SV.mode = b.dataset.mode; save(); refreshLobby(); });
@@ -5732,13 +6130,13 @@ function openScreen(n) { const f = SCREENS[n]; if (f) f(); }
 const SCREENS = {};
 SCREENS.work = screenWork; SCREENS.today = screenToday; SCREENS.craft = st => screenCraft(st && typeof st === 'object' ? st : null); SCREENS.bestiary = screenBestiary; SCREENS.echo = screenEcho; SCREENS.gift = screenGift; SCREENS.spark = screenSpark; SCREENS.chronicle = screenChronicle; SCREENS.outfits = screenOutfits;
 SCREENS.wardens = function (sel) {
-  const owned = Object.keys(HEROES).filter(id => SV.owned[id]);
-  const all = Object.keys(HEROES).sort((a, b) => (HEROES[b].star - HEROES[a].star) || (!!SV.owned[b] - !!SV.owned[a]));
+  const owned = Object.keys(HEROES).filter(id => SV.owned[id]), gsc = id => SV.owned[id] ? statTotal(statsOf(id)) : -1;
+  const all = Object.keys(HEROES).sort((a, b) => (!!SV.owned[b] - !!SV.owned[a]) || (HEROES[b].star - HEROES[a].star) || gsc(b) - gsc(a));
   let h = '<div class="sect">Your party · the first warden leads · tap a hero below for details</div><div class="grid" style="grid-template-columns:repeat(4,minmax(0,1fr))">';
   for (let i = 0; i < 4; i++) { const id = SV.party[i]; h += id ? '<button class="slot r' + (HEROES[id].star - 1) + '" data-act="det" data-v="' + id + '"><img src="' + heroSmallURL(id) + '" alt=""><span class="lv ol">' + (i === 0 ? 'Lead' : stars(HEROES[id].star)) + '</span></button>' : '<div class="slot empty"><span class="muted" style="font:700 11px var(--px)">Empty</span></div>'; }
-  h += '</div><div class="sect">Collection · ' + owned.length + ' / ' + all.length + ' wardens</div><div class="grid">';
-  all.forEach(id => { const o = SV.owned[id], H = HEROES[id]; h += '<button class="slot r' + (H.star - 1) + (o ? '' : ' empty') + '" data-act="det" data-v="' + id + '"><img src="' + heroSmallURL(id, !o) + '" alt=""><span class="lv ol">' + (o ? stars(H.star) + (o.lb ? ' +' + o.lb : '') : '?') + '</span>' + (o && talFree(id) > 0 ? '<span class="dot"></span>' : '') + '</button>'; });
-  h += '</div><p class="muted" style="margin-top:14px;font-size:12px">Summon new wardens at the Starforge. Duplicates limit-break a warden, making them stronger.</p>';
+  h += '</div><div class="sect">Wardens · ' + owned.length + ' · Legends ' + legendIds().filter(id => SV.owned[id]).length + ' / ' + legendIds().length + '</div><div class="grid">';
+  all.forEach(id => { const o = SV.owned[id], H = HEROES[id]; h += '<button class="slot r' + (H.star - 1) + (o ? '' : ' empty') + '" data-act="det" data-v="' + id + '"><img src="' + heroSmallURL(id, !o) + '" alt=""><span class="lv ol">' + (o ? stars(H.star) + (o.lb ? ' +' + o.lb : '') : '?') + '</span>' + (o ? gradeTag(id) : '') + (o && talFree(id) > 0 ? '<span class="dot"></span>' : '') + '</button>'; });
+  h += '</div><p class="muted" style="margin-top:14px;font-size:12px">Every warden rolls their own stats and grade (F to SS) when they join, so a 5★ can be weak and a 3★ can be great. Legends are the named heroes: duplicates limit-break them. Everyone else is one of a kind.</p>';
   openModal('Wardens', h, { side: 'r', name: 'wardens', act: { det: id => heroDetail(id) } });
 };
 function heroDetail(id) {
@@ -5748,6 +6146,7 @@ function heroDetail(id) {
   h += '<div class="stat"><span>Personality</span><b>' + TRAITS[H.trait].name + '</b></div><div class="muted" style="font-size:12px;margin:4px 0 6px">' + TRAITS[H.trait].desc + '</div>';
   if (o) { h += '<div class="stat"><span>Morale</span><b style="color:' + (o.mor < 25 ? '#ff9ab0' : '#f29ac0') + '">' + o.mor + ' / 100</b></div>' + (injOf(id) ? '<div class="stat"><span>Condition</span><b style="color:' + INJ[injOf(id)].col + '">' + INJ[injOf(id)].name + ' · heals in ' + injLeftTxt(id) + '</b></div>' : '<div class="stat"><span>Condition</span><b style="color:#7dff9c">Healthy</b></div>') + '<div class="stat"><span>Knows you?</span><b style="color:' + (isAware(id) ? '#7dff9c' : '#a8aed8') + '">' + (isAware(id) ? 'Yes, aware of you' : 'Not yet') + '</b></div>' + (isAware(id) ? '' : '<div class="muted" style="font-size:12px;margin:4px 0 6px">Wakes up to you at: ' + AWAKEN[H.trait].need + ' Or at limit break 3.</div>') + (isAware(id) ? '<div class="stat"><span>Relies on you</span><b style="color:' + relyCol(relyOf(id)) + '">' + relyName(relyOf(id)) + ' · ' + relyOf(id) + '</b></div><div class="muted" style="font-size:12px;margin:4px 0 6px">' + esc(H.name) + ' knows this is a game to you, and survival to them. Orders that keep them alive raise this; orders that get them knocked out lower it.</div>' : '') + '<div class="stat"><span>Bond</span><b>' + bondHearts(bondLv(id)) + ' <span style="color:#ff9ac8">' + BOND_NAME[bondLv(id)] + '</span></b></div><div class="prog" style="margin:0 0 6px"><i style="width:' + Math.round(bondProg(id) * 100) + '%;background:#ff9ac8"></i></div><div class="stat"><span>Limit break</span><b>' + o.lb + ' / 5</b></div><div class="stat"><span>Power</span><b>' + fmt(heroPower(id)) + '</b></div>'; }
   h += '<div class="stat"><span>HP · ATK · DEF</span><b>' + s.hpMax + ' · ' + Math.round(s.atk) + ' · ' + Math.round(s.def) + '</b></div><div class="stat"><span>Crit</span><b>' + Math.round(s.crit * 100) + '%</b></div>';
+  if (o) { const st = statsOf(id); h += '<div class="sect" style="margin-top:10px">Individual stats · grade ' + gradeTag(id) + '</div><div class="istats">' + ISTAT.map(([k, n, d]) => '<div title="' + d + '"><span>' + n + '</span><div class="prog"><i style="width:' + st[k] * 5 + '%;background:' + (st[k] >= 15 ? '#ffc65a' : st[k] >= 9 ? '#8fc3ff' : '#ff8a9a') + '"></i></div><b>' + st[k] + '</b></div>').join('') + '</div><div class="stat"><span>Profession</span><b>' + profTag(id) + '</b></div>' + (profOf(id) ? '<div class="muted" style="font-size:12px;margin:2px 0 6px">' + PROFS[profOf(id).k].desc + '</div>' : '') + (isGen(id) ? '<div class="row" style="margin-top:6px"><button class="btn pf red" data-act="rel" data-v="' + id + '">Release · +' + RELEASE_LIGHT[H.star] + ' Starlight</button></div>' : ''); }
   if (o) { const others = Object.keys(SV.owned).filter(x => x !== id && (pairXP(id, x) > 0)).sort((a, b) => pairXP(id, b) - pairXP(id, a)).slice(0, 6); if (others.length) { h += '<div class="sect" style="margin-top:10px">Relationships</div><div class="rels">' + others.map(x => '<span><img src="' + heroHeadURL(x) + '" alt=""><b>' + esc(HEROES[x].name) + '</b><i style="color:' + pairCol(id, x) + '">' + pairName(id, x) + '</i></span>').join('') + '</div><div class="muted" style="font-size:11px;margin-bottom:6px">Comrades fight harder side by side and avenge each other. Rivals both crit more. Bonds grow from clearing floors together.</div>'; } }
   h += wishHTML(id);
   h += hsHTML(id);
@@ -5761,7 +6160,7 @@ function heroDetail(id) {
     else { h += '<button class="btn pf" data-act="leave" data-v="' + id + '"' + (SV.party.length <= 1 ? ' disabled' : '') + '>Leave party</button>'; if (inP > 0) h += '<button class="btn pf gold" data-act="lead" data-v="' + id + '">Make lead</button>'; }
   } else h += '<button class="btn pf gold" data-open="forge">Summon at the Starforge</button>';
   h += '<button class="btn pf" data-act="back">Back</button></div></div></div>';
-  openModal(H.name, h, { side: 'r', act: { tal: v => SCREENS.talents(v), gear: v => SCREENS.loadout(v), fit: v => screenOutfits(v), gift: v => SCREENS.gift(v), wish: v => { closeModal(); grantWish(v); }, hs: v => { const [hid, i] = v.split('|'); closeModal(); playHS(hid, +i, () => heroDetail(hid)); }, back: () => SCREENS.wardens(), join: v => { if (SV.party.length < 4) SV.party.push(v); save(); heroDetail(v); }, leave: v => { SV.party = SV.party.filter(x => x !== v); save(); heroDetail(v); }, lead: v => { SV.party = [v].concat(SV.party.filter(x => x !== v)); save(); heroDetail(v); } } });
+  openModal(H.name, h, { side: 'r', act: { rel: v => openConfirm('Release ' + HEROES[v].name + '?', HEROES[v].name + ' leaves Veyra for good. Their gear returns to your bag, and they leave ' + RELEASE_LIGHT[HEROES[v].star] + ' Starlight and ' + 100 * HEROES[v].star + ' gold behind.', 'Release', () => { const n = HEROES[v].name; if (releaseHero(v)) { toast(n + ' sets off on their own road', ''); SCREENS.wardens(); } }), tal: v => SCREENS.talents(v), gear: v => SCREENS.loadout(v), fit: v => screenOutfits(v), gift: v => SCREENS.gift(v), wish: v => { closeModal(); grantWish(v); }, hs: v => { const [hid, i] = v.split('|'); closeModal(); playHS(hid, +i, () => heroDetail(hid)); }, back: () => SCREENS.wardens(), join: v => { if (SV.party.length < 4) SV.party.push(v); save(); heroDetail(v); }, leave: v => { SV.party = SV.party.filter(x => x !== v); save(); heroDetail(v); }, lead: v => { SV.party = [v].concat(SV.party.filter(x => x !== v)); save(); heroDetail(v); } } });
 }
 SCREENS.talents = function (id) {
   const H = HEROES[id], cls = H.cls, t = talOf(id), free = talFree(id), tot = talTotal(id), cost = respecCost(id);
@@ -5854,13 +6253,15 @@ function TRIALS() {
     { id: 'f50', t: 'Reach Spire floor 50', prog: SV.spire.best, need: 50, rew: { gems: 1000, title: 'Spire-Breaker' } },
     { id: 'k2000', t: 'Defeat 2,000 foes', prog: S.kills, need: 2000, rew: { gems: 500, title: 'The Relentless' } },
     { id: 'b25', t: 'Slay 25 guardians', prog: S.boss, need: 25, rew: { gems: 600, title: 'Guardian\u2019s Bane' } },
+    { id: 'r10', t: 'Reach depth 10 of the Rootdeep', prog: (SV.deep || {}).best || 0, need: 10, rew: { gems: 300 } },
+    { id: 'r20', t: 'Free the Hollow Heart', prog: (SV.deep || {}).best || 0, need: 20, rew: { gems: 600, title: 'Rootbreaker' } },
     { id: 'e60', t: 'Climb to echo 60', prog: SV.spire.best, need: 60, rew: { gems: 400, title: 'Echo-Walker' } },
     { id: 'e75', t: 'Climb to echo 75', prog: SV.spire.best, need: 75, rew: { gems: 600, title: 'Star-Diver' } },
     { id: 'e100', t: 'Climb to echo 100', prog: SV.spire.best, need: 100, rew: { gems: 1500, title: 'Beyond the Stars' } },
     { cat: 'col', id: 's50', t: 'Summon 50 times', prog: S.summons, need: 50, rew: { gems: 200 } },
     { cat: 'col', id: 's150', t: 'Summon 150 times', prog: S.summons, need: 150, rew: { gems: 500, title: 'Star-Caller' } },
     { cat: 'col', id: 'five', t: 'Recruit a 5\u2605 warden', prog: five, need: 1, rew: { gems: 200 } },
-    { cat: 'col', id: 'hall', t: 'Recruit every warden', prog: owned, need: Object.keys(HEROES).length, rew: { gems: 1000, title: 'Keeper of Stars' } },
+    { cat: 'col', id: 'hall', t: 'Recruit every Legend', prog: legendIds().filter(id => SV.owned[id]).length, need: legendIds().length, rew: { gems: 1000, title: 'Keeper of Stars' } },
     { cat: 'heart', id: 'aw1', t: 'A warden wakes up to you', prog: awoke, need: 1, rew: { gems: 150 } },
     { cat: 'heart', id: 'aw5', t: 'Five wardens wake up to you', prog: awoke, need: 5, rew: { gems: 400, title: 'The Unseen Hand' } },
     { cat: 'heart', id: 'tr3', t: 'Three wardens trust you (bond 3)', prog: trusted, need: 3, rew: { gems: 200 } },
@@ -5949,7 +6350,7 @@ function readBackup(code) {
 function applyBackup(d) {
   SV = Object.assign(freshSave(), d);
   ['stats', 'daily', 'opts', 'eq', 'mail', 'spire'].forEach(k => { SV[k] = Object.assign(freshSave()[k], SV[k] || {}); });
-  gearMigrate(); save(); if (LOBBY.map) hubWalkers(); refreshLobby();
+  Object.keys(HEROES).forEach(id => { if (HEROES[id].gen) delete HEROES[id]; }); recruitsInject(); indivMigrate(); gearMigrate(); save(); if (LOBBY.map) hubWalkers(); refreshLobby();
 }
 function copyText(txt, el) {
   const done = () => toast('Backup code copied', 'gold');
@@ -6005,11 +6406,14 @@ SCREENS.mode = function () {
     const T = EXP_TYPES[x.type], rw = expRewards(x), sel = SV.mode === 'exp' && SV.exp && SV.exp.id === x.id;
     h += '<div class="li" style="' + (sel ? 'box-shadow:var(--frame),inset 0 0 0 2px var(--gold)' : '') + '"><img class="ic" src="' + ICON[T.icon] + '" alt=""><div class="grow"><b>' + esc(x.title) + '</b><small>' + T.desc + '</small><small>' + ['Small', 'Large', 'Huge'][x.tier - 1] + ' map · ' + THEMES[x.biome].name.replace(' Floors', '') + ' · enemies Lv ' + expLevel(x) + '</small><small>Reward: ' + price('gold', rw.gold) + ' ' + price('gem', rw.gems) + ' + ' + RARN[Math.min(3, x.tier)] + '+ gear</small></div><button class="btn pf' + (sel ? ' gold' : '') + '" data-act="x" data-v="' + x.id + '">' + (sel ? 'Selected' : 'Select') + '</button></div>';
   });
-  h += '</div>' + evHTML() + wbHTML() + forgeHTML() + '<div class="row" style="justify-content:flex-end;margin-top:14px"><button class="btn pf" data-act="best">Bestiary · ' + BEST_ORDER.filter(bestSeen).length + '/' + BEST_ORDER.length + (bestAnyClaim() ? ' <span style="color:#ff6d8a">●</span>' : '') + '</button><button class="btn pf" data-act="chron">Chronicle · ' + STORY.filter(s => storySeen(s.id)).length + ' / ' + STORY.length + ' chapters</button></div>';
+  h += '</div>' + deepHTML() + evHTML() + wbHTML() + forgeHTML() + '<div class="row" style="justify-content:flex-end;margin-top:14px"><button class="btn pf" data-act="best">Bestiary · ' + BEST_ORDER.filter(bestSeen).length + '/' + BEST_ORDER.length + (bestAnyClaim() ? ' <span style="color:#ff6d8a">●</span>' : '') + '</button><button class="btn pf" data-act="chron">Chronicle · ' + STORY.filter(s => storySeen(s.id)).length + ' / ' + STORY.length + ' chapters</button></div>';
   openModal('Choose a mode', h, { side: 'l', act: {
     chron: () => SCREENS.chronicle(), best: () => SCREENS.bestiary(), craft: () => SCREENS.craft(),
     swS: () => { const r = sweepSpire(next); if (r) { sfx('coin'); toast('Floor ' + next + ' swept · ' + r.join(' · '), 'gold'); refreshLobby(); } SCREENS.mode(); },
     swF: () => { const fs = forgeSel(), r = sweepForge(fs.set, fs.tier); if (r) { sfx('coin'); toast(forgeName(fs.set, fs.tier) + ' swept · ' + r.join(' · '), 'gold'); refreshLobby(); } SCREENS.mode(); },
+    deep: () => { SV.mode = 'deep'; save(); refreshLobby(); SCREENS.mode(); },
+    df: v => { const D = deepOf(); D.next = Math.max(1, Math.min(DEEP_MAX, D.best + 1, deepNext() + +v)); SV.mode = 'deep'; save(); refreshLobby(); SCREENS.mode(); },
+    swD: () => { const n = deepNext(), r = sweepDeep(n); if (r) { sfx('coin'); toast('Depth ' + n + ' swept · ' + r.join(' · '), 'gold'); refreshLobby(); } SCREENS.mode(); },
     wb: () => { SV.mode = 'wb'; save(); refreshLobby(); SCREENS.mode(); },
     fset: v => { SV.mode = 'forge'; SV.forgeSel = { set: v, tier: forgeSel().tier }; save(); refreshLobby(); SCREENS.mode(); },
     ftier: v => { SV.mode = 'forge'; SV.forgeSel = Object.assign(forgeSel(), { tier: +v }); save(); refreshLobby(); SCREENS.mode(); },
@@ -6045,7 +6449,7 @@ SCREENS.map = function () {
 const FORGE = { anim: false };
 const RATES = [[5, 0.015], [4, 0.065], [3, 0.17], [2, 0.3], [1, 0.45]];
 function rollStar(min) { let r = Math.random(), acc = 0; for (const [s, p] of RATES) { acc += p; if (r < acc) return Math.max(s, min || 1); } return Math.max(1, min || 1); }
-function rollHero(min) { const st = rollStar(min), pool = Object.keys(HEROES).filter(id => HEROES[id].star === st); return pick(pool); }
+function rollHero(min) { const st = rollStar(min), pool = Object.keys(HEROES).filter(id => HEROES[id].star === st && !HEROES[id].gift && !HEROES[id].gen); return pick(pool); }
 function summon(n) {
   const free = n === 1 && SV.freePull !== today(), cost = n === 1 ? 100 : 900;
   if (!free && SV.gems < cost) { toast('Not enough gems', ''); return; }
@@ -6058,7 +6462,7 @@ function summon(n) {
 SCREENS.forge = function (results) {
   const free = SV.freePull !== today();
   let h = '<div class="summon-stage"><canvas id="sumCv"></canvas></div>';
-  if (results) h += '<div class="reveal">' + results.map((r, i) => { const H = HEROES[r.id]; return '<div class="rcard rar-' + ['', 'R', 'R', 'SR', 'SR', 'SSR'][H.star] + '" style="animation-delay:' + (0.9 + i * 0.12) + 's"><img src="' + heroSmallURL(r.id) + '" alt="" style="width:56px;height:78px"><b>' + esc(H.name) + '</b><small>' + stars(H.star) + '</small><br><small style="color:' + (r.tag === 'New!' ? '#7dff9c' : 'var(--dim)') + '">' + r.tag + '</small></div>'; }).join('') + '</div>';
+  if (results) h += '<div class="reveal">' + results.map((r, i) => { const H = HEROES[r.id]; return '<div class="rcard rar-' + ['', 'R', 'R', 'SR', 'SR', 'SSR'][H.star] + '" style="animation-delay:' + (0.9 + i * 0.12) + 's"><img src="' + heroSmallURL(r.id) + '" alt="" style="width:56px;height:78px"><b>' + esc(H.name) + '</b><small>' + stars(H.star) + '</small>' + (SV.owned[r.id] ? ' ' + gradeTag(r.id) : '') + '<br><small style="color:' + (r.tag.indexOf('New!') === 0 ? '#7dff9c' : 'var(--dim)') + '">' + (H.gen ? '' : 'Legend · ') + (r.tag.indexOf('New!') === 0 ? 'New!' : r.tag) + '</small></div>'; }).join('') + '</div>';
   h += '<div class="row" style="justify-content:center;margin-top:14px"><button class="btn pf gold" data-act="s1">' + (free ? 'Summon ×1 · Free today' : 'Summon ×1 · ' + price('gem', 100)) + '</button><button class="btn pf gold" data-act="s10">Summon ×10 · ' + price('gem', 900) + '</button></div>';
   const P = pityOf(), left5 = PITY5 - P.p5, left4 = PITY4 - P.p4, soft = P.p5 >= SOFT5;
   h += '<div class="pity"><div class="pbar"><span>5★ guaranteed within <b>' + left5 + '</b> summon' + (left5 === 1 ? '' : 's') + (soft ? ' · <em>chance now ' + (Math.min(1, rate5()) * 100).toFixed(1) + '%</em>' : '') + '</span><div class="prog"><i style="width:' + (P.p5 / PITY5 * 100) + '%;background:linear-gradient(90deg,#d8a8ff,#ffc65a)"></i></div></div>';
@@ -6130,7 +6534,7 @@ function frame(now) {
   requestAnimationFrame(frame);
 }
 function boot() {
-  loadSave(); gearMigrate(); buildIcons(); setupCanvas(); setupInput(); setupLobby(); refreshLobby();
+  loadSave(); recruitsInject(); indivMigrate(); gearMigrate(); buildIcons(); setupCanvas(); setupInput(); setupLobby(); refreshLobby();
   tipsInit(); tipQ('welcome');
   Object.keys(SV.owned).forEach(id => checkAwaken(id)); setTimeout(() => { if (LOBBY.on && !$('#modal').className) showBondUps(); }, 900);
   addEventListener('resize', () => { if (G.on) resizeGame(); });
