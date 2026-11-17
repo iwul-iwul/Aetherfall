@@ -232,6 +232,11 @@ img{image-rendering:pixelated;image-rendering:crisp-edges;-webkit-user-drag:none
 .li.tdone{opacity:.6}.li.tdone .tchk{box-shadow:inset 0 0 0 2px #7dff9c}
 .grade{position:absolute;left:3px;top:3px;min-width:16px;padding:0 3px;font:800 10px/14px system-ui,sans-serif;text-align:center;color:#0d0b1c;background:var(--gc);box-shadow:0 0 0 1px rgba(0,0,0,.6)}
 .sect .grade,.stat .grade,.li .grade,.rcard .grade{position:static;display:inline-block;margin-left:4px;vertical-align:1px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 8px}.chip{min-height:30px;padding:0 10px;font:700 12px var(--px);background:#1a1e40;box-shadow:inset 0 0 0 2px #3a4380;color:var(--dim)}.chip.on{background:linear-gradient(#4a54a8,#2f3678);color:#fff;box-shadow:inset 0 0 0 2px #9aa4ec}
+.slot .lk{position:absolute;right:3px;top:12px;width:15px;height:15px;background:rgba(8,10,28,.75)}.slot .lk img{width:15px;height:15px;image-rendering:pixelated}
+.slot .pf2{position:absolute;right:2px;bottom:2px;display:flex;align-items:center;background:rgba(8,10,28,.75);padding-right:2px}.slot .pf2 img{width:14px;height:14px;image-rendering:pixelated}.slot .pf2 b{font:700 10px var(--px)}
+.slot .pw{position:absolute;right:3px;bottom:13px;font:700 9px var(--px);color:#ffd36b}
+.btn img.bi{width:16px;height:16px;vertical-align:-3px;image-rendering:pixelated}
 .istats{display:flex;flex-direction:column;gap:5px;margin:4px 0 8px}.istats>div{display:grid;grid-template-columns:70px 1fr 24px;align-items:center;gap:8px;font-size:12px}.istats span{color:var(--dim)}.istats b{text-align:right}
 .wbtns{display:flex;flex-direction:column;gap:6px;align-self:center}
 @media (max-width:600px){.li:has(>.wbtns){flex-wrap:wrap}.li:has(>.wbtns) .grow{flex:1 1 0;min-width:0}.li>.wbtns{flex-direction:row;flex-basis:100%;flex-wrap:wrap}.li>.wbtns .btn{flex:1}.li.job{flex-wrap:wrap}.li.job .grow{flex:1 1 0;min-width:0}.li.job .wbtns{flex-direction:row;flex-basis:100%;padding-left:44px}.li.job .wbtns .btn{flex:1}}
@@ -550,7 +555,7 @@ body.mopen .glass{-webkit-backdrop-filter:none;backdrop-filter:none}
 
 <script>
 // shown in Settings so players can confirm which build their device is running
-const APP_VER = '3.58';
+const APP_VER = '3.59';
 'use strict';
 /* ================= core utilities ================= */
 const $ = s => document.querySelector(s), $$ = s => Array.from(document.querySelectorAll(s));
@@ -3034,7 +3039,7 @@ function pullStar(min) {
 function pullHero(min) { const st = pullStar(min), pool = Object.keys(HEROES).filter(id => HEROES[id].star === st && !HEROES[id].gift && !HEROES[id].gen); if (pool.length && Math.random() < (st <= 2 ? 0.35 : 0.2)) return pick(pool); return makeRecruit(st); }
 function grantHero(id) {
   const o = SV.owned[id]; let tag;
-  if (!o) { SV.owned[id] = { lb: 0, mor: 70, bx: 0 }; rollIndividual(id, false); tag = 'New! Grade ' + gradeOf(id)[1]; if (SV.party.length < 4) SV.party.push(id); if (HEROES[id].star >= 4) { SV.bondQ = SV.bondQ || []; SV.bondQ.push([id, 'meet']); } }
+  if (!o) { SV.owned[id] = { lb: 0, mor: 70, bx: 0 }; rollIndividual(id, false); if (HEROES[id].gen && (HEROES[id].star >= 5 || gradeIdx(id) <= 1)) SV.owned[id].lock = 1; tag = 'New! Grade ' + gradeOf(id)[1]; if (SV.party.length < 4) SV.party.push(id); if (HEROES[id].star >= 4) { SV.bondQ = SV.bondQ || []; SV.bondQ.push([id, 'meet']); } }
   else if (o.lb < 5) { o.lb++; tag = 'Limit break +' + o.lb; addBond(id, 5); }
   else { SV.gold += 500; tag = '+500 gold'; }
   return tag;
@@ -3652,15 +3657,93 @@ const isGen = id => !!(HEROES[id] && HEROES[id].gen);
 const legendIds = () => Object.keys(HEROES).filter(id => !HEROES[id].gen);
 // releasing a generated warden: they leave Veyra with your thanks, and leave some Starlight behind
 const RELEASE_LIGHT = [0, 1, 2, 4, 10, 25];
-function releaseHero(id) {
-  if (!isGen(id) || !SV.owned[id]) return false; const H = HEROES[id], e = SV.owned[id].eq || {};
+function releaseHero(id, quiet) {
+  if (!isGen(id) || !SV.owned[id] || SV.owned[id].lock) return false; const H = HEROES[id], e = SV.owned[id].eq || {};
   GSLOTS.forEach(s => { if (e[s]) SV.inv.push(e[s]); });
   SV.party = SV.party.filter(x => x !== id); if (!SV.party.length) SV.party = Object.keys(SV.owned).filter(x => x !== id).slice(0, 1);
   if (SV.work && SV.work.as) delete SV.work.as[id];
   if (SV.pairs) Object.keys(SV.pairs).forEach(k => { if (k.split('|').indexOf(id) >= 0) delete SV.pairs[k]; });
   delete SV.owned[id]; delete SV.recruits[id]; delete HEROES[id];
-  pityOf().light += RELEASE_LIGHT[H.star]; SV.gold += 100 * H.star; save();
+  pityOf().light += RELEASE_LIGHT[H.star]; SV.gold += 100 * H.star; if (quiet) return true; save();
   if (LOBBY.map) hubWalkers(); refreshLobby(); return true;
+}
+/* ================= roster tools and the Training Grounds ================= */
+// Locks keep favourites safe from release. Bulk release clears out weak recruits in one go.
+// Training spends gold and resources to raise a warden's stats, up to a cap set by their star.
+const isLocked = id => !!(SV.owned[id] && SV.owned[id].lock);
+function toggleLock(id) { const o = SV.owned[id]; if (!o) return; o.lock = o.lock ? 0 : 1; save(); }
+const isWorking = id => !!(SV.work && SV.work.as && SV.work.as[id]);
+const gradeIdx = id => GRADES.indexOf(gradeOf(id)); // 0 = SS ... 7 = F
+// bulk release candidates: recruits only, never locked, never in the party, never at a work post
+function bulkList(maxGrade, maxStar) {
+  const gi = GRADES.findIndex(g => g[1] === maxGrade);
+  return Object.keys(SV.owned).filter(id => isGen(id) && !isLocked(id) && SV.party.indexOf(id) < 0 && !isWorking(id) && HEROES[id].star <= maxStar && gradeIdx(id) >= gi);
+}
+function bulkRelease(ids) {
+  let light = 0, gold = 0, n = 0;
+  ids.forEach(id => { const st = HEROES[id] && HEROES[id].star; if (releaseHero(id, true)) { n++; light += RELEASE_LIGHT[st]; gold += 100 * st; } });
+  save(); if (LOBBY.map) hubWalkers(); refreshLobby();
+  return { n, light, gold };
+}
+
+/* ---- training ---- */
+const TRAIN_CAP = [0, 4, 6, 8, 12, 16]; // total points a warden can train, by star
+const TRAIN_RES = { pow: 'ore', vit: 'wood', foc: 'herb', agi: 'berry' };
+const TRAIN_WHY = { pow: 'Sparring with ore-weighted blades', vit: 'Hauling timber up the hill', foc: 'Meditation over herb smoke', agi: 'Chasing berry-thieves through the brush' };
+const trainedOf = id => (SV.owned[id] && SV.owned[id].trn) || 0;
+const trainCap = id => TRAIN_CAP[HEROES[id].star];
+function trainCost(id) { const n = trainedOf(id); return { gold: 200 * (n + 1), res: 4 + 2 * n }; }
+function canTrain(id, k) {
+  const st = statsOf(id), c = trainCost(id);
+  if (trainedOf(id) >= trainCap(id)) return 'cap'; if (st[k] >= 20) return 'max';
+  if (SV.gold < c.gold) return 'gold'; if ((SV.res[TRAIN_RES[k]] || 0) < c.res) return 'res';
+  return '';
+}
+function trainStat(id, k) {
+  if (canTrain(id, k)) return false; const o = SV.owned[id], c = trainCost(id);
+  SV.gold -= c.gold; SV.res[TRAIN_RES[k]] -= c.res; o.st[k]++; o.trn = (o.trn || 0) + 1; save(); return true;
+}
+
+function screenTrain(id) {
+  workOf();
+  if (!id || !SV.owned[id]) id = SV.party[0];
+  const H = HEROES[id], st = statsOf(id), c = trainCost(id), done = trainedOf(id), cap = trainCap(id), full = done >= cap;
+  const ids = SV.party.filter(x => SV.owned[x]).concat(Object.keys(SV.owned).filter(x => SV.party.indexOf(x) < 0).sort((a, b) => HEROES[b].star - HEROES[a].star || statTotal(statsOf(b)) - statTotal(statsOf(a))));
+  let h = '<div class="hpick">' + ids.map(x => '<button class="hp' + (x === id ? ' on' : '') + (SV.party.indexOf(x) >= 0 ? ' party' : '') + '" data-act="hero" data-v="' + x + '" title="' + esc(HEROES[x].name) + '"><img src="' + heroHeadURL(x) + '" alt=""></button>').join('') + '</div>';
+  h += '<div class="row" style="justify-content:space-between;margin:4px 0 8px"><div><b style="font:700 18px var(--px);color:' + STARC[H.star] + '" class="ol">' + esc(H.name) + '</b> <span class="muted" style="font-size:12px">' + stars(H.star) + ' · ' + CLASSES[H.cls].name + '</span></div><div>Grade ' + gradeTag(id).replace('class="grade"', 'class="grade" style="position:static;display:inline-block;--gc:' + gradeOf(id)[2] + '"') + '</div></div>';
+  h += '<div class="stat"><span>Trained</span><b>' + done + ' / ' + cap + '</b></div><div class="prog" style="margin:0 0 10px"><i style="width:' + Math.round(done / cap * 100) + '%;background:#ffc65a"></i></div>';
+  h += '<div class="wres">' + ['ore', 'wood', 'herb', 'berry'].map(r => '<span>' + icoImg(r) + '<b>' + fmt(SV.res[r] || 0) + '</b><small>' + RES_NAME[r] + '</small></span>').join('') + '<span>' + icoImg('gold') + '<b>' + fmt(SV.gold) + '</b><small>Gold</small></span></div>';
+  h += '<div class="lst">';
+  ISTAT.forEach(([k, n, d]) => {
+    const why = canTrain(id, k), r = TRAIN_RES[k];
+    const lbl = why === 'cap' ? 'Fully trained' : why === 'max' ? 'At 20' : 'Train +1';
+    h += '<div class="li"><div class="grow"><b>' + n + ' <span style="color:' + (st[k] >= 15 ? '#ffc65a' : st[k] >= 9 ? '#8fc3ff' : '#ff8a9a') + '">' + st[k] + '</span></b><small>' + d + ' · ' + TRAIN_WHY[k] + '</small><div class="prog" style="margin-top:4px"><i style="width:' + st[k] * 5 + '%;background:#8fc3ff"></i></div></div>'
+      + '<button class="btn pf' + (why ? '' : ' gold') + '" data-act="tr" data-v="' + k + '"' + (why ? ' disabled' : '') + ' style="min-width:118px">' + lbl + (why === 'cap' || why === 'max' ? '' : '<br><small style="font-size:11px">' + c.gold + ' gold · ' + c.res + ' ' + RES_NAME[r] + '</small>') + '</button></div>';
+  });
+  h += '</div><p class="muted" style="font-size:12px;margin:10px 0 0">' + (full ? esc(H.name) + ' has trained as far as a ' + H.star + '★ can. ' : '') + 'Each point costs more than the last. A warden can train ' + TRAIN_CAP.slice(1).map((v, i) => (i + 1) + '★ ' + v).join(', ') + ' points in total, and no stat goes past 20. Gather the resources in the Work Yard.</p>';
+  h += '<div class="row" style="margin-top:12px"><button class="btn pf" data-act="det">' + esc(H.name) + '\'s page</button><button class="btn pf" data-open="work">Work Yard</button></div>';
+  openModal('Training Grounds', h, { side: 'r', name: 'train', act: {
+    hero: v => screenTrain(v), det: () => heroDetail(id),
+    tr: k => { const g0 = gradeOf(id)[1]; if (!trainStat(id, k)) return; sfx('level'); refreshHeroStats(); const g1 = gradeOf(id)[1]; toast(esc(H.name) + ': ' + ISTAT.find(s => s[0] === k)[1] + ' +1' + (g1 !== g0 ? ' · now grade ' + g1 + '!' : ''), g1 !== g0 ? 'gold' : ''); screenTrain(id); }
+  } });
+}
+
+/* ---- bulk release screen ---- */
+const BULK = { g: 'D', s: 3 };
+function screenBulk() {
+  const list = bulkList(BULK.g, BULK.s);
+  const light = list.reduce((a, id) => a + RELEASE_LIGHT[HEROES[id].star], 0), gold = list.reduce((a, id) => a + 100 * HEROES[id].star, 0);
+  let h = '<p class="muted" style="font-size:13px;margin:0 0 10px">Let go of recruits you won\'t use. Legends, locked wardens, your party and anyone at a work post always stay. Their gear goes back to your bag.</p>';
+  h += '<div class="sect">Grade at or below</div><div class="chips">' + ['F', 'E', 'D', 'C', 'B'].map(g => '<button class="chip' + (BULK.g === g ? ' on' : '') + '" data-act="g" data-v="' + g + '">' + g + '</button>').join('') + '</div>';
+  h += '<div class="sect">Stars at or below</div><div class="chips">' + [1, 2, 3, 4, 5].map(s => '<button class="chip' + (BULK.s === s ? ' on' : '') + '" data-act="s" data-v="' + s + '">' + s + '★</button>').join('') + '</div>';
+  h += '<div class="sect">' + list.length + ' recruit' + (list.length === 1 ? '' : 's') + ' would leave</div>';
+  if (list.length) h += '<div class="grid">' + list.map(id => '<div class="slot r' + (HEROES[id].star - 1) + '"><img src="' + heroSmallURL(id) + '" alt=""><span class="lv ol">' + stars(HEROES[id].star) + '</span>' + gradeTag(id) + '</div>').join('') + '</div>';
+  else h += '<p class="muted" style="font-size:12px">Nobody matches. Try a higher grade or star limit.</p>';
+  h += '<div class="row" style="justify-content:space-between;margin-top:14px"><button class="btn pf" data-act="back">Back</button><button class="btn pf red" data-act="go"' + (list.length ? '' : ' disabled') + '>Release ' + list.length + ' · +' + light + ' Starlight · +' + fmt(gold) + ' gold</button></div>';
+  openModal('Release recruits', h, { side: 'r', name: 'bulk', act: {
+    g: v => { BULK.g = v; screenBulk(); }, s: v => { BULK.s = +v; screenBulk(); }, back: () => SCREENS.wardens(),
+    go: () => { const ids = bulkList(BULK.g, BULK.s); if (!ids.length) return; openConfirm('Release ' + ids.length + ' recruits?', 'They leave Veyra for good. You get ' + light + ' Starlight and ' + fmt(gold) + ' gold.', 'Release', () => { const r = bulkRelease(ids); sfx('coin'); toast(r.n + ' recruits set off on their own roads · +' + r.light + ' Starlight', 'gold'); SCREENS.wardens(); }); }
+  } });
 }
 
 /* ================= story: the Chronicle of the Spire ================= */
@@ -6129,15 +6212,37 @@ function openScreen(n) { const f = SCREENS[n]; if (f) f(); }
 /* ================= screens ================= */
 const SCREENS = {};
 SCREENS.work = screenWork; SCREENS.today = screenToday; SCREENS.craft = st => screenCraft(st && typeof st === 'object' ? st : null); SCREENS.bestiary = screenBestiary; SCREENS.echo = screenEcho; SCREENS.gift = screenGift; SCREENS.spark = screenSpark; SCREENS.chronicle = screenChronicle; SCREENS.outfits = screenOutfits;
+const WF = { f: 'all', c: '', s: 'best' };
+const WSORT = [['best', 'Best'], ['grade', 'Grade'], ['power', 'Power'], ['prof', 'Profession'], ['new', 'Newest']];
+SCREENS.train = id => screenTrain(id); SCREENS.bulk = screenBulk;
 SCREENS.wardens = function (sel) {
-  const owned = Object.keys(HEROES).filter(id => SV.owned[id]), gsc = id => SV.owned[id] ? statTotal(statsOf(id)) : -1;
-  const all = Object.keys(HEROES).sort((a, b) => (!!SV.owned[b] - !!SV.owned[a]) || (HEROES[b].star - HEROES[a].star) || gsc(b) - gsc(a));
+  const owned = Object.keys(HEROES).filter(id => SV.owned[id]), gsc = id => SV.owned[id] ? statTotal(statsOf(id)) : -1, ord = Object.keys(SV.owned);
+  const pk = id => { const p = profOf(id); return p ? Object.keys(PROFS).indexOf(p.k) * 10 - p.lv : 99; };
+  const cmp = {
+    best: (a, b) => (HEROES[b].star - HEROES[a].star) || gsc(b) - gsc(a),
+    grade: (a, b) => gsc(b) - gsc(a) || (HEROES[b].star - HEROES[a].star),
+    power: (a, b) => heroPower(b) - heroPower(a),
+    prof: (a, b) => pk(a) - pk(b) || gsc(b) - gsc(a),
+    new: (a, b) => ord.indexOf(b) - ord.indexOf(a)
+  }[WF.s] || ((a, b) => 0);
+  let all = Object.keys(HEROES).filter(id => {
+    const o = SV.owned[id], H = HEROES[id];
+    if (WF.c && H.cls !== WF.c) return false;
+    if (WF.f === 'rec') return o && H.gen; if (WF.f === 'leg') return !H.gen; if (WF.f === 'lock') return o && o.lock;
+    return o || !H.gen;
+  });
+  all.sort((a, b) => (!!SV.owned[b] - !!SV.owned[a]) || (SV.owned[a] ? cmp(a, b) : HEROES[b].star - HEROES[a].star));
   let h = '<div class="sect">Your party · the first warden leads · tap a hero below for details</div><div class="grid" style="grid-template-columns:repeat(4,minmax(0,1fr))">';
   for (let i = 0; i < 4; i++) { const id = SV.party[i]; h += id ? '<button class="slot r' + (HEROES[id].star - 1) + '" data-act="det" data-v="' + id + '"><img src="' + heroSmallURL(id) + '" alt=""><span class="lv ol">' + (i === 0 ? 'Lead' : stars(HEROES[id].star)) + '</span></button>' : '<div class="slot empty"><span class="muted" style="font:700 11px var(--px)">Empty</span></div>'; }
-  h += '</div><div class="sect">Wardens · ' + owned.length + ' · Legends ' + legendIds().filter(id => SV.owned[id]).length + ' / ' + legendIds().length + '</div><div class="grid">';
-  all.forEach(id => { const o = SV.owned[id], H = HEROES[id]; h += '<button class="slot r' + (H.star - 1) + (o ? '' : ' empty') + '" data-act="det" data-v="' + id + '"><img src="' + heroSmallURL(id, !o) + '" alt=""><span class="lv ol">' + (o ? stars(H.star) + (o.lb ? ' +' + o.lb : '') : '?') + '</span>' + (o ? gradeTag(id) : '') + (o && talFree(id) > 0 ? '<span class="dot"></span>' : '') + '</button>'; });
-  h += '</div><p class="muted" style="margin-top:14px;font-size:12px">Every warden rolls their own stats and grade (F to SS) when they join, so a 5★ can be weak and a 3★ can be great. Legends are the named heroes: duplicates limit-break them. Everyone else is one of a kind.</p>';
-  openModal('Wardens', h, { side: 'r', name: 'wardens', act: { det: id => heroDetail(id) } });
+  h += '</div><div class="row" style="gap:8px;margin-top:10px;flex-wrap:wrap"><button class="btn pf gold" data-act="train">Training Grounds</button><button class="btn pf red" data-act="bulk">Release recruits…</button></div>';
+  h += '<div class="sect">Wardens · ' + owned.length + ' · Legends ' + legendIds().filter(id => SV.owned[id]).length + ' / ' + legendIds().length + '</div>';
+  h += '<div class="chips">' + [['all', 'All'], ['rec', 'Recruits'], ['leg', 'Legends'], ['lock', 'Locked']].map(([k, n]) => '<button class="chip' + (WF.f === k ? ' on' : '') + '" data-act="wf" data-v="' + k + '">' + n + '</button>').join('') + '</div>';
+  h += '<div class="chips"><button class="chip' + (!WF.c ? ' on' : '') + '" data-act="wc" data-v="">Any class</button>' + Object.keys(CLASSES).map(k => '<button class="chip' + (WF.c === k ? ' on' : '') + '" data-act="wc" data-v="' + k + '">' + CLASSES[k].name + '</button>').join('') + '</div>';
+  h += '<div class="chips"><span class="muted" style="font-size:12px;align-self:center">Sort</span>' + WSORT.map(([k, n]) => '<button class="chip' + (WF.s === k ? ' on' : '') + '" data-act="ws" data-v="' + k + '">' + n + '</button>').join('') + '</div><div class="grid">';
+  all.forEach(id => { const o = SV.owned[id], H = HEROES[id], p = o && profOf(id); h += '<button class="slot r' + (H.star - 1) + (o ? '' : ' empty') + '" data-act="det" data-v="' + id + '"><img src="' + heroSmallURL(id, !o) + '" alt=""><span class="lv ol">' + (o ? stars(H.star) + (o.lb ? ' +' + o.lb : '') : '?') + '</span>' + (o ? gradeTag(id) : '') + (o && o.lock ? '<span class="lk">' + icoImg('lock') + '</span>' : '') + (WF.s === 'prof' && p ? '<span class="pf2">' + icoImg(PROFS[p.k].ic) + '<b>' + p.lv + '</b></span>' : '') + (WF.s === 'power' && o ? '<span class="pw ol">' + fmt(heroPower(id)) + '</span>' : '') + (o && talFree(id) > 0 ? '<span class="dot"></span>' : '') + '</button>'; });
+  if (!all.length) h += '<p class="muted" style="grid-column:1/-1">Nobody here with these filters.</p>';
+  h += '</div><p class="muted" style="margin-top:14px;font-size:12px">Every warden rolls their own stats and grade (F to SS) when they join, so a 5★ can be weak and a 3★ can be great. Train them at the Training Grounds. Legends are the named heroes: duplicates limit-break them. Everyone else is one of a kind. Lock a warden on their page to keep them safe from release.</p>';
+  openModal('Wardens', h, { side: 'r', name: 'wardens', act: { det: id => heroDetail(id), wf: v => { WF.f = v; SCREENS.wardens(); }, wc: v => { WF.c = v; SCREENS.wardens(); }, ws: v => { WF.s = v; SCREENS.wardens(); }, train: () => screenTrain(SV.party[0]), bulk: () => screenBulk() } });
 };
 function heroDetail(id) {
   const H = HEROES[id], o = SV.owned[id], C = CLASSES[H.cls], s = heroStats(id), inP = SV.party.indexOf(id);
@@ -6146,7 +6251,7 @@ function heroDetail(id) {
   h += '<div class="stat"><span>Personality</span><b>' + TRAITS[H.trait].name + '</b></div><div class="muted" style="font-size:12px;margin:4px 0 6px">' + TRAITS[H.trait].desc + '</div>';
   if (o) { h += '<div class="stat"><span>Morale</span><b style="color:' + (o.mor < 25 ? '#ff9ab0' : '#f29ac0') + '">' + o.mor + ' / 100</b></div>' + (injOf(id) ? '<div class="stat"><span>Condition</span><b style="color:' + INJ[injOf(id)].col + '">' + INJ[injOf(id)].name + ' · heals in ' + injLeftTxt(id) + '</b></div>' : '<div class="stat"><span>Condition</span><b style="color:#7dff9c">Healthy</b></div>') + '<div class="stat"><span>Knows you?</span><b style="color:' + (isAware(id) ? '#7dff9c' : '#a8aed8') + '">' + (isAware(id) ? 'Yes, aware of you' : 'Not yet') + '</b></div>' + (isAware(id) ? '' : '<div class="muted" style="font-size:12px;margin:4px 0 6px">Wakes up to you at: ' + AWAKEN[H.trait].need + ' Or at limit break 3.</div>') + (isAware(id) ? '<div class="stat"><span>Relies on you</span><b style="color:' + relyCol(relyOf(id)) + '">' + relyName(relyOf(id)) + ' · ' + relyOf(id) + '</b></div><div class="muted" style="font-size:12px;margin:4px 0 6px">' + esc(H.name) + ' knows this is a game to you, and survival to them. Orders that keep them alive raise this; orders that get them knocked out lower it.</div>' : '') + '<div class="stat"><span>Bond</span><b>' + bondHearts(bondLv(id)) + ' <span style="color:#ff9ac8">' + BOND_NAME[bondLv(id)] + '</span></b></div><div class="prog" style="margin:0 0 6px"><i style="width:' + Math.round(bondProg(id) * 100) + '%;background:#ff9ac8"></i></div><div class="stat"><span>Limit break</span><b>' + o.lb + ' / 5</b></div><div class="stat"><span>Power</span><b>' + fmt(heroPower(id)) + '</b></div>'; }
   h += '<div class="stat"><span>HP · ATK · DEF</span><b>' + s.hpMax + ' · ' + Math.round(s.atk) + ' · ' + Math.round(s.def) + '</b></div><div class="stat"><span>Crit</span><b>' + Math.round(s.crit * 100) + '%</b></div>';
-  if (o) { const st = statsOf(id); h += '<div class="sect" style="margin-top:10px">Individual stats · grade ' + gradeTag(id) + '</div><div class="istats">' + ISTAT.map(([k, n, d]) => '<div title="' + d + '"><span>' + n + '</span><div class="prog"><i style="width:' + st[k] * 5 + '%;background:' + (st[k] >= 15 ? '#ffc65a' : st[k] >= 9 ? '#8fc3ff' : '#ff8a9a') + '"></i></div><b>' + st[k] + '</b></div>').join('') + '</div><div class="stat"><span>Profession</span><b>' + profTag(id) + '</b></div>' + (profOf(id) ? '<div class="muted" style="font-size:12px;margin:2px 0 6px">' + PROFS[profOf(id).k].desc + '</div>' : '') + (isGen(id) ? '<div class="row" style="margin-top:6px"><button class="btn pf red" data-act="rel" data-v="' + id + '">Release · +' + RELEASE_LIGHT[H.star] + ' Starlight</button></div>' : ''); }
+  if (o) { const st = statsOf(id); h += '<div class="sect" style="margin-top:10px">Individual stats · grade ' + gradeTag(id) + '</div><div class="istats">' + ISTAT.map(([k, n, d]) => '<div title="' + d + '"><span>' + n + '</span><div class="prog"><i style="width:' + st[k] * 5 + '%;background:' + (st[k] >= 15 ? '#ffc65a' : st[k] >= 9 ? '#8fc3ff' : '#ff8a9a') + '"></i></div><b>' + st[k] + '</b></div>').join('') + '</div><div class="stat"><span>Trained</span><b>' + trainedOf(id) + ' / ' + trainCap(id) + '</b></div><div class="stat"><span>Profession</span><b>' + profTag(id) + '</b></div>' + (profOf(id) ? '<div class="muted" style="font-size:12px;margin:2px 0 6px">' + PROFS[profOf(id).k].desc + '</div>' : '') + '<div class="row" style="margin-top:6px;gap:8px;flex-wrap:wrap"><button class="btn pf gold" data-act="train" data-v="' + id + '">Train</button><button class="btn pf" data-act="lock" data-v="' + id + '">' + icoImg('lock', 'bi') + (o.lock ? ' Unlock' : ' Lock') + '</button>' + (isGen(id) ? '<button class="btn pf red" data-act="rel" data-v="' + id + '"' + (o.lock ? ' disabled' : '') + '>' + (o.lock ? 'Locked' : 'Release · +' + RELEASE_LIGHT[H.star] + ' Starlight') + '</button>' : '') + '</div>'; }
   if (o) { const others = Object.keys(SV.owned).filter(x => x !== id && (pairXP(id, x) > 0)).sort((a, b) => pairXP(id, b) - pairXP(id, a)).slice(0, 6); if (others.length) { h += '<div class="sect" style="margin-top:10px">Relationships</div><div class="rels">' + others.map(x => '<span><img src="' + heroHeadURL(x) + '" alt=""><b>' + esc(HEROES[x].name) + '</b><i style="color:' + pairCol(id, x) + '">' + pairName(id, x) + '</i></span>').join('') + '</div><div class="muted" style="font-size:11px;margin-bottom:6px">Comrades fight harder side by side and avenge each other. Rivals both crit more. Bonds grow from clearing floors together.</div>'; } }
   h += wishHTML(id);
   h += hsHTML(id);
@@ -6160,7 +6265,7 @@ function heroDetail(id) {
     else { h += '<button class="btn pf" data-act="leave" data-v="' + id + '"' + (SV.party.length <= 1 ? ' disabled' : '') + '>Leave party</button>'; if (inP > 0) h += '<button class="btn pf gold" data-act="lead" data-v="' + id + '">Make lead</button>'; }
   } else h += '<button class="btn pf gold" data-open="forge">Summon at the Starforge</button>';
   h += '<button class="btn pf" data-act="back">Back</button></div></div></div>';
-  openModal(H.name, h, { side: 'r', act: { rel: v => openConfirm('Release ' + HEROES[v].name + '?', HEROES[v].name + ' leaves Veyra for good. Their gear returns to your bag, and they leave ' + RELEASE_LIGHT[HEROES[v].star] + ' Starlight and ' + 100 * HEROES[v].star + ' gold behind.', 'Release', () => { const n = HEROES[v].name; if (releaseHero(v)) { toast(n + ' sets off on their own road', ''); SCREENS.wardens(); } }), tal: v => SCREENS.talents(v), gear: v => SCREENS.loadout(v), fit: v => screenOutfits(v), gift: v => SCREENS.gift(v), wish: v => { closeModal(); grantWish(v); }, hs: v => { const [hid, i] = v.split('|'); closeModal(); playHS(hid, +i, () => heroDetail(hid)); }, back: () => SCREENS.wardens(), join: v => { if (SV.party.length < 4) SV.party.push(v); save(); heroDetail(v); }, leave: v => { SV.party = SV.party.filter(x => x !== v); save(); heroDetail(v); }, lead: v => { SV.party = [v].concat(SV.party.filter(x => x !== v)); save(); heroDetail(v); } } });
+  openModal(H.name, h, { side: 'r', act: { train: v => screenTrain(v), lock: v => { toggleLock(v); sfx('ui'); toast(esc(HEROES[v].name) + (isLocked(v) ? ' is locked and safe from release' : ' is unlocked'), ''); heroDetail(v); }, rel: v => openConfirm('Release ' + HEROES[v].name + '?', HEROES[v].name + ' leaves Veyra for good. Their gear returns to your bag, and they leave ' + RELEASE_LIGHT[HEROES[v].star] + ' Starlight and ' + 100 * HEROES[v].star + ' gold behind.', 'Release', () => { const n = HEROES[v].name; if (releaseHero(v)) { toast(n + ' sets off on their own road', ''); SCREENS.wardens(); } }), tal: v => SCREENS.talents(v), gear: v => SCREENS.loadout(v), fit: v => screenOutfits(v), gift: v => SCREENS.gift(v), wish: v => { closeModal(); grantWish(v); }, hs: v => { const [hid, i] = v.split('|'); closeModal(); playHS(hid, +i, () => heroDetail(hid)); }, back: () => SCREENS.wardens(), join: v => { if (SV.party.length < 4) SV.party.push(v); save(); heroDetail(v); }, leave: v => { SV.party = SV.party.filter(x => x !== v); save(); heroDetail(v); }, lead: v => { SV.party = [v].concat(SV.party.filter(x => x !== v)); save(); heroDetail(v); } } });
 }
 SCREENS.talents = function (id) {
   const H = HEROES[id], cls = H.cls, t = talOf(id), free = talFree(id), tot = talTotal(id), cost = respecCost(id);
