@@ -1,7 +1,7 @@
 // Aetherfall service worker: network first, cache fallback so the game also opens offline.
 // The pixel font (Google Fonts) is kept in its own cache that survives game updates, so menus
 // keep their pixel lettering offline after the first online visit.
-var CACHE = 'aetherfall-v3-37';
+var CACHE = 'aetherfall-v3-51';
 var FONTS = 'aetherfall-fonts-1';
 var CORE = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 self.addEventListener('install', function (e) {
