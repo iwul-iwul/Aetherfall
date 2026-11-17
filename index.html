@@ -867,7 +867,7 @@ const BASELOOK = {
   bulwark: { skin: '#c98d6a', hair: '#5a3a22', hairStyle: 'short', top: '#8f9bb8', top2: '#5a6585', pants: '#3a3f5a', boots: '#2a2a3a', hat: 'helm', hatCol: '#b8c4d8', cape: '#2d5ab8', glow: '#5ab0ff' },
   oracle: { skin: '#f3cfb0', hair: '#f2d06b', hairStyle: 'long', top: '#ece6f5', top2: '#b8a4d8', pants: '#d8cce8', boots: '#9a7ab8', hat: 'halo', hatCol: '#f5c451', cape: null, robe: true, glow: '#fff1a8' }
 };
-function heroLook(id) { const h = HEROES[id]; return Object.assign({ cls: h.cls, star: h.star }, BASELOOK[h.cls], HAIRSTYLE[id] ? { hairStyle: HAIRSTYLE[id] } : {}, EYES[id] ? { eye: EYES[id] } : {}, h.look, typeof outfitOver === 'function' ? outfitOver(id) : {}); }
+function heroLook(id) { const h = HEROES[id]; return Object.assign({ cls: h.cls, star: h.star }, BASELOOK[h.cls], HAIRSTYLE[id] ? { hairStyle: HAIRSTYLE[id] } : {}, EYES[id] ? { eye: EYES[id] } : {}, h.look, typeof outfitOver === 'function' ? outfitOver(id) : {}, typeof gearOver === 'function' ? gearOver(id) : {}); }
 // more variety than the class defaults
 const EYES = { kael: '#4a8ad8', pip: '#7a4ac8', ilka: '#3aa85a', brann: '#7a5a3a', doran: '#3a6ab8', juno: '#e8642a', wren: '#4a9a4a', lumi: '#4a7ad8', varro: '#c8323f', senna: '#6a6ae0', kestrel: '#2a9a9a', rook: '#d8642a', maelis: '#3a9ae8', thane: '#a87a2a', vesper: '#e0902a', aurelle: '#c89a2a', moss: '#6a9a3a', tamsin: '#3a5ab8', odda: '#6a8ab8', sable: '#e0b030', morrow: '#8a7ad8', grimm: '#6a8a9a', elowen: '#4ac87a' };
 const HAIRSTYLE = { varro: 'swept', rook: 'messy', vesper: 'pony', juno: 'twin', nyx: 'bob', ilka: 'pony', kestrel: 'pony', wren: 'bob', brann: 'messy', doran: 'short', senna: 'long', pip: 'messy', moss: 'messy', tamsin: 'bob', odda: 'pony', sable: 'swept', morrow: 'long', grimm: 'short', elowen: 'long' };
@@ -1965,6 +1965,7 @@ function makeHero(id, slot) {
   const H = HEROES[id], c = CLASSES[H.cls], L = heroLook(id), o = SV.owned[id] || {};
   const h = actor({ team: 'h', id, slot, name: H.name, cls: H.cls, star: H.star, trait: H.trait, look: L, sheet: heroSheet('h_' + id, L), wpn: weaponSprite(c.weapon, L.glow), r: 6, ranged: c.ranged, range: c.range, rate: c.rate, skills: c.skills.slice().concat(typeof SIG !== 'undefined' && SIG[id] ? [SIG[id]] : []), mor: o.mor == null ? 70 : o.mor, bond: bondLv(id), aware: isAware(id), rely: isAware(id) ? relyOf(id) : null, will: 0, rest: 0, lazyT: rand(12, 26), focusObey: false });
   Object.assign(h, heroStats(id)); h.hp = h.hpMax; injMods(h); h.mp = h.mpMax; h.atkCd = rand(0, 0.5);
+  applyGearVis(h);
   return h;
 }
 const FOES = {
@@ -2550,6 +2551,7 @@ function autoEquip(id) {
   const e = eqOf(id), pool = SV.inv.slice(); GSLOTS.forEach(s => { if (e[s]) pool.push(e[s]); });
   const kit = bestKit(id, pool); let changed = 0;
   GSLOTS.forEach(s => { const cur = e[s], nb = kit[s]; if (cur === nb) return; changed++; if (cur) SV.inv.push(cur); if (nb) SV.inv = SV.inv.filter(x => x !== nb); e[s] = nb || null; });
+  if (changed) gearChanged(id);
   return changed;
 }
 function autoEquipParty() { let n = 0; SV.party.filter(id => SV.owned[id]).sort((a, b) => HEROES[b].star - HEROES[a].star).forEach(id => { n += autoEquip(id); }); save(); refreshHeroStats(); return n; }
@@ -2563,6 +2565,17 @@ function gearMigrate() {
   if (old.length) SV.party.filter(id => SV.owned[id]).forEach(id => { const e = eqOf(id); old.forEach(it => { if (!e[it.slot]) e[it.slot] = Object.assign({}, it, { uid: uid() }); }); });
   SV.eq = { weapon: null, armor: null, charm: null }; save();
 }
+
+/* ---- gear you can see ---- */
+// set armour recolours the hero's trim (unless they wear a chosen outfit); weapons glow in their set's colour
+function gearOver(id) { const o = SV.owned && SV.owned[id]; if (!o || o.fit || !o.eq) return {}; const a = o.eq.armor; return a && a.set ? { top2: shade(SETS[a.set].col, -0.12) } : {}; }
+function gearVis(id) {
+  const e = (SV.owned[id] && SV.owned[id].eq) || {}, w = e.weapon, c = setCounts(id), full = Object.keys(c).find(k => c[k] >= 3) || null;
+  return { glow: w && w.set ? SETS[w.set].col : null, rar: w ? w.rar : 0, full: full ? SETS[full].col : null };
+}
+// after any equipment change: rebuild the hero's look everywhere it is drawn
+function gearChanged(id) { if (typeof refreshHeroArt === 'function') refreshHeroArt(id); if (LOBBY.walkers) LOBBY.walkers.forEach(w => { if (w.id === id) applyGearVis(w); }); }
+function applyGearVis(a) { const v = gearVis(a.id), c = CLASSES[HEROES[a.id].cls]; a.wRar = v.rar; a.fullSet = v.full; const ws = weaponSprite(c.weapon, v.glow || a.look.glow); if (a.atJob) a.baseWpn = ws; else { a.wpn = ws; a.baseWpn = null; } }
 
 /* ---- set bonuses in combat ---- */
 function setFxTick(h, dt) {
@@ -4664,10 +4677,20 @@ function drawWeapon(g, a, dir) {
   else an = dir === 'sideL' ? -Math.PI + 0.9 : dir === 'side' ? -0.9 : dir === 'down' ? -1.25 : -1.9;
   if (a.dead) an = 0.3;
   g.save(); g.translate(snp(a.x + hand[0]), snp(a.y + hand[1])); g.rotate(an);
-  if (!a.dead && SV.opts.fx) { g.globalAlpha = 0.55 + 0.3 * Math.sin(G.time * 4 + a.x); g.drawImage(W.glow, -W.px - W.pad, -W.py - W.pad); g.globalAlpha = 1; }
-  g.drawImage(W.c, -W.px, -W.py); g.restore();
+  if (!a.dead && SV.opts.fx) { g.globalAlpha = (a.wRar >= 3 ? 0.8 : 0.55) + 0.3 * Math.sin(G.time * 4 + a.x); g.drawImage(W.glow, -W.px - W.pad, -W.py - W.pad); if (a.wRar >= 3) g.drawImage(W.glow, -W.px - W.pad, -W.py - W.pad); g.globalAlpha = 1; }
+  g.drawImage(W.c, -W.px, -W.py);
+  // Legendary weapons: little stars twinkle along the blade
+  if (a.wRar >= 4 && !a.dead && SV.opts.fx) { const len = W.c.width - W.px; g.globalCompositeOperation = 'lighter'; for (let i = 0; i < 2; i++) { const ph = (G.time * 1.1 + i * 0.5 + a.x * 0.013) % 1, x = Math.round(len * (0.35 + ph * 0.6)), y = Math.round(Math.sin(i * 2.3 + G.time) * 2) - 1; g.globalAlpha = Math.sin(ph * Math.PI); g.fillStyle = '#fff6c8'; g.fillRect(x, y - 1, 1, 3); g.fillRect(x - 1, y, 3, 1); } g.globalAlpha = 1; g.globalCompositeOperation = 'source-over'; }
+  g.restore();
 }
 function drawHero(g, h) {
+  // a full gear set wraps the hero in a soft aura of the set's colour
+  if (h.fullSet && !h.dead && SV.opts.fx) {
+    g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = 0.36 + 0.12 * Math.sin(G.time * 3 + h.x); g.fillStyle = h.fullSet;
+    g.beginPath(); g.ellipse(snp(h.x), snp(h.y), 11, 4.5, 0, 0, 6.283); g.fill();
+    for (let i = 0; i < 3; i++) { const ph = (G.time * 0.55 + i / 3 + h.x * 0.017) % 1; g.globalAlpha = 0.85 * (1 - ph); g.fillRect(snp(h.x + Math.sin(i * 2.1 + G.time * 1.7) * 8), snp(h.y - 3 - ph * 24), 1, 2); }
+    g.restore();
+  }
   const dir = dirOf(h), fr = h.moving ? Math.floor(h.walk * 4) % 4 : 0, hit = (h.flash || 0) > 0.03;
   // each hero blinks on their own rhythm, and squeezes their eyes shut when hit
   const blink = !h.moving && ((G.time + (h.slot || 0) * 1.37) % 3.7 < 0.13);
@@ -5352,7 +5375,7 @@ function hubWalkers() {
   const ids = SV.party.filter(id => SV.owned[id]).concat(Object.keys(SV.owned).filter(id => home(id) && W[id]), Object.keys(SV.owned).filter(id => home(id) && !W[id])).slice(0, 10);
   LOBBY.walkers = ids.map((id, i) => {
     const L = heroLook(id), c = CLASSES[HEROES[id].cls];
-    const w = actor({ team: 'h', id, name: HEROES[id].name, star: HEROES[id].star, trait: HEROES[id].trait, look: L, sheet: heroSheet('h_' + id, L), wpn: weaponSprite(c.weapon, L.glow), ranged: c.ranged, spd: 26 + Math.random() * 6, party: SV.party.indexOf(id) >= 0 });
+    const w = actor({ team: 'h', id, name: HEROES[id].name, star: HEROES[id].star, trait: HEROES[id].trait, look: L, sheet: heroSheet('h_' + id, L), wpn: weaponSprite(c.weapon, L.glow), ranged: c.ranged, spd: 26 + Math.random() * 6, party: SV.party.indexOf(id) >= 0 }); applyGearVis(w);
     const s = m.spots[pick(Object.keys(m.spots))]; w.x = s[0] * TS + 8 + rand(-14, 14); w.y = s[1] * TS + 8 + rand(-6, 6); w.wait = rand(0, 4);
     return w;
   });
@@ -5626,8 +5649,8 @@ SCREENS.loadout = function (hid, filter, sel) {
       smith: () => SCREENS.craft({ hid }),
       autop: () => { const n = autoEquipParty(); toast(n ? 'Party kitted out · ' + n + ' changes' : 'Your party already has the best kit', n ? 'gold' : ''); if (n) sfx('ui'); go(); },
       rein: v => { workOf(); const it = v.startsWith('eq:') ? e[v.slice(3)] : SV.inv.find(x => x.uid === v); if (!it) return; if (reinforce(it)) { sfx('level'); toast('<span class="t' + it.rar + '">' + esc(it.name) + '</span> reinforced', 'gold'); refreshHeroStats(); } else toast('Not enough ore or gold', ''); go(null, v); },
-      eq: v => { const i = SV.inv.findIndex(x => x.uid === v); if (i < 0) return; const it = SV.inv[i]; if (!canWear(hid, it)) return; const old = e[it.slot]; e[it.slot] = it; SV.inv.splice(i, 1); if (old) SV.inv.push(old); save(); refreshHeroStats(); sfx('ui'); go(null, 'eq:' + it.slot); },
-      uneq: v => { const it = e[v]; if (!it) return; SV.inv.push(it); e[v] = null; save(); refreshHeroStats(); go(); },
+      eq: v => { const i = SV.inv.findIndex(x => x.uid === v); if (i < 0) return; const it = SV.inv[i]; if (!canWear(hid, it)) return; const old = e[it.slot]; e[it.slot] = it; SV.inv.splice(i, 1); if (old) SV.inv.push(old); gearChanged(hid); save(); refreshHeroStats(); sfx('ui'); go(null, 'eq:' + it.slot); },
+      uneq: v => { const it = e[v]; if (!it) return; SV.inv.push(it); e[v] = null; gearChanged(hid); save(); refreshHeroStats(); go(); },
       sell: v => { const i = SV.inv.findIndex(x => x.uid === v); if (i < 0) return; SV.gold += itemValue(SV.inv[i]); SV.inv.splice(i, 1); sfx('coin'); save(); go(); },
       sellc: () => { let n = 0, gsum = 0; SV.inv = SV.inv.filter(it => { if (it.rar === 0) { n++; gsum += itemValue(it); return false; } return true; }); SV.gold += gsum; if (n) { sfx('coin'); toast('Salvaged ' + n + ' items for ' + gsum + ' gold', ''); } save(); go(); }
     }
